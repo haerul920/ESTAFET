@@ -1,0 +1,40 @@
+/* ESTAFET design tokens (CLAUDE.md section 9). Mapped into Tailwind in globals.css. */
+:root {
+  --ink: #0e1a26;
+  --black: #10151a;
+  --blue: #1760d6;
+  --blue-dark: #0f4baa;
+  --blue-tint: #e6f0fe;
+  --lime: #cdf54b;
+
+  --sky-gradient: linear-gradient(180deg, #1673e6 0%, #4aa0f2 42%, #97c8f8 78%, #cde4fb 100%);
+  --sky-strip: linear-gradient(180deg, #2f8cf0 0%, #7dbbf7 55%, #ffffff 100%);
+  --meadow-sky: linear-gradient(180deg, #d8d8ec 0%, #f6dccb 48%, #f4b98c 78%);
+
+  --page: #ffffff;
+  --surface: #f3f4f6;
+  --surface-grey: #efefef;
+  --surface-soft: #f1f2f4;
+  --chip: #e1e5e9;
+  --border: #dde1e5;
+  --border-soft: #e3e6e9;
+  --border-strong: #8a979f;
+  --text-2: #4a5a66;
+  --text-3: #33475b;
+  --text-muted: #6b7680;
+
+  --success-fg: #165c39;
+  --success-bg: #e4f3ea;
+  --warning-fg: #7a4a00;
+  --warning-bg: #fdf1dc;
+  --warning-ink: #5c4320;
+  --danger: #b3261e;
+
+  --radius-card: 28px;
+  --radius-hero: 36px;
+  --radius-input: 14px;
+
+  --glass-bg: rgba(255, 255, 255, 0.34);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 10px 30px rgba(10, 60, 150, 0.18);
+}

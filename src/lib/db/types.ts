@@ -1,0 +1,217 @@
+// Row shapes returned by Supabase queries. Kept in sync with supabase/migrations by hand.
+
+export type ProjectKind = "student_program" | "hackathon" | "research";
+export type StopReason = "funding_not_granted" | "team_graduated" | "time_or_people" | "other";
+export type ProjectStatus = "draft" | "awaiting_advisor" | "verifying" | "published" | "adopted" | "archived";
+export type ItemKind = "objective" | "completed" | "next_task" | "lesson";
+export type Effort = "small" | "medium" | "large";
+export type LessonType = "methodology" | "evaluation_feedback" | "funding_feedback" | "blocker";
+export type EvidenceStatus = "matched" | "not_found" | "partial";
+export type ReviewStatus = "pending" | "kept" | "removed";
+export type ObjectiveStatus = "done" | "in_progress" | "not_started";
+export type RequestStatus = "pending" | "approved" | "declined" | "withdrawn";
+export type RequestPurpose = "competition" | "research" | "course" | "other";
+export type ConsentStatus = "pending" | "approved" | "declined" | "withdrawn";
+export type LineageType =
+  | "created"
+  | "advisor_approved"
+  | "published"
+  | "requested"
+  | "approved"
+  | "agreement_signed"
+  | "continued"
+  | "resubmitted"
+  | "declined"
+  | "advisor_withdrawn";
+
+export interface Profile {
+  id: string;
+  full_name: string;
+  university: string;
+  faculty: string | null;
+  study_program: string | null;
+  avatar_url: string | null;
+  is_admin?: boolean;
+  suspended_at?: string | null;
+  suspended_reason?: string | null;
+  suspended_until?: string | null;
+}
+
+export interface TeaserProject {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  kind: ProjectKind;
+  field: string;
+  year: number;
+  stop_reason: StopReason;
+  status: ProjectStatus;
+  advisor_name: string;
+  is_demo: boolean;
+  published_at: string | null;
+  stopped_note: string;
+  tech: string[];
+  team_size: number;
+  objectives_total: number;
+  objectives_done: number;
+  tasks_count: number;
+}
+
+export interface TeaserItem {
+  id: string;
+  project_id: string;
+  kind: ItemKind;
+  title: string;
+  description: string;
+  effort: Effort | null;
+  lesson_type: LessonType | null;
+  objective_status: ObjectiveStatus | null;
+  position: number;
+  source_label: string | null;
+}
+
+export interface TeaserLineageEvent {
+  id: string;
+  project_id: string;
+  type: LineageType;
+  created_at: string;
+  team: string | null;
+}
+
+export interface Project {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  kind: ProjectKind;
+  field: string;
+  year: number;
+  stop_reason: StopReason;
+  status: ProjectStatus;
+  advisor_name: string;
+  advisor_email: string;
+  created_by: string;
+  is_demo: boolean;
+  published_at: string | null;
+  stopped_note: string;
+  tech: string[];
+  team_size: number;
+  moderation_status?: "ok" | "hidden" | "removed";
+  moderation_reason?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectMember {
+  project_id: string;
+  profile_id: string;
+  role: "creator" | "adopter";
+  consented_at: string | null;
+  profiles?: Pick<Profile, "full_name"> | null;
+}
+
+export interface AdvisorConsent {
+  id: string;
+  project_id: string;
+  status: ConsentStatus;
+  comment: string | null;
+  expires_at: string;
+  decided_at: string | null;
+  created_at: string;
+}
+
+export interface EvidenceRef {
+  file_id: string;
+  page: number;
+  quote: string;
+}
+
+export interface DraftItem {
+  id: string;
+  project_id: string;
+  run_id: string | null;
+  kind: ItemKind;
+  title: string;
+  description: string;
+  effort: Effort | null;
+  lesson_type: LessonType | null;
+  objective_status: ObjectiveStatus | null;
+  evidence: EvidenceRef[];
+  evidence_status: EvidenceStatus;
+  origin: "ai" | "creator";
+  review_status: ReviewStatus;
+  position: number;
+}
+
+export interface ProjectFile {
+  id: string;
+  project_id: string;
+  kind: "pdf" | "markdown" | "code_tree";
+  storage_path: string;
+  original_name: string;
+  size_bytes: number;
+  page_count: number | null;
+  extracted_text_path: string | null;
+  skipped_sensitive: { name: string; reason: string }[];
+  ingest_status: "ready" | "check";
+  ingest_note: string;
+  created_at: string;
+}
+
+export interface ContinuationRequest {
+  id: string;
+  project_id: string;
+  adopter_team_name: string;
+  members: { email: string }[];
+  task_ids: string[];
+  plan: string;
+  purpose: RequestPurpose;
+  target_date: string | null;
+  fit_note: string;
+  status: RequestStatus;
+  decision_note: string | null;
+  decided_by: string | null;
+  decided_at: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface AgreementAcceptance {
+  id: string;
+  request_id: string;
+  profile_id: string;
+  side: "creator" | "adopter";
+  agreement_version: number;
+  accepted_at: string;
+}
+
+export interface LineageEvent {
+  id: string;
+  project_id: string;
+  type: LineageType;
+  actor_id: string | null;
+  request_id: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface NotificationRow {
+  id: string;
+  user_id: string;
+  type: string;
+  payload: Record<string, unknown>;
+  read_at: string | null;
+  created_at: string;
+}
+
+export interface SynthesisRun {
+  id: string;
+  project_id: string;
+  provider: string;
+  model: string;
+  mode: "live" | "mock";
+  status: "queued" | "running" | "done" | "failed";
+  error: string | null;
+  created_at: string;
+}

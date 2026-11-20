@@ -1,0 +1,7 @@
+.next
+node_modules
+pnpm-lock.yaml
+supabase/migrations
+supabase/seed.sql
+the_design
+"ESTAFET UI UX Design.html"

@@ -1,0 +1,56 @@
+import { SYSTEM_PROMPT } from "./prompts";
+
+/** Live provider calls. Plain fetch, no SDK. Keys and model names come from the environment. */
+
+export interface LiveCall {
+  system: string;
+  user: string;
+}
+
+function stripFence(text: string): string {
+  const t = text.trim();
+  const m = t.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  return m ? m[1] : t;
+}
+
+export async function callGemini(model: string, user: string, signal?: AbortSignal): Promise<string> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("GEMINI_API_KEY is not set.");
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-goog-api-key": key },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: [{ role: "user", parts: [{ text: user }] }],
+      generationConfig: { responseMimeType: "application/json", temperature: 0 },
+    }),
+    signal,
+  });
+  if (!res.ok) throw new Error(`Gemini request failed (${res.status}).`);
+  const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+  const text = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+  if (!text) throw new Error("Gemini returned no text.");
+  return stripFence(text);
+}
+
+export async function callAnthropic(model: string, user: string, signal?: AbortSignal): Promise<string> {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw new Error("ANTHROPIC_API_KEY is not set.");
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model,
+      max_tokens: 8000,
+      temperature: 0,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: user }],
+    }),
+    signal,
+  });
+  if (!res.ok) throw new Error(`Anthropic request failed (${res.status}).`);
+  const json = (await res.json()) as { content?: { type: string; text?: string }[] };
+  const text = json.content?.filter((c) => c.type === "text").map((c) => c.text ?? "").join("") ?? "";
+  if (!text) throw new Error("Anthropic returned no text.");
+  return stripFence(text);
+}
