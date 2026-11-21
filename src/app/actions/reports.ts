@@ -32,7 +32,7 @@ export async function submitReport(_prev: FormState, formData: FormData): Promis
     .from("projects")
     .select("id")
     .eq("id", parsed.data.project_id)
-    .in("status", ["published", "adopted"])
+    .eq("status", "published")
     .eq("moderation_status", "ok")
     .maybeSingle();
   if (!project) return { error: "This project is not available to report.", values };

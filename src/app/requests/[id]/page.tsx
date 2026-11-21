@@ -16,33 +16,32 @@ export default async function RequestReviewPage({ params }: { params: Promise<{ 
   const { id } = await params;
   const user = await requireUser(`/requests/${id}`);
   const d = await getRequestDetail(id, user.id);
-  if (!d || (!d.isCreator && !d.isTeam)) notFound();
+  if (!d || (!d.isOwner && !d.isTeam)) notFound();
   const { request: r, project } = d;
 
-  const current = d.unlocked ? 4 : r.status === "approved" ? 2 : r.status === "pending" ? 1 : 1;
-  const steps = ["1. Read the plan", "2. Decide", "3. Accept the agreement", "4. Files unlock"].map((label) => ({ label }));
+  const current = d.unlocked ? 4 : r.status === "approved" ? 2 : 1;
+  const steps = ["1. Read the plan", "2. Decide", "3. Accept the agreement", "4. Access starts"].map((label) => ({ label }));
   const members = [d.requesterName, ...r.members.map((m) => m.email)];
 
   const props: ReviewProps = {
     requestId: r.id,
     status: r.status,
-    isCreator: d.isCreator,
+    isOwner: d.isOwner,
     isTeam: d.isTeam,
     unlocked: d.unlocked,
-    creatorAccepted: d.creatorAccepted,
-    adopterAccepted: d.adopterAccepted,
-    mineAccepted: d.mineAccepted,
-    creatorAcceptedBy: d.acceptances.filter((a) => a.side === "creator").map((a) => a.name),
-    adopterAcceptedBy: d.acceptances.filter((a) => a.side === "adopter").map((a) => a.name),
+    mineAccepted: d.myAccess !== null,
+    verified: user.verified,
+    holders: d.holders,
     decisionNote: r.decision_note,
     decidedAt: r.decided_at,
+    expiresAt: r.status === "pending" ? r.expires_at : null,
     workspaceHref: `/projects/${project.slug}/workspace`,
-    creditLine: creditLine({ title: project.title, creators: d.creatorNames, advisor: project.advisor_name, lineageId: r.id.slice(0, 8) }),
+    creditLine: creditLine({ title: project.title, creators: d.ownerNames, advisor: project.advisor_name, lineageId: r.id.slice(0, 8) }),
   };
 
   const statusBadge =
     r.status === "pending" ? (
-      <Badge tone="warn">{d.isCreator ? "Waiting for your decision" : REQUEST_STATUS_LABEL.pending}</Badge>
+      <Badge tone="warn">{d.isOwner ? "Waiting for your decision" : REQUEST_STATUS_LABEL.pending}</Badge>
     ) : r.status === "approved" ? (
       <Badge tone="ok">Approved</Badge>
     ) : (
@@ -51,16 +50,16 @@ export default async function RequestReviewPage({ params }: { params: Promise<{ 
 
   return (
     <PageShell>
-      <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: `Request for ${project.title}` }]} />
+      <Breadcrumb items={[{ label: "Dashboard", href: "/dasbor" }, { label: `Request for ${project.title}` }]} />
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="mb-2 mt-0 text-4xl font-medium max-sm:text-[28px]">
-            {d.isCreator ? "A team wants to continue your project" : "Your request to continue this project"}
+            {d.isOwner ? "A team wants to continue your project" : "Your request to continue this project"}
           </h1>
           <p className="m-0 text-text-2">
-            {d.isCreator
-              ? "Read their plan, then decide. Your private files stay locked until you approve."
-              : `You asked to continue ${project.title}. The original team decides, then both sides accept the agreement.`}
+            {d.isOwner
+              ? "Read their plan, then decide. Your private files stay locked until you approve and they accept the agreement."
+              : `You asked to continue ${project.title}. The owners decide, then each teammate accepts the agreement to get access.`}
           </p>
         </div>
         {statusBadge}

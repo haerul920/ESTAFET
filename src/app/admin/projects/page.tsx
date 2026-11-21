@@ -26,7 +26,7 @@ export default async function AdminProjectsPage({ searchParams }: { searchParams
 
   const columns: Column<Row>[] = [
     { key: "title", label: "Title", sortable: true },
-    { key: "creators", label: "Creators", render: (r) => r.creators || "—" },
+    { key: "creators", label: "Owners", render: (r) => r.creators || "—" },
     { key: "status", label: "Status", sortable: true, render: (r) => <StatusPill tone={toneFor(r.status)}>{r.status.replace("_", " ")}</StatusPill> },
     { key: "moderation_status", label: "Moderation", sortable: true, render: (r) => <StatusPill tone={toneFor(r.moderation_status)}>{r.moderation_status}</StatusPill> },
     { key: "is_demo", label: "Demo", render: (r) => (r.is_demo ? <DemoBadge /> : "—") },
@@ -36,12 +36,12 @@ export default async function AdminProjectsPage({ searchParams }: { searchParams
 
   return (
     <>
-      <PageHeader title="Projects" intro="Lifecycle status and moderation status are separate. Public pages need published or adopted AND moderation ok." />
+      <PageHeader title="Projects" intro="Lifecycle status and moderation status are separate. Public pages need published AND moderation ok." />
       <FilterBar
-        searchLabel="Search title, slug or creator"
+        searchLabel="Search title, slug or owner"
         toggles={[{ key: "demo", label: "Include demo projects" }]}
         filters={[
-          { key: "status", label: "Status", options: ["draft", "awaiting_advisor", "verifying", "published", "adopted"].map((v) => ({ value: v, label: v.replace("_", " ") })) },
+          { key: "status", label: "Status", options: ["draft", "published", "unpublished", "archived"].map((v) => ({ value: v, label: v.replace("_", " ") })) },
           { key: "moderation", label: "Moderation", options: ["ok", "hidden", "removed"].map((v) => ({ value: v, label: v })) },
           { key: "field", label: "Field", options: FACULTIES.slice(0, 4).map((v) => ({ value: v, label: v })) },
         ]}

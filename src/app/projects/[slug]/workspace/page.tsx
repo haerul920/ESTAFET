@@ -4,8 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import { Download, FileArchive, FileCode2, FileText, Lock } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getTeaserBySlug } from "@/lib/db/public";
-import { canReadPrivate, isProjectCreator } from "@/lib/db/access";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { canReadPrivate, isProjectOwner } from "@/lib/db/access";
 import { PageShell, Breadcrumb } from "@/components/ui/PageShell";
 import { Card } from "@/components/ui/Card";
 import { Badge, DemoBadge, EvidenceChip } from "@/components/ui/Badge";
@@ -23,20 +23,36 @@ export const metadata: Metadata = { title: "Workspace", robots: { index: false }
 export default async function WorkspacePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   await requireUser(`/projects/${slug}/workspace`);
-  const teaser = await getTeaserBySlug(slug);
+  // Basic project facts come from the server (an unpublished project is not in the public view, but its access holders keep working).
+  const { data: teaser } = await createAdminClient()
+    .from("projects")
+    .select("id, slug, title, advisor_name, is_demo, status")
+    .eq("slug", slug)
+    .maybeSingle();
   if (!teaser) notFound();
 
-  // The database decides: creators and teams whose request is approved and accepted by both sides.
+  // The database decides: an owner, or a person who holds active access.
   if (!(await canReadPrivate(teaser.id))) redirect(`/projects/${slug}?locked=1`);
-  const creator = await isProjectCreator(teaser.id);
+  const owner = await isProjectOwner(teaser.id);
 
   const supabase = await createClient();
-  const [{ data: files }, { data: items }, { data: events }, { data: members }] = await Promise.all([
+  const [{ data: files }, { data: items }, { data: ownEvents }, { data: publicEvents }, { data: members }] = await Promise.all([
     supabase.from("project_files").select("*").eq("project_id", teaser.id).order("created_at"),
     supabase.from("draft_items").select("*").eq("project_id", teaser.id).eq("review_status", "kept").order("position"),
     supabase.from("lineage_events").select("*").eq("project_id", teaser.id).order("created_at"),
-    supabase.from("project_members").select("profile_id, role").eq("project_id", teaser.id).eq("role", "creator"),
+    supabase.from("public_project_lineage").select("*").eq("project_id", teaser.id).order("created_at"),
+    supabase.from("project_members").select("profile_id").eq("project_id", teaser.id).eq("status", "active"),
   ]);
+  // Owners see the whole lineage. Someone with access sees the public lineage plus the events of their own request.
+  const seen = new Set<string>();
+  const events: LineageEvent[] = [
+    ...((ownEvents ?? []) as LineageEvent[]),
+    ...((publicEvents ?? []) as { id: string; project_id: string; type: LineageEvent["type"]; created_at: string; team: string | null }[]).map(
+      (e): LineageEvent => ({ id: e.id, project_id: e.project_id, type: e.type, actor_id: null, request_id: null, payload: e.team ? { team: e.team } : {}, created_at: e.created_at }),
+    ),
+  ]
+    .filter((e) => (seen.has(e.id) ? false : (seen.add(e.id), true)))
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, full_name")
@@ -55,7 +71,7 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
 
   return (
     <PageShell>
-      <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: teaser.title, href: `/projects/${slug}` }, { label: "Workspace" }]} />
+      <Breadcrumb items={[{ label: "Dashboard", href: "/dasbor" }, { label: teaser.title, href: `/projects/${slug}` }, { label: "Workspace" }]} />
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="mb-3 flex flex-wrap gap-2">
@@ -66,9 +82,9 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
           </div>
           <h1 className="mb-2 mt-0 text-[40px] font-medium max-sm:text-[30px]">{teaser.title}</h1>
           <p className="m-0 text-text-2">
-            {creator
-              ? "You are a creator of this project. This is what an approved team sees."
-              : "Your team has access because the creators approved your request and both sides accepted the agreement."}
+            {owner
+              ? "You own this project. This is what people with access see."
+              : "You have access because you accepted the attribution agreement. Please credit the original team."}
           </p>
         </div>
         <ButtonLink href={`/projects/${slug}`} variant="outline">
@@ -163,22 +179,22 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
                 title: teaser.title,
                 creators: creatorNames,
                 advisor: teaser.advisor_name,
-                lineageId: (events as LineageEvent[] | null)?.find((e) => e.type === "continued")?.id.slice(0, 8) ?? teaser.id.slice(0, 8),
+                lineageId: events.find((e) => e.type === "continued")?.id.slice(0, 8) ?? teaser.id.slice(0, 8),
               })}
             />
           </Reveal>
           <Reveal>
             <Card>
               <h2 className="mb-3 mt-0 text-base">Lineage</h2>
-              <Lineage steps={buildFullLineage((events ?? []) as LineageEvent[])} />
+              <Lineage steps={buildFullLineage(events)} />
               <p className="mb-0 mt-3 text-[13px] text-text-2">The lineage is append-only. Entries cannot be edited or removed.</p>
             </Card>
           </Reveal>
-          {creator ? (
+          {owner ? (
             <Reveal>
               <Card tone="blue">
                 <p className="m-0 text-sm text-text-3">
-                  Requests for this project are on your <Link href="/dashboard">dashboard</Link>.
+                  Requests and access for this project are on your <Link href="/dasbor">dashboard</Link>.
                 </p>
               </Card>
             </Reveal>

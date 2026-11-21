@@ -18,7 +18,7 @@ export interface NavUser {
 
 const LINKS = [
   { href: "/explore", label: "Explore" },
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dasbor", label: "Dashboard" },
 ];
 
 /**
@@ -111,14 +111,17 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
               type="button"
               aria-haspopup="menu"
               aria-expanded={userOpen}
-              aria-label={`Account menu for ${user.name}`}
               onClick={() => setUserOpen((v) => !v)}
               className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-black text-[13px] font-semibold text-lime"
             >
-              {user.initials}
+              <span className="sr-only">
+                Account menu for {user.name}
+                {user.unread > 0 ? `, ${user.unread} unread notifications` : ""}
+              </span>
+              <span aria-hidden="true">{user.initials}</span>
               {user.unread > 0 ? (
                 <span
-                  aria-label={`${user.unread} unread notifications`}
+                  aria-hidden="true"
                   className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-lime px-1 text-[11px] font-bold text-black ring-2 ring-white"
                 >
                   {user.unread}
@@ -138,14 +141,14 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
                   <p className="m-0 truncate px-3 py-2 text-sm font-semibold">{user.name}</p>
                   <Link
                     role="menuitem"
-                    href="/dashboard"
+                    href="/dasbor"
                     className="flex min-h-[44px] items-center gap-2.5 rounded-2xl px-3 text-[15px] text-ink no-underline hover:bg-surface"
                   >
                     <LayoutDashboard size={18} aria-hidden="true" /> Dashboard
                   </Link>
                   <Link
                     role="menuitem"
-                    href="/dashboard?tab=notifications"
+                    href="/dasbor#notifikasi"
                     className="flex min-h-[44px] items-center gap-2.5 rounded-2xl px-3 text-[15px] text-ink no-underline hover:bg-surface"
                   >
                     <Bell size={18} aria-hidden="true" /> Notifications

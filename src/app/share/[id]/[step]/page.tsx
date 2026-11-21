@@ -2,16 +2,17 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
+import { hasAcceptedPolicies } from "@/lib/db/access";
 import {
   buildChecklist,
   buildSourceViews,
-  getCreatorProject,
+  getOwnedProject,
   getFiles,
   getItems,
   getLatestConsent,
   getLatestRun,
   getTeam,
-} from "@/lib/db/creator";
+} from "@/lib/db/owner";
 import { getConfig } from "@/lib/llm";
 import { StepHeader, WIZARD_STEPS, WizardFrame, type WizardStep } from "@/components/features/wizard/WizardFrame";
 import { BasicsForm } from "@/components/features/wizard/BasicsForm";
@@ -43,17 +44,22 @@ export default async function WizardStepPage({ params }: Params) {
   if (!(WIZARD_STEPS as readonly string[]).includes(step)) notFound();
   const current = step as WizardStep;
   const user = await requireUser(`/share/${id}/${step}`);
-  const project = await getCreatorProject(id);
+  const project = await getOwnedProject(id);
   if (!project) notFound();
 
-  const [team, consent, files, items, run] = await Promise.all([
+  const [team, consent, files, items, run, policiesAccepted] = await Promise.all([
     getTeam(id),
     getLatestConsent(id),
     getFiles(id),
     getItems(id),
     getLatestRun(id),
+    hasAcceptedPolicies(),
   ]);
-  const checklist = buildChecklist(team, consent, items);
+  const checklist = buildChecklist(team, consent, items, {
+    advisorMode: project.advisor_mode,
+    noAdvisorDeclared: project.no_advisor_declared_at !== null,
+    policiesAccepted,
+  });
   const config = getConfig();
 
   if (current === "basics") {
@@ -92,9 +98,7 @@ export default async function WizardStepPage({ params }: Params) {
 
   if (current === "files") {
     const readable = files.filter((f) => f.extracted_text_path).length;
-    const blockReason = !checklist.team.done
-      ? "Every team member must confirm on the Consent step before ESTAFET reads your files."
-      : "Your advisor must approve on the Consent step before ESTAFET reads your files.";
+    const blockReason = "Every team member must confirm on the Consent step before ESTAFET reads your files.";
     return (
       <WizardFrame projectId={id} current="files">
         <div className="flex flex-wrap items-start gap-8">
@@ -107,7 +111,7 @@ export default async function WizardStepPage({ params }: Params) {
               projectId={id}
               files={files}
               itemCount={items.length}
-              canSynthesize={checklist.team.done && checklist.advisor.done && readable > 0}
+              canSynthesize={checklist.team.done && readable > 0}
               blockReason={blockReason}
               mockMode={config.mode === "mock"}
             />
@@ -149,7 +153,7 @@ export default async function WizardStepPage({ params }: Params) {
   }
 
   // Publish step: preview exactly like the public page
-  const published = project.status === "published" || project.status === "adopted";
+  const published = project.status === "published";
   const kept = items.filter((i) => i.review_status === "kept");
   const teaserItems: TeaserItem[] = kept.map((i) => ({
     id: i.id,
@@ -183,11 +187,15 @@ export default async function WizardStepPage({ params }: Params) {
     objectives_total: objectives.length,
     objectives_done: objectives.filter((o) => o.objective_status === "done").length,
     tasks_count: kept.filter((i) => i.kind === "next_task").length,
+    access_mode: project.access_mode,
+    max_active_adopters: project.max_active_adopters,
+    active_adopters: 0,
+    no_advisor: project.advisor_mode === "none",
   };
   const reason = !checklist.team.done
     ? "Every team member must confirm first."
     : !checklist.advisor.done
-      ? "Your advisor has not approved yet."
+      ? "Your advisor has not approved yet. You can also declare that there is no advisor on the Consent step."
       : !checklist.review.done
         ? "Review every drafted item and keep at least one."
         : "";
@@ -228,12 +236,26 @@ export default async function WizardStepPage({ params }: Params) {
           cta={
             <Card tone="lime" className="flex flex-col gap-2">
               <h2 className="m-0 text-xl">Want to continue this project?</h2>
-              <p className="m-0 text-[15px] text-text-2">Adopters will see a &ldquo;Request to continue&rdquo; button here.</p>
+              <p className="m-0 text-[15px] text-text-2">
+                {project.access_mode === "open"
+                  ? "Visitors will see a \"Continue this project\" button. They accept the attribution agreement and get access right away."
+                  : project.access_mode === "paused"
+                    ? "New access is paused, so visitors can read the teaser only."
+                    : "Visitors will see an \"Ask to continue\" button. You decide on each request."}
+              </p>
             </Card>
           }
         />
       </div>
-      {published ? null : <PublishBar projectId={id} ready={checklist.canPublish} reason={reason} />}
+      {published ? null : (
+        <PublishBar
+          projectId={id}
+          ready={checklist.team.done && checklist.advisor.done && checklist.review.done}
+          reason={reason}
+          policiesAccepted={policiesAccepted}
+          verified={user.verified}
+        />
+      )}
     </WizardFrame>
   );
 }

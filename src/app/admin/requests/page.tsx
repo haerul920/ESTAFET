@@ -56,7 +56,7 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
 
   return (
     <>
-      <PageHeader title="Requests" intro="Read-only. Admins cannot approve or decline on behalf of creators." />
+      <PageHeader title="Requests" intro="Read-only. Admins cannot approve or decline on behalf of owners." />
       {open ? (
         <aside aria-label="Request details" className="mb-5 rounded-3xl border-2 border-blue bg-white p-5">
           <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
@@ -72,7 +72,7 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
                 { label: "Target date", value: open.target_date ? formatDate(open.target_date) : "—" },
                 { label: "Plan", value: open.plan },
                 { label: "Fit", value: open.fit_note || "—" },
-                { label: "Creators said", value: open.decision_note || "—" },
+                { label: "Owners said", value: open.decision_note || "—" },
               ]} />
             </Panel>
             <div className="flex flex-col gap-3">

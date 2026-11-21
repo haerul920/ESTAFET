@@ -15,8 +15,13 @@ async function signUp(page: Page, name: string, email: string) {
   await page.getByLabel("Full name").fill(name);
   await page.getByLabel("University email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
+  await page.getByLabel(/I accept the Terms and the Privacy Policy/).check();
   await page.getByRole("button", { name: "Create account" }).click();
-  await page.waitForURL("**/dashboard");
+  // A new account with nothing yet lands on the first-run screen. It is a hint, not a role.
+  await page.waitForURL("**/mulai");
+  await expect(page.getByRole("heading", { name: "What do you want to do?" })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("link", { name: /Share a project/ })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("link", { name: /Explore projects/ })).toBeVisible();
 }
 
 async function newUserPage(browser: Browser) {
@@ -24,7 +29,7 @@ async function newUserPage(browser: Browser) {
   return { context, page: await context.newPage() };
 }
 
-test("core flow: share, verify, publish, request, approve, agree, unlock", async ({ browser, page }) => {
+test("core flow: share, verify, publish, request, approve, accept, access", async ({ browser, page }) => {
   // ---- Creator signs up and fills the basics
   await signUp(page, "E2E Creator", creatorEmail);
   await page.goto("/share");
@@ -105,8 +110,9 @@ test("core flow: share, verify, publish, request, approve, agree, unlock", async
   await page.getByRole("link", { name: "Continue to publish" }).click();
   await page.waitForURL("**/publish");
 
-  // ---- Publish
+  // ---- Publish (the Terms and Privacy Policy were accepted at sign up, so there is nothing more to tick)
   await page.getByLabel(/The preview above is what I want to make public/).check();
+  await expect(page.getByLabel(/I accept the current/)).toHaveCount(0);
   await page.getByRole("button", { name: "Publish teaser" }).click();
   await page.waitForURL(/\/projects\/e2e-reef-counter/);
   const slug = new URL(page.url()).pathname.split("/").pop()!;
@@ -146,25 +152,20 @@ test("core flow: share, verify, publish, request, approve, agree, unlock", async
   await ap.getByRole("button", { name: "Send request" }).click();
   await ap.waitForURL(/\/requests\//);
   const requestUrl = ap.url();
-  await expect(ap.getByText("Waiting for the creators").first()).toBeVisible();
+  await expect(ap.getByText("Waiting for the owners").first()).toBeVisible();
 
-  // ---- Creator approves and accepts
+  // ---- The owner approves. Approval alone does not open the files.
   await page.goto(requestUrl);
   await page.getByRole("button", { name: "Approve request" }).click();
   await expect(page.getByText(/^Approved on/)).toBeVisible();
-  await page.getByLabel("I accept these terms as a creator of this project.").check();
-  await page.getByRole("button", { name: "Accept as creator" }).click();
-  await expect(page.getByText("You accepted version 1.")).toBeVisible();
-
-  // after only the creator approved and accepted, the adopter still cannot open the workspace
   await ap.goto(`/projects/${slug}/workspace`);
   await expect(ap).toHaveURL(new RegExp(`/projects/${slug}\\?locked=1`));
 
-  // ---- Adopter accepts: files unlock
+  // ---- The requester accepts the agreement for themselves: access starts
   await ap.goto(requestUrl);
-  await ap.getByLabel("I accept these terms on behalf of the adopter team.").check();
-  await ap.getByRole("button", { name: "Accept as adopter" }).click();
-  await expect(ap.getByText("Both sides accepted. Files are unlocked.")).toBeVisible();
+  await ap.getByLabel("I accept these terms for myself, and I will credit the original team.").check();
+  await ap.getByRole("button", { name: "Accept and get access" }).click();
+  await expect(ap.getByText("Accepted. Your access is active.")).toBeVisible();
 
   await ap.goto(`/projects/${slug}/workspace`);
   await expect(ap.getByRole("heading", { name: "Private files" })).toBeVisible();
@@ -195,8 +196,8 @@ test("a declined request leaves the project published", async ({ browser }) => {
   await creator.page.getByLabel("University email").fill("creator@estafet.demo");
   await creator.page.getByLabel("Password").fill("Demo-Pass-2026!");
   await creator.page.getByRole("button", { name: "Sign in" }).click();
-  await creator.page.waitForURL("**/dashboard");
-  // The seeded Mangrove request is pending for the demo creator.
+  await creator.page.waitForURL("**/dasbor");
+  // The seeded Mangrove request is pending for the demo account that owns it.
   await creator.page.getByRole("link", { name: "Review request" }).first().click();
   await creator.page.getByRole("button", { name: "Decline" }).click();
   await creator.page.getByRole("button", { name: "Yes, decline" }).click();
@@ -204,4 +205,43 @@ test("a declined request leaves the project published", async ({ browser }) => {
   await creator.page.goto("/projects/mangrove-cover-classifier");
   await expect(creator.page.getByRole("heading", { level: 1, name: "Mangrove Cover Classifier" })).toBeVisible();
   await creator.context.close();
+});
+
+test("the same account shares projects and continues another one, through open mode", async ({ browser }) => {
+  // Make the test repeatable: remove this account's earlier access to the open demo project (lineage stays append-only).
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
+  await admin.from("project_access").delete().eq("project_id", "b0000000-0000-4000-8000-000000000002").eq("profile_id", "c0000000-0000-4000-8000-000000000001");
+
+  const person = await newUserPage(browser);
+  const p = person.page;
+  await p.goto("/login");
+  await p.getByLabel("University email").fill("creator@estafet.demo");
+  await p.getByLabel("Password").fill("Demo-Pass-2026!");
+  await p.getByRole("button", { name: "Sign in" }).click();
+  await p.waitForURL("**/dasbor");
+  // This account owns projects, so the first section is filled.
+  await expect(p.getByRole("heading", { name: "Projects I share" })).toBeVisible();
+  await expect(p.getByRole("link", { name: "Mangrove Cover Classifier", exact: true })).toBeVisible();
+
+  // Another person's project that is open with an agreement: no approval step, the files open after one checkbox.
+  await p.goto("/projects/campus-waste-sorting-assistant");
+  await expect(p.getByRole("heading", { name: "Continue this project" })).toBeVisible();
+  const take = p.getByRole("button", { name: "Continue this project" });
+  await expect(take).toBeDisabled();
+  await p.getByLabel("I accept these terms for myself, and I will credit the original team.").check();
+  await take.click();
+  await p.waitForURL("**/projects/campus-waste-sorting-assistant/workspace");
+  await expect(p.getByRole("heading", { name: "Private files" })).toBeVisible();
+
+  // The same dashboard now shows both: what this person shares, and what they are continuing. No role switch.
+  await p.goto("/dasbor");
+  await expect(p.getByRole("heading", { name: "Projects I share" })).toBeVisible();
+  await expect(p.getByRole("heading", { name: "Projects I am continuing" })).toBeVisible();
+  await expect(p.getByText("Access active").first()).toBeVisible();
+
+  // An owner cannot take access to their own project.
+  await p.goto("/projects/mangrove-cover-classifier");
+  await expect(p.getByRole("heading", { name: "This is your project" })).toBeVisible();
+  await expect(p.getByRole("button", { name: "Continue this project" })).toHaveCount(0);
+  await person.context.close();
 });

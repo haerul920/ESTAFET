@@ -9,12 +9,14 @@ Built by team **Beban Server** for STACK 2026 (GDGoC ITB), Case 1 "Smarter Campu
 
 ## The core flow
 
-1. A creator fills the basics, the team confirms, and the advisor approves through a private link (no account).
-2. The creator uploads PDF reports, Markdown notes or a ZIP of the code folder (tree only).
-3. A synthesis step drafts a summary, objectives, completed work, candidate next tasks and lessons. Every item carries evidence (file, page, quote), and the server checks that the quote exists on the cited page.
-4. The creator keeps, edits or removes every item. Publishing is blocked until all items are reviewed and the advisor approved.
+There is **one account type**. "Owner" (shares a project) and "adopter" (continues one) are relationships per project, so the same account can do both. Admin is an extra flag.
+
+1. An owner fills the basics, the team confirms, and the advisor approves through a private link (no account). A project with no advisor can declare that instead.
+2. The owner uploads PDF reports, Markdown notes or a ZIP of the code folder (tree only).
+3. A synthesis step drafts a summary, objectives, completed work, candidate next tasks and lessons. Every item carries evidence (file, page, quote), and the server checks that the quote exists on the cited page. It runs only after every team member consented.
+4. The owner keeps, edits or removes every item. Publishing is blocked until all items are reviewed, the advisor step is done and the current Terms and Privacy Policy are accepted.
 5. A public teaser is published. Files stay private.
-6. An adopter team sends a continuation request. The creator approves, both sides accept the Attribution Agreement, private files unlock, and the lineage is logged.
+6. Someone who wants to continue gets access in one of two ways, set per project: **open** (accept the Attribution Agreement and the files open, owners are told) or **by request** (a team sends a plan, the owners approve, each teammate accepts the agreement for themselves). Owners can pause new access and limit how many teams continue at once. Owners can revoke access with a reason. The lineage is logged.
 
 ## Stack
 
@@ -59,7 +61,9 @@ Other variables are documented in `.env.example`. `.env*` files are git-ignored;
 | `pnpm dev` / `pnpm build` / `pnpm start` | Next.js |
 | `pnpm check` | ESLint + `tsc --noEmit` + unit tests |
 | `pnpm test` | Unit tests (Vitest) |
-| `pnpm test:db` | Database rule tests against the local stack (RLS, publish rule, unlock rule, append-only lineage) |
+| `pnpm test:db` | Database rule tests against the local stack (RLS, publish rule, access modes, quota, expiry, revoke, append-only lineage) |
+| `node scripts/migrate-r1-dry-run.mjs` | Dry run of the R1 migration on legacy-shaped data, then restores the local DB |
+| `node scripts/build-setup-all.mjs` | Rebuilds `supabase/setup-all.sql` from the migrations and the seed |
 | `pnpm test:e2e` | Playwright end-to-end tests: core flow, admin area and axe accessibility (starts `dev:local`, needs the local stack and mock mode) |
 | `pnpm test:e2e:admin` | Only the admin end-to-end tests |
 | `pnpm test:db:purge` | DESTRUCTIVE purge test on the local stack, then run `pnpm db:reset` |
@@ -71,11 +75,13 @@ Other variables are documented in `.env.example`. `.env*` files are git-ignored;
 
 Password for all demo accounts: `Demo-Pass-2026!`
 
-| Account | Role in the demo |
+All demo accounts are ordinary accounts. What they can do depends on the projects they own, not on an account type. The emails keep their old names so older notes still work.
+
+| Account | In the demo |
 |---|---|
-| `creator@estafet.demo` | Owns *Mangrove Cover Classifier* (published, one pending request), *Coral Reef Photo Counter* (at the Verify step, 4 of 6 items reviewed, one with "Evidence not found") and *Solar Dryer Controller* (waiting for the advisor) |
+| `creator@estafet.demo` | Owns *Mangrove Cover Classifier* (published, one pending request), *Coral Reef Photo Counter* (at the Verify step, 4 of 6 items reviewed, one with "Evidence not found") and *Solar Dryer Controller* (waiting for the advisor). Can also continue other people's projects. |
 | `adopter@estafet.demo` | Team Laut Biru, with pending requests for Mangrove and Fish Freshness |
-| `alumni@estafet.demo` | Owns the other four published demo projects |
+| `alumni@estafet.demo` | Owns the other four published demo projects. *Campus Waste Sorting Assistant* is **open**: any signed-in, verified account can take access after accepting the agreement. The rest are **by request**. |
 | `admin@estafet.demo` | **Demo admin** (only seeded when `SEED_DEMO=true`, never in production). Opens `/admin` |
 
 Advisor demo link (single decision, demo token only): `http://localhost:3000/consent/demo-advisor-token-solar`
@@ -112,14 +118,18 @@ select public.promote_admin('person@student.unhas.ac.id');   -- demote_admin(...
 | Continuation request, creator decision, agreement, unlock | **Done** | End to end in the Playwright test. |
 | Agreement PDF and credit line | **Done** | `@react-pdf/renderer`. |
 | Workspace (signed downloads, full backlog, lineage) | **Done** | Signed URLs are issued only after an RLS-checked read. |
-| Dashboard + in-app notifications | **Done** | No email. |
+| One account type, relationships per project (R1) | **Done (database, rules, dashboard, tests)** | `project_members` (owner, co_owner), `project_access`, access modes `open`, `by_request`, `paused`, team quota, lifecycle `draft`, `published`, `unpublished`, `archived`, request expiry and cooldown, revoke, email-verification gate, policy acceptance. 103 database tests, a migration dry run on legacy-shaped data, and 3 core-flow Playwright tests pass. See `docs/migrations-r1.md`. |
+| Owner controls for access mode, team limit, unpublish and archive in the interface | **Planned (phase R4)** | The database rules exist and are tested. No screen changes them yet. |
+| Dashboard (`/dasbor`) + in-app notifications | **Done** | One view with two sections: projects I share, projects I am continuing. First-run screen at `/mulai`. No email. |
+| Indonesian interface | **Planned (phase R2)** | The interface is still English. |
+| Terms and Privacy Policy | **Interim drafts only** | `/terms` and `/privacy` are short drafts marked as not reviewed. The full text is phase R5. |
 | Accessibility pass (axe/Lighthouse) | **Planned** | Semantic HTML, labels, focus ring, 44 px targets and reduced motion are built in, but no axe or Lighthouse run has been done yet. |
 | Admin area: roles, audit log, shell, overview (8A) | **Done** | `is_admin()`, append-only `audit_log`, `admin_*` functions, 404 for non-admins, password re-check for sensitive actions. Tests: unit, `pnpm test:db`, Playwright. |
 | Admin moderation: reports, hide/remove, users, break glass (8B) | **Done** | Public "Report this project", reports queue, reversible hide/remove with creator notifications, suspend/restore, 5-minute break glass with red banner. |
 | Admin operations: pipeline, consents, requests, settings (8C) | **Done** | Retry/cancel runs, regenerate advisor link, read-only requests with admin notes, settings that override env and apply immediately, purge demo data (never in PRODUCTION). |
 | Admin trials and metrics (8D) | **Done (tool)** | Record sessions, per-cohort summary with n, chart, CSV, methods paragraph. **No real trial has been recorded**: the only rows are labeled demo and excluded by default. |
 | Admin audit viewer, shortcuts, polish (8E) | **Done** | Filters, diff, CSV export, global search, keyboard shortcuts, axe with no serious issues at 900/1280/1440 px. A screen-reader pass by a person is still **Planned**. |
-| Email delivery | **Planned** | Out of scope: the creator copies the consent link and shares it. |
+| Email delivery | **Planned (phase R7)** | The owner copies the advisor link and sends it. Hosted projects must turn on email confirmation for the verification gate to mean anything: local Supabase confirms every email automatically. |
 | Deployment (Vercel + Supabase cloud) | **Planned** | Only the local stack has been run. |
 | `/styleguide` route | **Planned** | Not built. |
 
@@ -133,9 +143,11 @@ select public.promote_admin('person@student.unhas.ac.id');   -- demote_admin(...
 - **Live AI path is untested** (see Status). Mock mode is the verified path.
 - Synthesis runs inside the request (no background queue, no status polling). Large live runs may take tens of seconds.
 - Scanned PDFs (no text layer) are flagged "Check" and cannot be read. There is no OCR.
-- Teammates must already have an ESTAFET account to be added as creators.
-- "One open request per team" is enforced per requesting account.
-- Only one agreement acceptance per side is needed to unlock (one creator, one adopter), by design of this prototype.
+- Co-owners and teammates must already have an ESTAFET account to be invited. A co-owner joins only when they accept.
+- "One open request per team" is enforced per requesting account. Access is per person: each teammate accepts the agreement for themselves.
+- Until phase R4 there is no screen to change a project's access mode or team limit, or to unpublish or archive it.
+- A person whose access was revoked cannot take it again by themselves.
+- The agreement PDF exists only for access that came from a request. Open-mode access has no PDF yet (phase R4).
 - The Attribution Agreement is a simple template for student projects and is **not legal advice**.
 - Survey numbers (n = 10) are indicative only. The "30 minutes to understand a project" figure is a **target, not a measured result**.
 - The local-stack keys in `.env.local` are Supabase's public development defaults.
@@ -155,7 +167,8 @@ and the `rate_limit_hits` table. They are marked "(added)" in `supabase/migratio
 ## Architecture notes
 
 - Cache Components is switched off: every page reads the Supabase session cookie, so pages render per request.
-- `src/proxy.ts` (the Next 16 name for middleware) refreshes the session and protects `/dashboard`, `/share`, `/requests` and the request and workspace routes.
+- `src/proxy.ts` (the Next 16 name for middleware) refreshes the session and protects `/dasbor`, `/mulai`, `/share`, `/requests` and the request and workspace routes. `/dashboard` redirects to `/dasbor`.
+- Authorization depends on relationships, never on an account type: `is_project_owner`, `has_access`, `can_read_private`, `is_request_team` (see `docs/migrations-r1.md`).
 - The service-role client is used only in server code and only after an explicit authorization check.
 - See `docs/architecture.md` for the policy table and diagrams.
 
@@ -176,8 +189,8 @@ Fonts: Instrument Sans, DM Mono, JetBrains Mono (SIL Open Font License) via `nex
 |---|---|
 | [TEAM TO FILL] | [TEAM TO FILL] |
 
-Starting version: [TAG `final-day-start` TO BE SET BY THE TEAM]. Final version: [TO BE SET]. This repository was not under git when
-this README was written, so no tags exist yet.
+Starting version: git tag `final-day-start` (commit `964d2e9`, the first commit). Final version: [TO BE SET]. Release-edition work
+(`CLAUDE.md` section 14) happens on `release/*` branches and is merged after Final Day. The plan is in `docs/release-plan.md`.
 
 ## License
 

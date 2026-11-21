@@ -45,9 +45,16 @@ const EVENT_TITLE: Record<string, string> = {
   requested: "Continuation requested",
   approved: "Request approved by the creators",
   declined: "Request declined or withdrawn",
-  agreement_signed: "Attribution agreement accepted by both sides",
+  agreement_signed: "Attribution agreement accepted",
   continued: "Handed over: files unlocked",
   resubmitted: "Resubmitted",
+  access_taken: "A team took access",
+  access_revoked: "Access was revoked by the owners",
+  request_expired: "Request expired without a decision",
+  unpublished: "Teaser unpublished by the owners",
+  republished: "Teaser published again",
+  archived: "Project archived by the owners",
+  access_settings_changed: "Access settings changed by the owners",
 };
 
 /** Full lineage for creators and approved adopters (private workspace). */

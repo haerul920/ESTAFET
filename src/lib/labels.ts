@@ -1,4 +1,5 @@
 import type {
+  AccessMode,
   Effort,
   ItemKind,
   LessonType,
@@ -66,38 +67,25 @@ export const PURPOSE_LABEL: Record<RequestPurpose, string> = {
 };
 
 export const REQUEST_STATUS_LABEL: Record<RequestStatus, string> = {
-  pending: "Waiting for the creators",
+  pending: "Waiting for the owners",
   approved: "Approved",
   declined: "Declined",
   withdrawn: "Withdrawn",
+  expired: "Expired",
 };
 
 export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
   draft: "Draft",
-  awaiting_advisor: "Waiting for advisor",
-  verifying: "Verifying",
   published: "Published",
-  adopted: "Continued",
+  unpublished: "Unpublished",
   archived: "Archived",
 };
 
-/** Pipeline stage index used by the dashboard (Draft, Advisor approval, Verify, Published, Continued). */
-export function pipelineStage(status: ProjectStatus): number {
-  switch (status) {
-    case "draft":
-      return 0;
-    case "awaiting_advisor":
-      return 1;
-    case "verifying":
-      return 2;
-    case "published":
-      return 3;
-    case "adopted":
-      return 4;
-    default:
-      return 3;
-  }
-}
+export const ACCESS_MODE_LABEL: Record<AccessMode, string> = {
+  open: "Open with an agreement",
+  by_request: "By request",
+  paused: "Paused",
+};
 
 export function formatMonthYear(iso: string | null): string {
   if (!iso) return "";

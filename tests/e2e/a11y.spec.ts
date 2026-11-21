@@ -9,7 +9,7 @@ async function login(page: Page, email: string) {
   await page.getByLabel("University email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL(/\/(dashboard|admin)/);
+  await page.waitForURL(/\/(dasbor|dashboard|admin|mulai)/);
 }
 
 async function serious(page: Page) {
@@ -55,4 +55,39 @@ test("axe: the dialogs and the public report form have no serious issues", async
   await guest.getByRole("button", { name: "Report this project" }).click();
   await guest.waitForTimeout(1500); // let the fade-in animations finish: axe would read half-transparent text
   expect(await serious(guest)).toEqual([]);
+});
+
+test("axe: the first-run screen, dashboard, access cards and policy pages have no serious issues", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  await login(page, "alumni@estafet.demo");
+  const problems: string[] = [];
+  // alumni owns the open demo project, so check the owner card there; creator@ sees the open card as a visitor.
+  for (const path of ["/mulai", "/dasbor", "/projects/campus-waste-sorting-assistant", "/projects/mangrove-cover-classifier", "/terms", "/privacy"]) {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(1200); // let reveal animations finish: axe would read half-transparent text
+    for (const p of await serious(page)) problems.push(`${path}: ${p}`);
+  }
+  await context.close();
+
+  const visitor = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const vp = await visitor.newPage();
+  await login(vp, "creator@estafet.demo");
+  for (const path of ["/projects/campus-waste-sorting-assistant"]) {
+    await vp.goto(path);
+    await vp.waitForLoadState("networkidle");
+    await vp.waitForTimeout(1200);
+    for (const p of await serious(vp)) problems.push(`${path} (as a visitor): ${p}`);
+  }
+  await visitor.close();
+
+  const guest = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+  for (const path of ["/signup", "/projects/campus-waste-sorting-assistant"]) {
+    await guest.goto(path);
+    await guest.waitForLoadState("networkidle");
+    await guest.waitForTimeout(1200);
+    for (const p of await serious(guest)) problems.push(`${path} (guest): ${p}`);
+  }
+  expect(problems).toEqual([]);
 });

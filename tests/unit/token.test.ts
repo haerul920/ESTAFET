@@ -42,10 +42,10 @@ describe("helpers", () => {
   });
 
   it("only allows same-site redirects", () => {
-    expect(safeNext("/dashboard?tab=x")).toBe("/dashboard?tab=x");
-    expect(safeNext("//evil.com")).toBe("/dashboard");
-    expect(safeNext("https://evil.com")).toBe("/dashboard");
-    expect(safeNext(null)).toBe("/dashboard");
+    expect(safeNext("/dasbor?x=1")).toBe("/dasbor?x=1");
+    expect(safeNext("//evil.com")).toBe("/dasbor");
+    expect(safeNext("https://evil.com")).toBe("/dasbor");
+    expect(safeNext(null)).toBe("/dasbor");
   });
 
   it("checks the email domain allow-list", () => {

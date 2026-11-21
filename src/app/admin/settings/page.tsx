@@ -24,6 +24,8 @@ export default async function AdminSettingsPage() {
         <SettingRow settingKey="max_upload_mb" label="Maximum upload size" help="Per file, checked on the next upload." kind="number" unit="MB" value={String(s.max_upload_mb.value)} source={s.max_upload_mb.source} fallback={`${s.max_upload_mb.fallback} MB`} />
         <SettingRow settingKey="synthesis_daily_cap" label="Synthesis runs per user per day" help="Retries count toward the cap of the person who started the run." kind="number" unit="runs" value={String(s.synthesis_daily_cap.value)} source={s.synthesis_daily_cap.source} fallback={`${s.synthesis_daily_cap.fallback} runs`} />
         <SettingRow settingKey="advisor_token_ttl_days" label="Advisor link lifetime" help="Applies to newly created links. Existing links keep their expiry." kind="number" unit="days" value={String(s.advisor_token_ttl_days.value)} source={s.advisor_token_ttl_days.source} fallback={`${s.advisor_token_ttl_days.fallback} days`} />
+        <SettingRow settingKey="request_expiry_days" label="Request expiry" help="A pending continuation request with no decision expires after this many days. Applies to new requests." kind="number" unit="days" value={String(s.request_expiry_days.value)} source={s.request_expiry_days.source} fallback={`${s.request_expiry_days.fallback} days`} />
+        <SettingRow settingKey="reapply_cooldown_days" label="Re-apply cooldown" help="After a decline, the same account must wait this long before asking again. Zero turns it off." kind="number" unit="days" value={String(s.reapply_cooldown_days.value)} source={s.reapply_cooldown_days.source} fallback={`${s.reapply_cooldown_days.fallback} days`} />
       </Panel>
 
       <Panel title="Display" className="mb-4">

@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/share", "/requests"];
+const PROTECTED_PREFIXES = ["/dasbor", "/dashboard", "/mulai", "/share", "/requests"];
 
 function needsSession(pathname: string) {
   if (PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) return true;
@@ -57,7 +57,7 @@ export async function updateSession(request: NextRequest) {
   }
   if (signedIn && (pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/dasbor";
     url.search = "";
     return NextResponse.redirect(url);
   }

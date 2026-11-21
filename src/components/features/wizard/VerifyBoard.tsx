@@ -15,7 +15,7 @@ import { applyDraftSummary } from "@/app/actions/projects";
 import { ITEM_KIND_LABEL, LESSON_LABEL } from "@/lib/labels";
 import { cn } from "@/lib/cn";
 import type { DraftItem, ItemKind, ReviewStatus } from "@/lib/db/types";
-import type { SourceView, PublishChecklist } from "@/lib/db/creator";
+import type { SourceView, PublishChecklist } from "@/lib/db/owner";
 
 const FILTERS = [
   { id: "all", label: "All" },

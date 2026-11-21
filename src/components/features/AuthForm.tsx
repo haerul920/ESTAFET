@@ -4,15 +4,17 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
-import { FormMessage, SelectField, TextField } from "@/components/ui/Field";
+import { CheckboxField, FormMessage, SelectField, TextField } from "@/components/ui/Field";
 import { FACULTIES } from "@/lib/labels";
 import type { FormState } from "@/lib/validation";
 
 type Action = (prev: FormState, fd: FormData) => Promise<FormState>;
 
+// Demo accounts are plain accounts. Each one both shares projects and continues other people's projects.
 const DEMO = [
-  { label: "Creator", email: "creator@estafet.demo" },
-  { label: "Adopter", email: "adopter@estafet.demo" },
+  { label: "Demo account A", email: "creator@estafet.demo" },
+  { label: "Demo account B", email: "adopter@estafet.demo" },
+  { label: "Demo account C", email: "alumni@estafet.demo" },
 ];
 
 export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; action: Action; next: string }) {
@@ -65,17 +67,29 @@ export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; act
         error={fe.password}
         required
       />
+      {!login ? (
+        <CheckboxField
+          name="accept_policies"
+          defaultChecked={v.accept_policies === "on"}
+          error={fe.accept_policies}
+          label={
+            <>
+              I accept the <Link href="/terms">Terms</Link> and the <Link href="/privacy">Privacy Policy</Link>.
+            </>
+          }
+        />
+      ) : null}
       <Button type="submit" variant="primary" disabled={pending} className="mt-2 justify-center">
         {pending ? "Please wait…" : login ? "Sign in" : "Create account"}
       </Button>
       <p className="m-0 text-center text-[15px] text-text-2">
         {login ? (
           <>
-            New to ESTAFET? <Link href={`/signup${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`}>Create an account</Link>
+            New to ESTAFET? <Link href={`/signup${next !== "/dasbor" ? `?next=${encodeURIComponent(next)}` : ""}`}>Create an account</Link>
           </>
         ) : (
           <>
-            Already have an account? <Link href={`/login${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`}>Sign in</Link>
+            Already have an account? <Link href={`/login${next !== "/dasbor" ? `?next=${encodeURIComponent(next)}` : ""}`}>Sign in</Link>
           </>
         )}
       </p>

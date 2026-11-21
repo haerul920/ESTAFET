@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getCreatorProject } from "@/lib/db/creator";
+import { getOwnedProject } from "@/lib/db/owner";
 import { ingestUpload, UploadRejected } from "@/lib/ingest";
 import { LIMITS } from "@/lib/ingest/limits";
 import { getSettings, mbToBytes } from "@/lib/settings";
@@ -32,9 +32,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if ((await getCurrentUser())?.suspended) return NextResponse.json({ error: "Your account is suspended." }, { status: 403 });
   const maxBytes = mbToBytes((await getSettings()).max_upload_mb.value);
 
-  const project = await getCreatorProject(projectId);
-  if (!project) return NextResponse.json({ error: "You can only upload files to your own projects." }, { status: 403 });
-  if (!["draft", "awaiting_advisor", "verifying"].includes(project.status)) {
+  const project = await getOwnedProject(projectId);
+  if (!project) return NextResponse.json({ error: "Only the owners of a project can upload files to it." }, { status: 403 });
+  if (!["draft", "unpublished"].includes(project.status)) {
     return NextResponse.json({ error: "This project is published, so its files can no longer change." }, { status: 409 });
   }
 

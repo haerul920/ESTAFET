@@ -77,7 +77,7 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
               <Panel title="Project">
                 <KeyValueList items={[
                   { label: "Moderation", value: <StatusPill tone={toneFor(report.moderation_status)}>{report.moderation_status}</StatusPill> },
-                  { label: "Creators", value: d?.creators.map((c) => c.name).join(", ") || "—" },
+                  { label: "Owners", value: d?.creators.map((c) => c.name).join(", ") || "—" },
                   { label: "Advisor", value: d?.project.advisor_name || "—" },
                   { label: "Teaser summary", value: d?.project.summary || "—" },
                 ]} />

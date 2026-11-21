@@ -8,7 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/auth";
 import { fieldErrorsFrom, formValues, emailSchema, type FormState } from "@/lib/validation";
 import { generateToken, hashToken, tokenExpiry } from "@/lib/token";
-import { getCreatorProject } from "@/lib/db/creator";
+import { getOwnedProject } from "@/lib/db/owner";
 import { getSettings } from "@/lib/settings";
 
 const basicsSchema = z.object({
@@ -23,8 +23,9 @@ const basicsSchema = z.object({
   year: z.coerce.number().int().min(2015, "Enter a year from 2015.").max(new Date().getFullYear() + 1, "That year is in the future."),
   stop_reason: z.enum(["funding_not_granted", "team_graduated", "time_or_people", "other"], { message: "Choose why the project stopped." }),
   stopped_note: z.string().trim().max(400, "Keep this note under 400 characters.").optional(),
-  advisor_name: z.string().trim().min(2, "Enter your advisor's name."),
-  advisor_email: emailSchema,
+  // Optional: a project without a supervising lecturer declares that on the Consent step instead.
+  advisor_name: z.string().trim().max(120, "Keep the name under 120 characters.").optional(),
+  advisor_email: z.union([z.literal(""), emailSchema]).optional(),
 });
 
 /** Step 1. Creates the draft on first save, updates it afterwards, then moves to the Consent step. */
@@ -35,12 +36,17 @@ export async function saveBasics(_prev: FormState, formData: FormData): Promise<
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error), values, error: "Fix the highlighted fields and save again." };
 
   const supabase = await createClient();
-  const input = { ...parsed.data, stopped_note: parsed.data.stopped_note ?? "" };
+  const input = {
+    ...parsed.data,
+    stopped_note: parsed.data.stopped_note ?? "",
+    advisor_name: parsed.data.advisor_name ?? "",
+    advisor_email: parsed.data.advisor_email ?? "",
+  };
   const id = values.id;
 
   if (id) {
-    const project = await getCreatorProject(id);
-    if (!project) return { error: "You can only edit your own projects.", values };
+    const project = await getOwnedProject(id);
+    if (!project) return { error: "Only the owners of a project can edit it.", values };
     const { error } = await supabase.from("projects").update(input).eq("id", id);
     if (error) return { error: "We could not save your changes. They may be locked because the project is already published.", values };
     revalidatePath(`/share/${id}`, "layout");
@@ -52,21 +58,54 @@ export async function saveBasics(_prev: FormState, formData: FormData): Promise<
     .insert({ ...input, created_by: user.id })
     .select("id")
     .single();
-  if (error || !data) return { error: "We could not create your draft. Please try again.", values };
+  if (error || !data) {
+    if (!user.verified) return { error: "Verify your email address first. Sharing a project needs a confirmed email.", values };
+    return { error: "We could not create your draft. Please try again.", values };
+  }
   redirect(`/share/${data.id}/consent`);
 }
 
-/** Add a teammate (creator) by the email of an existing ESTAFET account. */
-export async function addTeamMember(_prev: FormState, formData: FormData): Promise<FormState> {
+/** Invite a co-owner by the email of an existing ESTAFET account. They become a member only when they accept. */
+export async function inviteCoOwner(_prev: FormState, formData: FormData): Promise<FormState> {
   const projectId = String(formData.get("project_id") ?? "");
   const email = emailSchema.safeParse(formData.get("email"));
   if (!email.success) return { fieldErrors: { email: "Enter a valid email address." } };
   await requireUser(`/share/${projectId}/consent`);
   const supabase = await createClient();
-  const { error } = await supabase.rpc("add_team_member", { p_project_id: projectId, p_email: email.data });
+  const { error } = await supabase.rpc("invite_co_owner", { p_project_id: projectId, p_email: email.data });
   if (error) return { fieldErrors: { email: error.message } };
   revalidatePath(`/share/${projectId}/consent`);
-  return { ok: true, message: "Teammate added. They confirm on their own dashboard." };
+  return { ok: true, message: "Invitation sent. They become a co-owner when they accept it on their dashboard." };
+}
+
+/** The invited person accepts or declines. */
+export async function respondToInvite(projectId: string, accept: boolean): Promise<{ error?: string }> {
+  await requireUser("/dasbor");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("respond_co_owner_invite", { p_project_id: projectId, p_accept: accept });
+  if (error) return { error: error.message };
+  revalidatePath("/dasbor");
+  return {};
+}
+
+/** The project has no supervising lecturer. Publishing then needs this declaration instead of an advisor approval. */
+export async function declareNoAdvisor(projectId: string): Promise<{ error?: string }> {
+  await requireUser(`/share/${projectId}/consent`);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("declare_no_advisor", { p_project_id: projectId });
+  if (error) return { error: error.message };
+  revalidatePath(`/share/${projectId}`, "layout");
+  return {};
+}
+
+/** Records that the signed-in user accepted the current Terms and Privacy Policy. */
+export async function acceptPolicies(projectId?: string): Promise<{ error?: string }> {
+  await requireUser(projectId ? `/share/${projectId}/publish` : "/dasbor");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("accept_current_policies");
+  if (error) return { error: error.message };
+  if (projectId) revalidatePath(`/share/${projectId}`, "layout");
+  return {};
 }
 
 export async function removeTeamMember(projectId: string, profileId: string) {
@@ -82,7 +121,7 @@ export async function confirmTeamConsent(projectId: string) {
   const { error } = await supabase.rpc("confirm_team_consent", { p_project_id: projectId });
   if (error) return { error: error.message };
   revalidatePath(`/share/${projectId}`, "layout");
-  revalidatePath("/dashboard");
+  revalidatePath("/dasbor");
   return { ok: true };
 }
 
@@ -92,9 +131,9 @@ export async function confirmTeamConsent(projectId: string) {
  */
 export async function createConsentLink(projectId: string): Promise<{ url?: string; error?: string }> {
   await requireUser(`/share/${projectId}/consent`);
-  const project = await getCreatorProject(projectId);
-  if (!project) return { error: "You can only request approval for your own projects." };
-  if (!project.advisor_name || !project.advisor_email) return { error: "Add your advisor's name and email in step 1 first." };
+  const project = await getOwnedProject(projectId);
+  if (!project) return { error: "Only the owners of a project can request approval." };
+  if (!project.advisor_name || !project.advisor_email) return { error: "Add your advisor's name and email in step 1 first, or declare that there is no advisor." };
 
   const token = generateToken();
   const supabase = await createClient();
@@ -111,9 +150,9 @@ export async function createConsentLink(projectId: string): Promise<{ url?: stri
 
 export async function deleteFile(projectId: string, fileId: string): Promise<{ error?: string }> {
   await requireUser(`/share/${projectId}/files`);
-  const project = await getCreatorProject(projectId);
-  if (!project) return { error: "You can only change your own projects." };
-  if (!["draft", "awaiting_advisor", "verifying"].includes(project.status)) return { error: "Published projects cannot lose files." };
+  const project = await getOwnedProject(projectId);
+  if (!project) return { error: "Only the owners of a project can change it." };
+  if (!["draft", "unpublished"].includes(project.status)) return { error: "Published projects cannot lose files." };
 
   const supabase = await createClient();
   const { data: file } = await supabase.from("project_files").select("*").eq("id", fileId).eq("project_id", projectId).maybeSingle();
@@ -142,7 +181,7 @@ export async function publishProject(projectId: string): Promise<{ error?: strin
   if (error) return { error: error.message };
   const { data } = await supabase.from("projects").select("slug").eq("id", projectId).single();
   revalidatePath("/explore");
-  revalidatePath("/dashboard");
+  revalidatePath("/dasbor");
   redirect(`/projects/${data?.slug ?? ""}`);
 }
 
