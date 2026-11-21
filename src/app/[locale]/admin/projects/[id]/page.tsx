@@ -7,13 +7,13 @@ import { ReasonAction } from "@/components/admin/ReasonDialog";
 import { KeyValueList, PageHeader, Panel, StatusPill, Time, Timeline, toneFor } from "@/components/admin/ui";
 import { DemoBadge } from "@/components/ui/Badge";
 import { setProjectModeration } from "@/app/[locale]/admin/actions";
-import { KIND_LABEL } from "@/lib/labels";
+import { EN } from "@/lib/admin/en";
 import { formatWita } from "@/lib/admin/time";
 
 export const metadata: Metadata = { title: "Project" };
 
 interface Detail {
-  project: { id: string; slug: string; title: string; summary: string; kind: keyof typeof KIND_LABEL; field: string; year: number; status: string; moderation_status: string; moderation_reason: string | null; moderated_at: string | null; is_demo: boolean; advisor_name: string; published_at: string | null; created_at: string; stopped_note: string; tech: string[] };
+  project: { id: string; slug: string; title: string; summary: string; kind: keyof typeof EN.kind; field: string; year: number; status: string; moderation_status: string; moderation_reason: string | null; moderated_at: string | null; is_demo: boolean; advisor_name: string; published_at: string | null; created_at: string; stopped_note: string; tech: string[] };
   creators: { id: string; name: string }[];
   items: { id: string; kind: string; title: string; effort: string | null; objective_status: string | null }[];
   evidence: { matched: number; partial: number; not_found: number };
@@ -37,7 +37,7 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
     <>
       <PageHeader
         title={p.title}
-        intro={`${KIND_LABEL[p.kind]} · ${p.year} · ${p.field}`}
+        intro={`${EN.kind[p.kind]} · ${p.year} · ${p.field}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {p.is_demo ? <DemoBadge /> : null}

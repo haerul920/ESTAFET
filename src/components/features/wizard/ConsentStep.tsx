@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, Link2, UserPlus, X } from "lucide-react";
@@ -9,7 +10,7 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { FormMessage, TextField } from "@/components/ui/Field";
 import { confirmTeamConsent, createConsentLink, declareNoAdvisor, inviteCoOwner, removeTeamMember } from "@/app/actions/projects";
-import { formatDate } from "@/lib/labels";
+import { formatDate } from "@/lib/format";
 import type { AdvisorConsent, Project } from "@/lib/db/types";
 import type { FormState } from "@/lib/validation";
 
@@ -32,6 +33,8 @@ export function ConsentStep({
   currentUserId: string;
   consent: AdvisorConsent | null;
 }) {
+  const t = useTranslations("consentStep");
+  const locale = useLocale();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [addState, addAction, adding] = useActionState<FormState, FormData>(inviteCoOwner, {});
@@ -39,10 +42,11 @@ export function ConsentStep({
   const [linkError, setLinkError] = useState("");
   const [copied, setCopied] = useState(false);
   const [confirmError, setConfirmError] = useState("");
+  const [advisorError, setAdvisorError] = useState("");
   const me = team.find((m) => m.profile_id === currentUserId);
   const active = team.filter((m) => m.status === "active");
   const allConfirmed = active.length > 0 && active.every((m) => m.consented_at);
-  const [advisorError, setAdvisorError] = useState("");
+  const advisorName = project.advisor_name || t("advisorDefault");
 
   function makeLink() {
     setLinkError("");
@@ -52,7 +56,7 @@ export function ConsentStep({
         setLink(res.url);
         setCopied(false);
         router.refresh();
-      } else setLinkError(res.error ?? "Could not create the link.");
+      } else setLinkError(res.error ?? t("linkCouldNot"));
     });
   }
 
@@ -63,7 +67,7 @@ export function ConsentStep({
       setCopied(true);
       setTimeout(() => setCopied(false), 3000);
     } catch {
-      setLinkError("Your browser blocked copying. Select the link and copy it by hand.");
+      setLinkError(t("copyBlocked"));
     }
   }
 
@@ -71,12 +75,9 @@ export function ConsentStep({
     <div className="flex flex-col gap-6">
       <Card as="section" aria-labelledby="team-h">
         <h2 id="team-h" className="mb-1 mt-0 text-[22px]">
-          1. Your team agrees
+          {t("teamTitle")}
         </h2>
-        <p className="mb-4 mt-0 text-[15px] text-text-2">
-          Every former team member who worked on this project must confirm that they are happy to share it. Invite them
-          as co-owners: they need an ESTAFET account first, and they join when they accept the invitation.
-        </p>
+        <p className="mb-4 mt-0 text-[15px] text-text-2">{t("teamIntro")}</p>
         <ul className="m-0 flex list-none flex-col gap-3 p-0">
           <AnimatePresence initial={false}>
             {team.map((m) => (
@@ -91,21 +92,21 @@ export function ConsentStep({
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-line-soft bg-white p-4">
                   <div>
                     <strong>{m.full_name}</strong>
-                    {m.profile_id === currentUserId ? <span className="text-text-2"> (you)</span> : null}
+                    {m.profile_id === currentUserId ? <span className="text-text-2">{t("you")}</span> : null}
                     <div className="text-sm text-text-2">
                       {m.status === "invited"
-                        ? "Invited. Has not accepted the invitation yet."
+                        ? t("invited")
                         : m.consented_at
-                          ? `Confirmed ${formatDate(m.consented_at)}`
-                          : "Has not confirmed yet"}
+                          ? t("confirmedOn", { date: formatDate(m.consented_at, locale) })
+                          : t("notConfirmed")}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {m.status === "invited" ? (
-                      <Badge tone="neutral">Invitation sent</Badge>
+                      <Badge tone="neutral">{t("badgeInvited")}</Badge>
                     ) : m.consented_at ? (
                       <Badge tone="ok">
-                        <Check size={14} aria-hidden="true" /> Confirmed
+                        <Check size={14} aria-hidden="true" /> {t("badgeConfirmed")}
                       </Badge>
                     ) : m.profile_id === currentUserId ? (
                       <Button
@@ -119,15 +120,15 @@ export function ConsentStep({
                           })
                         }
                       >
-                        I confirm
+                        {t("confirmBtn")}
                       </Button>
                     ) : (
-                      <Badge tone="warn">Waiting</Badge>
+                      <Badge tone="warn">{t("waiting")}</Badge>
                     )}
                     {m.role !== "owner" ? (
                       <button
                         type="button"
-                        aria-label={`Remove ${m.full_name} from the team`}
+                        aria-label={t("removeAria", { name: m.full_name })}
                         onClick={() => start(async () => { await removeTeamMember(project.id, m.profile_id); router.refresh(); })}
                         className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-text-2 hover:bg-surface"
                       >
@@ -141,24 +142,13 @@ export function ConsentStep({
           </AnimatePresence>
         </ul>
         {confirmError ? <div className="mt-3"><FormMessage tone="error">{confirmError}</FormMessage></div> : null}
-        {me && !me.consented_at ? (
-          <p className="mb-0 mt-3 text-sm text-text-2">
-            By confirming you agree that the title, summary, objectives, verified tasks and lessons you approve become public.
-          </p>
-        ) : null}
+        {me && !me.consented_at ? <p className="mb-0 mt-3 text-sm text-text-2">{t("confirmNote")}</p> : null}
 
         <form action={addAction} className="mt-5 flex flex-wrap items-end gap-3 border-t border-line pt-5">
           <input type="hidden" name="project_id" value={project.id} />
-          <TextField
-            label="Invite a co-owner by email"
-            name="email"
-            type="email"
-            className="min-w-[240px] flex-1"
-            error={addState.fieldErrors?.email}
-            hint="Their ESTAFET account email."
-          />
+          <TextField label={t("inviteLabel")} name="email" type="email" className="min-w-[240px] flex-1" error={addState.fieldErrors?.email} hint={t("inviteHint")} />
           <Button type="submit" variant="outline" disabled={adding}>
-            <UserPlus size={18} aria-hidden="true" /> Invite
+            <UserPlus size={18} aria-hidden="true" /> {t("invite")}
           </Button>
         </form>
         {addState.ok ? <div className="mt-3"><FormMessage tone="success">{addState.message}</FormMessage></div> : null}
@@ -166,33 +156,27 @@ export function ConsentStep({
 
       <Card as="section" aria-labelledby="advisor-h">
         <h2 id="advisor-h" className="mb-1 mt-0 text-[22px]">
-          2. Your advisor approves
+          {t("advisorTitle")}
         </h2>
-        <p className="mb-4 mt-0 text-[15px] text-text-2">
-          {project.advisor_name || "Your advisor"} approves through a private link. No account is needed. The link
-          works once for a single decision and expires after 14 days.
-        </p>
-        <div className="mb-4 rounded-[14px] bg-warn-bg p-4 text-[15px] text-warn-ink">
-          <strong>ESTAFET does not send email for this yet.</strong> Create the link, copy it, and send it to your advisor yourself
-          (chat or email). Waiting for your advisor never blocks uploading or drafting. It only holds back publishing.
-        </div>
+        <p className="mb-4 mt-0 text-[15px] text-text-2">{t("advisorIntro", { name: advisorName })}</p>
+        <div className="mb-4 rounded-[14px] bg-warn-bg p-4 text-[15px] text-warn-ink">{t("noEmail")}</div>
 
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          <span className="text-sm font-semibold">Status:</span>
+          <span className="text-sm font-semibold">{t("status")}</span>
           {project.advisor_mode === "none" ? (
-            <Badge tone="info">Declared: no advisor</Badge>
+            <Badge tone="info">{t("stDeclared")}</Badge>
           ) : consent?.status === "approved" ? (
-            <Badge tone="ok">Approved {consent.decided_at ? formatDate(consent.decided_at) : ""}</Badge>
+            <Badge tone="ok">{t("stApproved", { date: consent.decided_at ? formatDate(consent.decided_at, locale) : "" })}</Badge>
           ) : consent?.status === "pending" ? (
-            <Badge tone="warn">Waiting for your advisor</Badge>
+            <Badge tone="warn">{t("stPending")}</Badge>
           ) : consent?.status === "declined" ? (
-            <Badge tone="danger">Advisor said not now</Badge>
+            <Badge tone="danger">{t("stDeclined")}</Badge>
           ) : consent?.status === "withdrawn" ? (
-            <Badge tone="neutral">Link replaced or approval withdrawn</Badge>
+            <Badge tone="neutral">{t("stWithdrawn")}</Badge>
           ) : (
-            <Badge tone="neutral">Not requested yet</Badge>
+            <Badge tone="neutral">{t("stNone")}</Badge>
           )}
-          {consent?.comment ? <span className="text-sm text-text-2">Comment: &ldquo;{consent.comment}&rdquo;</span> : null}
+          {consent?.comment ? <span className="text-sm text-text-2">{t("comment", { comment: consent.comment })}</span> : null}
         </div>
 
         {consent?.status !== "approved" ? (
@@ -200,7 +184,7 @@ export function ConsentStep({
             <div className="flex flex-wrap gap-3">
               <Button onClick={makeLink} disabled={pending} variant={link ? "outline" : "primary"}>
                 <Link2 size={18} aria-hidden="true" />
-                {link || consent?.status === "pending" ? "Create a new link" : "Create consent link"}
+                {link || consent?.status === "pending" ? t("createNew") : t("createLink")}
               </Button>
               {project.advisor_mode !== "none" ? (
                 <Button
@@ -215,35 +199,21 @@ export function ConsentStep({
                     })
                   }
                 >
-                  This project has no advisor
+                  {t("noAdvisorBtn")}
                 </Button>
               ) : null}
             </div>
-            {project.advisor_mode === "none" ? (
-              <p className="mb-0 mt-2 text-sm text-text-2">
-                You declared that no lecturer supervised this project. Publishing needs no advisor approval, and the ESTAFET team may spot-check such projects.
-                Create a consent link if an advisor will approve after all.
-              </p>
-            ) : null}
+            {project.advisor_mode === "none" ? <p className="mb-0 mt-2 text-sm text-text-2">{t("noAdvisorNote")}</p> : null}
             {advisorError ? <div className="mt-3"><FormMessage tone="error">{advisorError}</FormMessage></div> : null}
-            {consent?.status === "pending" && !link ? (
-              <p className="mb-0 mt-2 text-sm text-text-2">
-                A link is already out. For safety it cannot be shown again, so creating a new one replaces it.
-              </p>
-            ) : null}
+            {consent?.status === "pending" && !link ? <p className="mb-0 mt-2 text-sm text-text-2">{t("linkOut")}</p> : null}
           </>
         ) : null}
         {linkError ? <div className="mt-3"><FormMessage tone="error">{linkError}</FormMessage></div> : null}
         <AnimatePresence>
           {link ? (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-4 flex flex-col gap-2"
-            >
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-4 flex flex-col gap-2">
               <label htmlFor="consent-link" className="text-sm font-semibold">
-                Private link for {project.advisor_name || "your advisor"}
+                {t("linkLabel", { name: advisorName })}
               </label>
               <div className="flex flex-wrap gap-2">
                 <input
@@ -255,11 +225,11 @@ export function ConsentStep({
                 />
                 <Button variant="outlineBlue" onClick={copy}>
                   {copied ? <Check size={18} aria-hidden="true" /> : <Copy size={18} aria-hidden="true" />}
-                  {copied ? "Copied" : "Copy link"}
+                  {copied ? t("copied") : t("copy")}
                 </Button>
               </div>
               <p role="status" className="m-0 text-[13px] text-text-2">
-                Shown once. Anyone with this link can approve for 14 days, so send it only to your advisor.
+                {t("shownOnce")}
               </p>
             </motion.div>
           ) : null}
@@ -268,10 +238,10 @@ export function ConsentStep({
 
       <div className="flex flex-wrap justify-between gap-3">
         <ButtonLink href={`/share/${project.id}/basics`} variant="outline">
-          Back
+          {t("back")}
         </ButtonLink>
         <ButtonLink href={`/share/${project.id}/files`} arrow size="lg">
-          {allConfirmed && consent?.status === "approved" ? "Continue to files" : "Continue to files (you can finish consent later)"}
+          {allConfirmed ? t("next") : t("nextLater")}
         </ButtonLink>
       </div>
     </div>

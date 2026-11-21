@@ -2,6 +2,7 @@
 
 import { Link } from "@/i18n/navigation";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { Check, Circle, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { CopyLinkButton } from "./CopyLinkButton";
@@ -37,37 +38,38 @@ export function PublishChecklist({
   advisorEmail: string;
   step: string;
 }) {
+  const t = useTranslations("checklist");
   const { team, advisor, review, policies } = checklist;
   const advisorText =
     advisor.status === "not_needed"
-      ? "No advisor declared"
+      ? t("notNeeded")
       : advisor.status === "approved"
-        ? "Advisor approved"
+        ? t("approved")
         : advisor.status === "declined"
-          ? "Advisor said not now"
+          ? t("declined")
           : advisor.status === "withdrawn"
-            ? "Advisor approval withdrawn"
+            ? t("withdrawn")
             : advisor.status === "pending"
-              ? "Advisor approval pending"
-              : "Advisor approval not requested";
+              ? t("pending")
+              : t("none");
 
   return (
-    <Card as="aside" aria-label="Before you can publish">
-      <h2 className="mb-4 mt-0 text-lg">Before you can publish</h2>
+    <Card as="aside" aria-label={t("title")}>
+      <h2 className="mb-4 mt-0 text-lg">{t("title")}</h2>
       <ul className="m-0 flex list-none flex-col gap-4 p-0">
         <li className="flex gap-3">
           <Mark state={team.done ? "done" : "warn"} />
           <span>
-            <strong>{team.done ? "Team agreed" : "Team agreement pending"}</strong>
+            <strong>{team.done ? t("teamDone") : t("teamPending")}</strong>
             <br />
             <span className="text-sm text-text-2">
-              {team.confirmed} of {team.total} members confirmed
+              {t("teamCount", { confirmed: team.confirmed, total: team.total })}
             </span>
             {!team.done && step !== "consent" ? (
               <>
                 <br />
                 <Link href={`/share/${projectId}/consent`} className="text-sm font-semibold">
-                  Go to Consent
+                  {t("goConsent")}
                 </Link>
               </>
             ) : null}
@@ -80,15 +82,15 @@ export function PublishChecklist({
             <br />
             <span className="text-sm text-text-2">
               {advisor.done
-                ? "Publishing is unlocked on this side."
+                ? t("advisorDone")
                 : advisor.status === "pending"
-                  ? `Share the private link with ${advisorEmail || "your advisor"}. Publishing stays locked until they approve. You can keep working meanwhile.`
-                  : "Publishing stays locked until your advisor approves, or you declare that there is no advisor."}
+                  ? t("advisorPending", { email: advisorEmail || t("advisorDefault") })
+                  : t("advisorLocked")}
             </span>
             {!advisor.done ? (
               <>
                 <br />
-                {step === "consent" ? null : <CopyLinkButton projectId={projectId} label="Copy consent link" />}
+                {step === "consent" ? null : <CopyLinkButton projectId={projectId} label={t("copyLink")} />}
               </>
             ) : null}
           </span>
@@ -96,21 +98,19 @@ export function PublishChecklist({
         <li className="flex gap-3">
           <Mark state={review.done ? "done" : review.total > 0 ? "warn" : "todo"} />
           <span>
-            <strong>Review the AI draft</strong>
+            <strong>{t("reviewTitle")}</strong>
             <br />
             <span className="text-sm text-text-2">
-              {review.total === 0
-                ? "Next step: upload files and draft items."
-                : `${review.reviewed} of ${review.total} items reviewed`}
+              {review.total === 0 ? t("reviewNone") : t("reviewCount", { reviewed: review.reviewed, total: review.total })}
             </span>
           </span>
         </li>
         <li className="flex gap-3">
           <Mark state={policies.done ? "done" : "warn"} />
           <span>
-            <strong>{policies.done ? "Terms and Privacy Policy accepted" : "Terms and Privacy Policy not accepted yet"}</strong>
+            <strong>{policies.done ? t("policiesOk") : t("policiesNo")}</strong>
             <br />
-            <span className="text-sm text-text-2">{policies.done ? "You can publish once the other steps are done." : "You accept them on the last step, before publishing."}</span>
+            <span className="text-sm text-text-2">{policies.done ? t("policiesOkText") : t("policiesNoText")}</span>
           </span>
         </li>
       </ul>

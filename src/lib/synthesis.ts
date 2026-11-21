@@ -1,5 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { getTranslations } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getConfig, synthesize, SynthesisError, type SynthesisOutput } from "@/lib/llm";
 import { checkItemEvidence } from "@/lib/evidence/match";
@@ -39,14 +41,15 @@ function flatten(out: SynthesisOutput): NewItem[] {
  * (a creator from the API route, or an admin retrying a failed run after writing the audit row).
  * `requestedBy` is the user the run counts against for the daily cap.
  */
-export async function runSynthesis(projectId: string, requestedBy: string | null): Promise<SynthesisResult> {
+export async function runSynthesis(projectId: string, requestedBy: string | null, locale: Locale = "id"): Promise<SynthesisResult> {
+  const t = await getTranslations({ locale, namespace: "synth" });
   const admin = createAdminClient();
   const settings = await getSettings();
 
   const { data: project } = await admin.from("projects").select("id, status, tech").eq("id", projectId).maybeSingle();
-  if (!project) return { ok: false, status: 404, error: "Project not found." };
+  if (!project) return { ok: false, status: 404, error: t("notFound") };
   if (!["draft", "unpublished"].includes(project.status)) {
-    return { ok: false, status: 409, error: "This project is already published." };
+    return { ok: false, status: 409, error: t("published") };
   }
 
   // Consent gate: never send private data to a model before every active team member consented.
@@ -57,7 +60,7 @@ export async function runSynthesis(projectId: string, requestedBy: string | null
     return {
       ok: false,
       status: 409,
-      error: "ESTAFET reads your files only after every team member has confirmed. Finish the Consent step first.",
+      error: t("needConsent"),
     };
   }
 
@@ -70,14 +73,14 @@ export async function runSynthesis(projectId: string, requestedBy: string | null
       : Promise.resolve({ count: 0 }),
     admin.from("synthesis_runs").select("id", { count: "exact", head: true }).eq("project_id", projectId).gte("created_at", since(3_600_000)),
   ]);
-  if ((userCount.count ?? 0) >= cap) return { ok: false, status: 429, error: `The daily limit of ${cap} runs was reached. Try again tomorrow.` };
+  if ((userCount.count ?? 0) >= cap) return { ok: false, status: 429, error: t("dailyLimit", { cap }) };
   if ((projectCount.count ?? 0) >= PROJECT_HOURLY_CAP) {
-    return { ok: false, status: 429, error: "This project already ran several times in the last hour. Wait a little, then try again." };
+    return { ok: false, status: 429, error: t("hourlyLimit") };
   }
 
   const { data: fileRows } = await admin.from("project_files").select("*").eq("project_id", projectId).order("created_at");
   const files = ((fileRows ?? []) as ProjectFile[]).filter((f) => f.extracted_text_path);
-  if (files.length === 0) return { ok: false, status: 400, error: "Upload at least one readable file first." };
+  if (files.length === 0) return { ok: false, status: 400, error: t("noFiles") };
 
   const docsById = new Map<string, ExtractedDoc>();
   for (const f of files) {
@@ -90,7 +93,7 @@ export async function runSynthesis(projectId: string, requestedBy: string | null
     }
   }
   const docs = files.map((f) => docsById.get(f.id)).filter((d): d is ExtractedDoc => Boolean(d));
-  if (docs.length === 0) return { ok: false, status: 400, error: "The uploaded files could not be read. Upload them again." };
+  if (docs.length === 0) return { ok: false, status: 400, error: t("unreadable") };
 
   const config = getConfig();
   const inputHash = createHash("sha256").update(docs.map((d) => d.fileName + d.pages.map((p) => p.text).join("\n")).join("\n--\n")).digest("hex");
@@ -102,10 +105,10 @@ export async function runSynthesis(projectId: string, requestedBy: string | null
     })
     .select("id")
     .single();
-  if (runError || !run) return { ok: false, status: 500, error: "Could not start the run." };
+  if (runError || !run) return { ok: false, status: 500, error: t("startFailed") };
 
   try {
-    const output = await synthesize(docs, config);
+    const output = await synthesize(docs, config, undefined, locale);
     const idByName = new Map(files.map((f) => [f.original_name, f.id]));
     const pagesByFile = new Map<string, Map<number, string>>();
     for (const f of files) {

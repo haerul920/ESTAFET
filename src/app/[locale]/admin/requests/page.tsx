@@ -7,7 +7,7 @@ import { NoteForm } from "@/components/admin/NoteForm";
 import { KeyValueList, PageHeader, Panel, StatusPill, Time, Timeline, toneFor } from "@/components/admin/ui";
 import { queryView } from "@/lib/admin/query";
 import type { SearchParams } from "@/lib/admin/table";
-import { PURPOSE_LABEL, formatDate } from "@/lib/labels";
+import { EN, fmtDate } from "@/lib/admin/en";
 import type { RequestPurpose } from "@/lib/db/types";
 
 export const metadata: Metadata = { title: "Requests" };
@@ -68,8 +68,8 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
               <KeyValueList items={[
                 { label: "Status", value: <StatusPill tone={toneFor(open.status)}>{open.status}</StatusPill> },
                 { label: "Team size", value: open.team_size },
-                { label: "Purpose", value: PURPOSE_LABEL[open.purpose] },
-                { label: "Target date", value: open.target_date ? formatDate(open.target_date) : "—" },
+                { label: "Purpose", value: EN.purpose[open.purpose] },
+                { label: "Target date", value: open.target_date ? fmtDate(open.target_date) : "—" },
                 { label: "Plan", value: open.plan },
                 { label: "Fit", value: open.fit_note || "—" },
                 { label: "Owners said", value: open.decision_note || "—" },

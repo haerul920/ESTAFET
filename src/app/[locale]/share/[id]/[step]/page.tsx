@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { CheckCircle2 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { hasAcceptedPolicies } from "@/lib/db/access";
@@ -27,7 +28,11 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import type { DraftItem, ProjectFile, TeaserItem, TeaserProject } from "@/lib/db/types";
 
-export const metadata: Metadata = { title: "Share a project" };
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const tm = await getTranslations({ locale, namespace: "wizard" });
+  return { title: tm("shareMeta") };
+}
 
 type Params = { params: Promise<{ id: string; step: string }> };
 
@@ -44,6 +49,8 @@ export default async function WizardStepPage({ params }: Params) {
   if (!(WIZARD_STEPS as readonly string[]).includes(step)) notFound();
   const current = step as WizardStep;
   const user = await requireUser(`/share/${id}/${step}`);
+  const [locale, t, tl] = await Promise.all([getLocale(), getTranslations("wizard"), getTranslations("lineage")]);
+  void locale;
   const project = await getOwnedProject(id);
   if (!project) notFound();
 
@@ -65,7 +72,7 @@ export default async function WizardStepPage({ params }: Params) {
   if (current === "basics") {
     return (
       <WizardFrame projectId={id} current="basics">
-        <StepHeader title="Tell us about your project" intro="Change anything here. Saving moves you on to the consent step." />
+        <StepHeader title={t("basicsTitle")} intro={t("editIntro")} />
         <BasicsForm project={project} />
       </WizardFrame>
     );
@@ -75,8 +82,8 @@ export default async function WizardStepPage({ params }: Params) {
     return (
       <WizardFrame projectId={id} current="consent">
         <StepHeader
-          title="Get consent before anything is read"
-          intro="Your teammates confirm they are happy to share the project, and your advisor approves through a private link. ESTAFET reads your files only after both."
+          title={t("consentTitle")}
+          intro={t("consentIntro")}
         />
         <div className="flex flex-wrap items-start gap-8">
           <div className="min-w-0 flex-[1_1_600px]">
@@ -85,10 +92,8 @@ export default async function WizardStepPage({ params }: Params) {
           <div className="flex min-w-[260px] flex-[0_1_340px] flex-col gap-4">
             <PublishChecklist projectId={id} checklist={checklist} advisorEmail={project.advisor_email} step="consent" />
             <Card tone="blue">
-              <h2 className="mb-2 mt-0 text-base">What the advisor sees</h2>
-              <p className="m-0 text-[15px] text-text-3">
-                The title and summary, what becomes public, and what stays private. They can approve, say &ldquo;Not now&rdquo;, and add a comment.
-              </p>
+              <h2 className="mb-2 mt-0 text-base">{t("advisorSees")}</h2>
+              <p className="m-0 text-[15px] text-text-3">{t("advisorSeesText")}</p>
             </Card>
           </div>
         </div>
@@ -98,14 +103,14 @@ export default async function WizardStepPage({ params }: Params) {
 
   if (current === "files") {
     const readable = files.filter((f) => f.extracted_text_path).length;
-    const blockReason = "Every team member must confirm on the Consent step before ESTAFET reads your files.";
+    const blockReason = t("filesBlock");
     return (
       <WizardFrame projectId={id} current="files">
         <div className="flex flex-wrap items-start gap-8">
           <div className="flex min-w-0 flex-[1_1_600px] flex-col gap-6">
             <StepHeader
-              title="Add your project files"
-              intro="ESTAFET reads these files to draft a summary and the unfinished tasks. You review every item before anything is published. Files stay private."
+              title={t("filesTitle")}
+              intro={t("filesIntro")}
             />
             <FilesStep
               projectId={id}
@@ -119,10 +124,8 @@ export default async function WizardStepPage({ params }: Params) {
           <div className="mt-[88px] flex min-w-[260px] flex-[0_1_340px] flex-col gap-4 max-lg:mt-0">
             <PublishChecklist projectId={id} checklist={checklist} advisorEmail={project.advisor_email} step="files" />
             <Card tone="blue">
-              <h2 className="mb-2 mt-0 text-base">What becomes public</h2>
-              <p className="m-0 text-[15px] text-text-3">
-                Only the title, summary, objectives, verified next tasks and lessons you approve. Your files, code and notes stay private until you approve a request.
-              </p>
+              <h2 className="mb-2 mt-0 text-base">{t("publicTitle")}</h2>
+              <p className="m-0 text-[15px] text-text-3">{t("publicText")}</p>
             </Card>
           </div>
         </div>
@@ -136,7 +139,7 @@ export default async function WizardStepPage({ params }: Params) {
       <WizardFrame projectId={id} current="verify">
         {items.length === 0 && run?.status === "failed" ? (
           <Card tone="warn" className="mb-6">
-            <strong>The last draft failed.</strong> {run.error}
+            <strong>{t("lastFailed")}</strong> {run.error}
           </Card>
         ) : null}
         <VerifyBoard
@@ -193,55 +196,47 @@ export default async function WizardStepPage({ params }: Params) {
     no_advisor: project.advisor_mode === "none",
   };
   const reason = !checklist.team.done
-    ? "Every team member must confirm first."
+    ? t("reasonTeam")
     : !checklist.advisor.done
-      ? "Your advisor has not approved yet. You can also declare that there is no advisor on the Consent step."
+      ? t("reasonAdvisor")
       : !checklist.review.done
-        ? "Review every drafted item and keep at least one."
+        ? t("reasonReview")
         : "";
 
   return (
     <WizardFrame projectId={id} current="publish">
       <StepHeader
-        title={published ? "Your teaser is live" : "Preview your public teaser"}
-        intro={
-          published
-            ? "This is what visitors see. Your files stay private."
-            : "This is exactly how visitors will see your project. Check it, then publish."
-        }
+        title={published ? t("liveTitle") : t("previewTitle")}
+        intro={published ? t("liveIntro") : t("previewIntro")}
       />
       {published ? (
         <Card tone="blue" className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <span className="flex items-center gap-2">
-            <CheckCircle2 size={20} className="text-ok" aria-hidden="true" /> <strong>Published.</strong> Requests from other teams appear on your dashboard.
+            <CheckCircle2 size={20} className="text-ok" aria-hidden="true" /> <strong>{t("publishedBold")}</strong> {t("publishedText")}
           </span>
           <ButtonLink href={`/projects/${project.slug}`} arrow>
-            View public page
+            {t("viewPublic")}
           </ButtonLink>
         </Card>
       ) : null}
       <div className="rounded-[36px] border border-dashed border-line-strong p-6 max-sm:p-3">
         <div className="mb-6 flex items-center gap-2">
-          <Badge tone="info">Preview</Badge>
-          <span className="text-sm text-text-2">Visitors cannot see this until you publish.</span>
+          <Badge tone="info">{t("preview")}</Badge>
+          <span className="text-sm text-text-2">{t("previewNote")}</span>
         </div>
         <TeaserContent
           project={teaser}
           items={teaserItems}
           lineageSteps={[
-            { id: "o", title: "Original team", sub: `Started ${project.year}`, state: "done" },
-            { id: "p", title: "Published on ESTAFET", sub: published ? "Live" : "After you publish", state: published ? "done" : "next" },
-            { id: "n", title: "Next team", sub: "Waiting for a continuation", state: "next" },
+            { id: "o", title: tl("origin"), sub: tl("originSub", { year: project.year }), state: "done" },
+            { id: "p", title: tl("published"), sub: published ? tl("live") : tl("afterPublish"), state: published ? "done" : "next" },
+            { id: "n", title: tl("next"), sub: tl("nextWaiting"), state: "next" },
           ]}
           cta={
             <Card tone="lime" className="flex flex-col gap-2">
-              <h2 className="m-0 text-xl">Want to continue this project?</h2>
+              <h2 className="m-0 text-xl">{t("ctaTitle")}</h2>
               <p className="m-0 text-[15px] text-text-2">
-                {project.access_mode === "open"
-                  ? "Visitors will see a \"Continue this project\" button. They accept the attribution agreement and get access right away."
-                  : project.access_mode === "paused"
-                    ? "New access is paused, so visitors can read the teaser only."
-                    : "Visitors will see an \"Ask to continue\" button. You decide on each request."}
+                {project.access_mode === "open" ? t("ctaOpen") : project.access_mode === "paused" ? t("ctaPaused") : t("ctaRequest")}
               </p>
             </Card>
           }

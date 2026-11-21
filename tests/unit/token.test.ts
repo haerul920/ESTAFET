@@ -1,3 +1,4 @@
+import { translator } from "./i18n-helpers";
 import { describe, expect, it } from "vitest";
 import { generateToken, hashToken, isExpired, looksLikeToken, tokenExpiry } from "@/lib/token";
 import { creditLine, AGREEMENT_VERSION } from "@/lib/agreement/terms";
@@ -35,7 +36,7 @@ describe("advisor tokens", () => {
 
 describe("helpers", () => {
   it("builds the credit line", () => {
-    expect(creditLine({ title: "Mangrove", creators: ["A", "B"], advisor: "Dr. C", lineageId: "abc" })).toBe(
+    expect(creditLine({ title: "Mangrove", creators: ["A", "B"], advisor: "Dr. C", lineageId: "abc" }, translator("agreement"))).toBe(
       'This work builds on "Mangrove" by A, B, advised by Dr. C. Source: ESTAFET lineage abc.',
     );
     expect(AGREEMENT_VERSION).toBe(1);

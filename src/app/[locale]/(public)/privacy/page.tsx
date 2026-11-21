@@ -1,30 +1,31 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/ui/PageShell";
 import { Card } from "@/components/ui/Card";
 
-export const metadata: Metadata = { title: "Privacy Policy", robots: { index: false } };
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const tm = await getTranslations({ locale, namespace: "privacy" });
+  return { title: tm("metaTitle"), robots: { index: false } };
+}
 
-/**
- * Short interim version of the Privacy Policy (version 1). It lists what the software does today.
- * The full text is written in phase R5 and reviewed by the university before any public launch.
- */
-export default function PrivacyPage() {
+/** Interim version 1 of the Privacy Policy: what the software does today. The full text is phase R5, reviewed by the university. */
+export default async function PrivacyPage() {
+  const t = await getTranslations("privacy");
   return (
     <PageShell width={760}>
       <Card tone="warn" className="mb-6">
-        <strong>Draft, not yet reviewed by the university.</strong> This is version 1 of the Privacy Policy. A full text will replace it before launch.
+        <strong>{t("draft")}</strong>
       </Card>
-      <h1 className="mb-4 mt-0 text-[36px] font-medium">Privacy Policy</h1>
+      <h1 className="mb-4 mt-0 text-[36px] font-medium">{t("title")}</h1>
       <div className="flex flex-col gap-4 text-[16px] leading-relaxed">
-        <p className="m-0">What ESTAFET stores and does today:</p>
+        <p className="m-0">{t("intro")}</p>
         <ul className="m-0 flex flex-col gap-2 pl-5">
-          <li>Your account: name, email address, and the faculty you choose to give. We record which version of these documents you accepted.</li>
-          <li>Your projects: the details you enter, and the files you upload. Files are stored privately and are not shown on public pages.</li>
-          <li>AI drafting: when you ask for a draft, the text of your files is sent to the AI provider that ESTAFET is configured to use. In demo mode a built-in simulator is used and nothing leaves the server. Every team member must agree before this happens.</li>
-          <li>Reports and moderation: a report is stored with its reason. The owner of a project never sees who reported it.</li>
-          <li>Security: we keep a hashed form of an address to limit abuse. We do not store file contents in logs.</li>
+          {(["l1", "l2", "l3", "l4", "l5"] as const).map((k) => (
+            <li key={k}>{t(k)}</li>
+          ))}
         </ul>
-        <p className="m-0 text-text-2">Rights to access, correct, export and delete your data are described in the full text. Data export and account deletion are not built yet.</p>
+        <p className="m-0 text-text-2">{t("note")}</p>
       </div>
     </PageShell>
   );

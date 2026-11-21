@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Check, Copy } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { createConsentLink } from "@/app/actions/projects";
 
 /**
@@ -10,13 +11,14 @@ import { createConsentLink } from "@/app/actions/projects";
  */
 export function CopyLinkButton({
   projectId,
-  label = "Copy consent link",
+  label,
   onUrl,
 }: {
   projectId: string;
   label?: string;
   onUrl?: (url: string) => void;
 }) {
+  const t = useTranslations("copyLink");
   const [pending, start] = useTransition();
   const [state, setState] = useState<"idle" | "copied" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -26,17 +28,17 @@ export function CopyLinkButton({
       const res = await createConsentLink(projectId);
       if (!res.url) {
         setState("error");
-        setMessage(res.error ?? "Could not create the link.");
+        setMessage(res.error ?? t("couldNot"));
         return;
       }
       onUrl?.(res.url);
       try {
         await navigator.clipboard.writeText(res.url);
         setState("copied");
-        setMessage("Link copied. Any earlier link no longer works.");
+        setMessage(t("copiedMsg"));
       } catch {
         setState("copied");
-        setMessage("Link created. Copy it from the box on the Consent step.");
+        setMessage(t("createdMsg"));
       }
       setTimeout(() => setState("idle"), 4000);
     });
@@ -51,7 +53,7 @@ export function CopyLinkButton({
         className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 text-sm font-semibold text-blue disabled:opacity-60"
       >
         {state === "copied" ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
-        {pending ? "Creating link…" : state === "copied" ? "Copied" : label}
+        {pending ? t("creating") : state === "copied" ? t("copied") : (label ?? t("label"))}
       </button>
       <span role="status" className={`text-[13px] ${state === "error" ? "text-danger" : "text-text-2"}`}>
         {message}

@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import { Clock, LinkIcon, ShieldAlert } from "lucide-react";
+import { getLocale, getTranslations } from "next-intl/server";
 import { loadConsent } from "@/lib/db/consent";
 import { ConsentDecision } from "@/components/features/ConsentDecision";
 import { DemoBadge } from "@/components/ui/Badge";
 import { Logo } from "@/components/ui/Logo";
 import { Cloud } from "@/components/ui/motion";
-import { formatDate } from "@/lib/labels";
+import { formatDate } from "@/lib/format";
 
-export const metadata: Metadata = {
-  title: "Advisor approval",
-  robots: { index: false, follow: false },
-  referrer: "no-referrer",
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const tm = await getTranslations({ locale, namespace: "advisor" });
+  return { title: tm("metaTitle"), robots: { index: false, follow: false }, referrer: "no-referrer" };
+}
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -43,44 +44,28 @@ function Notice({ icon, title, text }: { icon: React.ReactNode; title: string; t
 
 export default async function ConsentPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+  const [locale, t] = await Promise.all([getLocale(), getTranslations("advisor")]);
   const consent = await loadConsent(token);
 
   if (consent.state === "invalid") {
-    return (
-      <Notice
-        icon={<LinkIcon size={40} className="text-text-2" aria-hidden="true" />}
-        title="This link is not valid"
-        text="Check that you copied the whole link. The students can create a new one for you."
-      />
-    );
+    return <Notice icon={<LinkIcon size={40} className="text-text-2" aria-hidden="true" />} title={t("invalidTitle")} text={t("invalidText")} />;
   }
   if (consent.state === "rate_limited") {
-    return (
-      <Notice
-        icon={<ShieldAlert size={40} className="text-warn" aria-hidden="true" />}
-        title="Too many attempts"
-        text="Please wait a few minutes and open the link again."
-      />
-    );
+    return <Notice icon={<ShieldAlert size={40} className="text-warn" aria-hidden="true" />} title={t("rateTitle")} text={t("rateText")} />;
   }
   if (consent.state === "expired") {
-    return (
-      <Notice
-        icon={<Clock size={40} className="text-warn" aria-hidden="true" />}
-        title="This link has expired"
-        text="For safety, approval links stop working after 14 days. Ask the students to create a new link."
-      />
-    );
+    return <Notice icon={<Clock size={40} className="text-warn" aria-hidden="true" />} title={t("expiredTitle")} text={t("expiredText")} />;
   }
 
   const { project, state } = consent;
   const decided = state !== "pending";
+  const when = consent.decidedAt ? formatDate(consent.decidedAt, locale) : "";
 
   return (
     <Shell>
       <div>
-        <div className="mono-label mb-2.5 text-text-2">Advisor approval</div>
-        <h1 className="m-0 text-[32px] font-medium leading-[1.1] tracking-[-0.04em]">Your student wants to share a project on ESTAFET</h1>
+        <div className="mono-label mb-2.5 text-text-2">{t("eyebrow")}</div>
+        <h1 className="m-0 text-[32px] font-medium leading-[1.1] tracking-[-0.04em]">{t("heading")}</h1>
       </div>
 
       <section className="flex flex-col gap-2 rounded-3xl bg-surface p-5">
@@ -88,46 +73,44 @@ export default async function ConsentPage({ params }: { params: Promise<{ token:
           <h2 className="m-0 text-[19px] font-semibold">{project.title}</h2>
           {project.is_demo ? <DemoBadge /> : null}
         </div>
-        <span className="text-[15px] text-text-2">
-          Shared by {project.sharedBy}. You are listed as advisor: {project.advisorName || "not named"}.
-        </span>
+        <span className="text-[15px] text-text-2">{t("sharedBy", { name: project.sharedBy, advisor: project.advisorName || t("advisorNone") })}</span>
         {project.summary ? <p className="m-0 text-[15px] text-text-3">{project.summary}</p> : null}
       </section>
 
       <section className="rounded-3xl bg-blue-tint p-5">
-        <h2 className="mb-2 mt-0 text-[17px] font-semibold">What becomes public</h2>
+        <h2 className="mb-2 mt-0 text-[17px] font-semibold">{t("publicTitle")}</h2>
         <ul className="m-0 flex list-disc flex-col gap-1 pl-5 text-[15px] text-text-3">
-          <li>Title and summary</li>
-          <li>Objectives and progress</li>
-          <li>Next tasks the team verified</li>
-          <li>Lessons, including reviewer feedback</li>
+          <li>{t("p1")}</li>
+          <li>{t("p2")}</li>
+          <li>{t("p3")}</li>
+          <li>{t("p4")}</li>
         </ul>
       </section>
 
       <section className="rounded-3xl bg-surface p-5">
-        <h2 className="mb-2 mt-0 text-[17px] font-semibold">What stays private</h2>
-        <p className="m-0 text-[15px] text-text-3">
-          Reports, notes and code. They open only if the creators approve a team that asks to continue.
-        </p>
+        <h2 className="mb-2 mt-0 text-[17px] font-semibold">{t("privateTitle")}</h2>
+        <p className="m-0 text-[15px] text-text-3">{t("privateText")}</p>
       </section>
 
       <section className="rounded-3xl bg-surface p-5">
-        <h2 className="mb-2 mt-0 text-[17px] font-semibold">Your name stays attached</h2>
-        <p className="m-0 text-[15px] text-text-3">
-          Any team that continues the project must credit you as advisor in their future submissions.
-        </p>
+        <h2 className="mb-2 mt-0 text-[17px] font-semibold">{t("nameTitle")}</h2>
+        <p className="m-0 text-[15px] text-text-3">{t("nameText")}</p>
       </section>
 
       {decided ? (
         <section role="status" className="rounded-3xl bg-warn-bg p-5 text-warn-ink">
           <strong>
             {state === "approved"
-              ? `You approved this${consent.decidedAt ? ` on ${formatDate(consent.decidedAt)}` : ""}.`
+              ? when
+                ? t("approvedOn", { date: when })
+                : t("approvedNoDate")
               : state === "declined"
-                ? `You answered “Not now”${consent.decidedAt ? ` on ${formatDate(consent.decidedAt)}` : ""}.`
-                : "This approval was withdrawn."}
+                ? when
+                  ? t("declinedOn", { date: when })
+                  : t("declinedNoDate")
+                : t("withdrawnText")}
           </strong>{" "}
-          This link allows one decision.
+          {t("oneDecision")}
         </section>
       ) : null}
 
@@ -135,7 +118,8 @@ export default async function ConsentPage({ params }: { params: Promise<{ token:
       {state === "approved" ? <ConsentDecision token={token} canWithdraw /> : null}
 
       <p className="m-0 text-[13px] text-text-2">
-        No account needed. This link is private to you. {state === "pending" || state === "approved" ? "You can withdraw your approval later from this page." : ""}
+        {t("footer")}
+        {state === "pending" || state === "approved" ? t("footerWithdraw") : ""}
       </p>
     </Shell>
   );

@@ -164,7 +164,7 @@ describe("admin code never writes tables directly", () => {
   function walk(dir: string): string[] {
     return fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(path.join(dir, d.name)) : [path.join(dir, d.name)]));
   }
-  const files = walk(path.resolve(__dirname, "../../src/app/admin")).filter((f) => /\.(ts|tsx)$/.test(f));
+  const files = walk(path.resolve(__dirname, "../../src/app/[locale]/admin")).filter((f) => /\.(ts|tsx)$/.test(f));
 
   it("has admin files to check", () => expect(files.length).toBeGreaterThan(10));
 
@@ -179,7 +179,7 @@ describe("admin code never writes tables directly", () => {
   });
 
   it("every mutation in admin/actions.ts goes through an admin_* function", () => {
-    const src = fs.readFileSync(path.resolve(__dirname, "../../src/app/admin/actions.ts"), "utf8");
+    const src = fs.readFileSync(path.resolve(__dirname, "../../src/app/[locale]/admin/actions.ts"), "utf8");
     const rpcs = [...src.matchAll(/rpc\("([a-z_]+)"/g)].map((m) => m[1]);
     expect(rpcs.length).toBeGreaterThan(10);
     expect(rpcs.every((r) => r.startsWith("admin_"))).toBe(true);

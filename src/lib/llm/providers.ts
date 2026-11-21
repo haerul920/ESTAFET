@@ -1,4 +1,4 @@
-import { SYSTEM_PROMPT } from "./prompts";
+import { systemPrompt } from "./prompts";
 
 /** Live provider calls. Plain fetch, no SDK. Keys and model names come from the environment. */
 
@@ -13,14 +13,14 @@ function stripFence(text: string): string {
   return m ? m[1] : t;
 }
 
-export async function callGemini(model: string, user: string, signal?: AbortSignal): Promise<string> {
+export async function callGemini(model: string, user: string, signal?: AbortSignal, language: "id" | "en" = "en"): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY is not set.");
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-goog-api-key": key },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      systemInstruction: { parts: [{ text: systemPrompt(language) }] },
       contents: [{ role: "user", parts: [{ text: user }] }],
       generationConfig: { responseMimeType: "application/json", temperature: 0 },
     }),
@@ -33,7 +33,7 @@ export async function callGemini(model: string, user: string, signal?: AbortSign
   return stripFence(text);
 }
 
-export async function callAnthropic(model: string, user: string, signal?: AbortSignal): Promise<string> {
+export async function callAnthropic(model: string, user: string, signal?: AbortSignal, language: "id" | "en" = "en"): Promise<string> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY is not set.");
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -43,7 +43,7 @@ export async function callAnthropic(model: string, user: string, signal?: AbortS
       model,
       max_tokens: 8000,
       temperature: 0,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt(language),
       messages: [{ role: "user", content: user }],
     }),
     signal,

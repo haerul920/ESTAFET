@@ -60,7 +60,7 @@ const FILE_NS = {
   "src/lib/errors.ts": { t: "errors" },
 };
 // Keys that are built from data at run time (enum values, SQL hints), so a static scan cannot see them used.
-const DYNAMIC_PREFIXES = ["labels.", "errors.hints.", "lineage.events.", "report.r."];
+const DYNAMIC_PREFIXES = ["labels.", "errors.hints.", "lineage.events.", "report.r.", "advisor.r.", "auth.demo", "terms.l", "privacy.l", "wizard.step", "board.f", "board.st"];
 // Single keys picked by a variable (for example t(link.key) or ag(k)).
 const DYNAMIC_KEYS = ["nav.explore", "nav.dashboard", "lang.id", "lang.en", "agreement.t1", "agreement.t2", "agreement.t3", "agreement.t4"];
 
@@ -154,7 +154,7 @@ for (const k of idMap.keys()) {
 
 // 4. hard-coded strings in components (admin area exempt until R6)
 const EXEMPT = [/^src\/app\/\[locale\]\/admin\//, /^src\/components\/admin\//, /^src\/lib\/admin\//, /^src\/app\/api\//];
-const ALLOW_WORDS = new Set(["ESTAFET", "STACK", "PDF", "Markdown", "ZIP", "ID", "EN", "Supabase", "Beban", "Server"]);
+const ALLOW_WORDS = new Set(["ESTAFET", "STACK", "PDF", "Markdown", "ZIP", "ID", "EN", "Supabase", "Beban", "Server", "Promise", "DemoPass2026", "env"]);
 for (const file of files) {
   const rel = relative(ROOT, file).replace(/\\/g, "/");
   if (!/\.tsx$/.test(rel) || EXEMPT.some((r) => r.test(rel))) continue;
