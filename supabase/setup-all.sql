@@ -2520,6 +2520,15 @@ begin
     jsonb_build_object('key', p_key, 'value', v_before), jsonb_build_object('key', p_key, 'value', p_value));
 end $$;
 
+-- The reason rule now carries a hint so the interface can show it in the user's language.
+create or replace function public.require_reason(p_reason text) returns void
+language plpgsql immutable as $$
+begin
+  if length(trim(coalesce(p_reason, ''))) < 15 then
+    raise exception 'A reason of at least 15 characters is required' using errcode = 'P0001', hint = 'reason_short';
+  end if;
+end $$;
+
 -- Admin read and consent functions that used the old roles and statuses.
 create or replace function public.admin_regenerate_consent(p_project uuid, p_token_hash text, p_expires timestamptz, p_reason text)
 returns uuid language plpgsql security definer set search_path = public as $$
