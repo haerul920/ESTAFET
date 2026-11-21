@@ -18,7 +18,7 @@ interface Row {
   created_at: string; other_reports: number; handled_by: string | null;
 }
 
-const REASONS = ["copyright", "personal_data", "inaccurate", "inappropriate", "other"];
+const REASONS = ["copyright", "personal_data", "false_information", "inappropriate", "false_ownership", "harmful_file", "spam", "other"];
 
 export default async function AdminReportsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
@@ -87,6 +87,7 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
                   <div className="flex flex-wrap gap-2">
                     <ReasonAction label="Dismiss" reasonLabel="Resolution note (kept in the audit log)" consequence={<>The report is closed as dismissed. The project is not changed.</>} action={handleReport.bind(null, openId, "dismiss")} />
                     {report.status === "open" ? <ReasonAction label="Mark in review" reasonLabel="Note on what you are checking" consequence={<>The report moves to In review so teammates know someone is on it.</>} action={handleReport.bind(null, openId, "in_review")} /> : null}
+                    <ReasonAction label="Hold project" reasonLabel="Why you are holding it" consequence={<>The project is held while you review it: it leaves public pages and the public sees a neutral notice. The report is resolved. The owners are told and can appeal.</>} action={handleReport.bind(null, report.id, "hold")} successMessage="Project held." />
                     <ReasonAction label="Hide project" consequence={<>The project disappears from Explore and its page returns 404. The report is resolved. The creators are told your note.</>} action={handleReport.bind(null, openId, "hide")} reasonLabel="Resolution note (shown to the creators)" />
                     <ReasonAction label="Remove project" tone="danger" consequence={<>Like Hide, but marked as removed. Data and signed agreements are kept. Needs a recent password check.</>} action={handleReport.bind(null, openId, "remove")} reasonLabel="Resolution note (shown to the creators)" />
                   </div>

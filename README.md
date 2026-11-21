@@ -63,7 +63,7 @@ Other variables are documented in `.env.example`. `.env*` files are git-ignored;
 | `pnpm test` | Unit tests (Vitest) |
 | `pnpm test:db` | Database rule tests against the local stack (RLS, publish rule, access modes, quota, expiry, revoke, append-only lineage) |
 | `node scripts/migrate-r1-dry-run.mjs` | Dry run of the R1 migration on legacy-shaped data, then restores the local DB |
-| `node scripts/build-setup-all.mjs` | Rebuilds `supabase/setup-all.sql` from the migrations and the seed |
+| `node scripts/build-cloud-sql.mjs` | Rebuilds `supabase/cloud-sql/` (numbered files to paste into the Supabase SQL Editor) from the migrations |
 | `pnpm test:e2e` | Playwright end-to-end tests: core flow, admin area and axe accessibility (starts `dev:local`, needs the local stack and mock mode) |
 | `pnpm test:e2e:admin` | Only the admin end-to-end tests |
 | `pnpm test:db:purge` | DESTRUCTIVE purge test on the local stack, then run `pnpm db:reset` |

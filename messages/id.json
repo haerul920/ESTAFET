@@ -509,8 +509,11 @@
     "r": {
       "copyright": "Hak cipta",
       "personal_data": "Data pribadi",
-      "inaccurate": "Informasi tidak akurat",
+      "false_information": "Informasi palsu atau menyesatkan",
       "inappropriate": "Konten tidak pantas",
+      "false_ownership": "Kepemilikan palsu",
+      "harmful_file": "Berkas berbahaya",
+      "spam": "Spam",
       "other": "Hal lain"
     },
     "details": "Apa yang salah?",
@@ -521,7 +524,22 @@
     "rateLimited": "Kamu mengirim beberapa laporan baru-baru ini. Tunggu sebentar sebelum mengirim lagi.",
     "notAvailable": "Proyek ini tidak tersedia untuk dilaporkan.",
     "sendFailed": "Laporanmu tidak bisa dikirim. Coba lagi.",
-    "sent": "Terima kasih. Laporanmu sudah dikirim ke tim ESTAFET."
+    "d": {
+      "copyright": "Karya ini menyalin karya orang lain tanpa izin.",
+      "personal_data": "Memuat data pribadi orang lain yang tidak boleh dibagikan.",
+      "false_information": "Ringkasan atau klaimnya tidak sesuai dengan isi berkas.",
+      "inappropriate": "Memuat konten yang melanggar Pedoman Komunitas.",
+      "false_ownership": "Pengunggah bukan bagian dari tim yang mengerjakan proyek ini.",
+      "harmful_file": "Berkas berisi malware, tautan berbahaya, atau rahasia yang bocor.",
+      "spam": "Proyek ini iklan, tautan massal, atau bukan proyek sungguhan.",
+      "other": "Masalah lain yang melanggar aturan platform."
+    },
+    "evidence": "Tautan bukti (opsional)",
+    "evidenceHint": "Misalnya tautan ke karya aslimu atau halaman yang menunjukkan masalahnya.",
+    "badLink": "Tautan bukti harus diawali http:// atau https://.",
+    "ownProject": "Kamu tidak bisa melaporkan proyekmu sendiri.",
+    "sentRef": "Terima kasih. Laporanmu sudah dikirim ke tim ESTAFET. Kode referensi: {reference}",
+    "duplicate": "Kamu sudah melaporkan hal yang sama dan laporannya masih terbuka. Kode referensi: {reference}"
   },
   "agreement": {
     "title": "Perjanjian atribusi",

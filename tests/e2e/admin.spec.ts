@@ -38,10 +38,10 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
   const visitor = await fresh(browser);
   await visitor.page.goto("/en/projects/fish-freshness-indicator");
   await visitor.page.getByRole("button", { name: "Report this project" }).click();
-  await visitor.page.getByLabel("Reason").selectOption("inaccurate");
+  await visitor.page.getByLabel("Reason").selectOption("false_information");
   await visitor.page.getByLabel("What is wrong?").fill("E2E: the summary says more than the files support.");
   await visitor.page.getByRole("button", { name: "Send report" }).click();
-  await expect(visitor.page.getByText("Your report was sent to the ESTAFET team.")).toBeVisible();
+  await expect(visitor.page.getByText(/Your report was sent to the ESTAFET team. Reference code: LP-[0-9A-F]{8}/)).toBeVisible();
   await visitor.context.close();
 
   // 2. The admin opens it and hides the project with a reason.

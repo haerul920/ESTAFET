@@ -10,6 +10,7 @@ import { REAUTH_COOKIE, REAUTH_MINUTES, signReauth } from "@/lib/admin/reauth";
 import { isProduction } from "@/lib/admin/env";
 import { setAuthBan } from "@/lib/admin/ban";
 import { removeDemoObjects } from "@/lib/admin/purge";
+import { SUPABASE_PUBLIC_KEY, SUPABASE_URL } from "@/lib/supabase/keys";
 import { runSynthesis } from "@/lib/synthesis";
 import { trialSchema } from "@/lib/admin/trial-schema";
 import { SETTING_KEYS, SETTING_SCHEMAS, type SettingKey } from "@/lib/settings";
@@ -45,7 +46,7 @@ const fail = (error: { message: string } | null): ActionResult | undefined => (e
 export async function reauthenticate(password: string): Promise<ActionResult> {
   const user = await requireAdmin();
   if (!password) return { error: "Enter your password." };
-  const plain = createPlainClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  const plain = createPlainClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const { error } = await plain.auth.signInWithPassword({ email: user.email, password });
@@ -57,13 +58,13 @@ export async function reauthenticate(password: string): Promise<ActionResult> {
 
 // ---- Moderation -------------------------------------------------------------------------------
 
-export async function setProjectModeration(projectId: string, status: "ok" | "hidden" | "removed", reason: string): Promise<ActionResult> {
+export async function setProjectModeration(projectId: string, status: "ok" | "held" | "hidden" | "removed", reason: string): Promise<ActionResult> {
   return run(status === "removed", async (db) =>
     fail((await db.rpc("admin_set_project_moderation", { p_project: projectId, p_status: status, p_reason: reason })).error),
   );
 }
 
-export async function handleReport(reportId: string, action: "dismiss" | "in_review" | "hide" | "remove", note: string): Promise<ActionResult> {
+export async function handleReport(reportId: string, action: "dismiss" | "in_review" | "hold" | "hide" | "remove", note: string): Promise<ActionResult> {
   return run(action === "remove", async (db) => fail((await db.rpc("admin_handle_report", { p_report: reportId, p_action: action, p_note: note })).error));
 }
 

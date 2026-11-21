@@ -17,7 +17,7 @@ Only temporary values stay outside the database: React state while a form is ope
 
 Use **one** of these. Full steps are in `docs/database-setup.md`.
 
-1. **Supabase cloud, easiest:** open the project, go to SQL Editor, paste the whole of `supabase/setup-all.sql`, run it once on an empty project. It is generated (`node scripts/build-setup-all.mjs`) from the four migrations plus the demo seed. For a real launch, run the four files in `supabase/migrations/` in order and **skip** `seed.sql`.
+1. **Supabase cloud, easiest:** open `supabase/cloud-sql/README.md` and follow it: paste the numbered files into the SQL Editor one at a time, in order. Skip the optional demo data for a real site.
 2. **CLI:** `supabase link --project-ref <ref>` then `supabase db push`.
 3. **Local:** `pnpm db:start` then `pnpm db:reset`.
 

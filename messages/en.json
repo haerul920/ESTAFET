@@ -509,8 +509,11 @@
     "r": {
       "copyright": "Copyright",
       "personal_data": "Personal data",
-      "inaccurate": "Inaccurate information",
+      "false_information": "False or misleading information",
       "inappropriate": "Inappropriate content",
+      "false_ownership": "False ownership",
+      "harmful_file": "Harmful file",
+      "spam": "Spam",
       "other": "Something else"
     },
     "details": "What is wrong?",
@@ -521,7 +524,22 @@
     "rateLimited": "You sent several reports recently. Please wait a while before sending another.",
     "notAvailable": "This project is not available to report.",
     "sendFailed": "Your report could not be sent. Please try again.",
-    "sent": "Thank you. Your report was sent to the ESTAFET team."
+    "d": {
+      "copyright": "This copies someone else's work without permission.",
+      "personal_data": "It contains other people's personal data that must not be shared.",
+      "false_information": "The summary or claims do not match the files.",
+      "inappropriate": "It contains content that breaks the Community Guidelines.",
+      "false_ownership": "The person sharing it was not part of the team that made it.",
+      "harmful_file": "A file contains malware, a harmful link or leaked secrets.",
+      "spam": "This is advertising, bulk links or not a real project.",
+      "other": "Another problem that breaks the platform rules."
+    },
+    "evidence": "Link to evidence (optional)",
+    "evidenceHint": "For example a link to your original work or a page that shows the problem.",
+    "badLink": "The evidence link must start with http:// or https://.",
+    "ownProject": "You cannot report your own project.",
+    "sentRef": "Thank you. Your report was sent to the ESTAFET team. Reference code: {reference}",
+    "duplicate": "You already reported this and it is still open. Reference code: {reference}"
   },
   "agreement": {
     "title": "Attribution agreement",

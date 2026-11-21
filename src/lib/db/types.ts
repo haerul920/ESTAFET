@@ -3,7 +3,7 @@
 export type ProjectKind = "student_program" | "hackathon" | "research";
 export type StopReason = "funding_not_granted" | "team_graduated" | "time_or_people" | "other";
 export type ProjectStatus = "draft" | "published" | "unpublished" | "archived";
-export type ModerationStatus = "ok" | "hidden" | "removed";
+export type ModerationStatus = "ok" | "held" | "hidden" | "removed";
 export type AccessMode = "open" | "by_request" | "paused";
 export type MemberRole = "owner" | "co_owner";
 export type MemberStatus = "invited" | "active" | "left";

@@ -113,8 +113,25 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
         <div className="flex min-w-0 flex-col gap-4">
           <Panel title="Moderation">
             <div className="flex flex-wrap gap-2">
-              {mod === "ok" ? (
+              {mod === "ok" || mod === "held" ? (
                 <>
+                  {mod === "ok" ? (
+                    <ReasonAction
+                      label="Hold"
+                      consequence={<>The project is held while you review it: it disappears from public pages, and the public sees a neutral notice. The owners are told and can appeal. You can restore it at any time.</>}
+                      action={setProjectModeration.bind(null, id, "held")}
+                      undo={{ action: setProjectModeration.bind(null, id, "ok") }}
+                      successMessage="Project held."
+                    />
+                  ) : (
+                    <ReasonAction
+                      label="Restore"
+                      tone="primary"
+                      consequence={<>The project becomes visible again if its status is published. The owners are told.</>}
+                      action={setProjectModeration.bind(null, id, "ok")}
+                      successMessage="Project restored."
+                    />
+                  )}
                   <ReasonAction
                     label="Hide"
                     consequence={<>The project disappears from Explore, search and its public page (404). Nothing is deleted. The creators are told your reason.</>}

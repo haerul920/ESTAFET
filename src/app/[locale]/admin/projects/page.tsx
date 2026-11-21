@@ -42,7 +42,7 @@ export default async function AdminProjectsPage({ searchParams }: { searchParams
         toggles={[{ key: "demo", label: "Include demo projects" }]}
         filters={[
           { key: "status", label: "Status", options: ["draft", "published", "unpublished", "archived"].map((v) => ({ value: v, label: v.replace("_", " ") })) },
-          { key: "moderation", label: "Moderation", options: ["ok", "hidden", "removed"].map((v) => ({ value: v, label: v })) },
+          { key: "moderation", label: "Moderation", options: ["ok", "held", "hidden", "removed"].map((v) => ({ value: v, label: v })) },
           { key: "field", label: "Field", options: FACULTIES.slice(0, 4).map((v) => ({ value: v, label: v })) },
         ]}
       />
