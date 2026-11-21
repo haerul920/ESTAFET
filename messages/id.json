@@ -1,12 +1,12 @@
 {
   "meta": {
-    "title": "ESTAFET: estafet untuk proyek mahasiswa",
-    "description": "ESTAFET mengubah proyek mahasiswa yang berhenti menjadi titik awal yang terverifikasi, sehingga tim berikutnya langsung bekerja di minggu pertama, bukan mengorek drive lama.",
+    "title": "ESTAFET: serah terima proyek mahasiswa yang berhenti",
+    "description": "ESTAFET mengubah proyek mahasiswa yang berhenti menjadi titik awal yang terverifikasi, sehingga tim berikutnya langsung bekerja di minggu pertama, bukan menggali drive lama.",
     "ogDescription": "Serah terima terstruktur proyek lomba dan riset mahasiswa yang berhenti di Universitas Hasanuddin."
   },
   "layout": {
     "skip": "Lewati ke konten",
-    "demoBanner": "Lingkungan demo: proyek contoh adalah data tiruan."
+    "demoBanner": "Lingkungan demo: proyek yang tampil adalah data contoh."
   },
   "nav": {
     "main": "Navigasi utama",
@@ -22,13 +22,13 @@
     "menuClose": "Tutup menu",
     "account": "Menu akun {name}",
     "accountUnread": ", {count} notifikasi belum dibaca",
-    "breadcrumb": "Remah roti navigasi"
+    "breadcrumb": "Jalur navigasi"
   },
   "footer": {
-    "note": "Prototipe untuk STACK 2026 oleh tim Beban Server. Proyek contoh adalah data tiruan.",
+    "note": "Prototipe untuk STACK 2026 oleh tim Beban Server. Proyek yang tampil adalah data contoh.",
     "terms": "Syarat",
     "privacy": "Privasi",
-    "nav": "Tautan kaki halaman"
+    "nav": "Tautan bagian bawah halaman"
   },
   "lang": {
     "label": "Bahasa",
@@ -46,7 +46,7 @@
   },
   "error": {
     "title": "Terjadi kesalahan",
-    "body": "Halaman ini tidak bisa dimuat. Coba lagi sebentar lagi.",
+    "body": "Halaman ini tidak bisa dimuat. Coba lagi sebentar.",
     "reference": "Referensi: {digest}",
     "retry": "Coba lagi",
     "home": "Kembali ke beranda"
@@ -54,7 +54,7 @@
   "notFound": {
     "code": "Kesalahan 404",
     "title": "Halaman itu tidak ditemukan",
-    "body": "Tautannya mungkin sudah lama, atau proyeknya belum diterbitkan. Proyek yang belum diterbitkan hanya terlihat oleh pemiliknya.",
+    "body": "Tautannya mungkin sudah usang, atau proyeknya belum diterbitkan. Proyek yang belum diterbitkan hanya terlihat oleh pemiliknya.",
     "explore": "Jelajahi proyek",
     "home": "Kembali ke beranda"
   },
@@ -102,7 +102,7 @@
     },
     "objective": {
       "done": "Selesai",
-      "in_progress": "Berjalan",
+      "in_progress": "Sedang berjalan",
       "not_started": "Belum mulai"
     },
     "purpose": {
@@ -178,7 +178,7 @@
       "owner_protected": "Pemilik proyek tidak bisa dikeluarkan.",
       "advisor_approved": "Dosen pembimbing sudah menyetujui proyek ini.",
       "advisor_required": "Penerbitan butuh persetujuan dosen pembimbing, atau pernyataan bahwa proyek ini tidak punya dosen pembimbing.",
-      "team_consent": "Semua anggota tim harus konfirmasi dulu sebelum terbit.",
+      "team_consent": "Semua anggota tim harus mengonfirmasi dulu sebelum terbit.",
       "items_pending": "Tinjau semua item draf sebelum terbit.",
       "no_kept_item": "Pertahankan setidaknya satu item sebelum terbit.",
       "policies_required": "Setujui Syarat dan Kebijakan Privasi yang berlaku sebelum terbit.",
@@ -224,8 +224,8 @@
     "summaryMax": "Ringkasan maksimal 700 karakter.",
     "kind": "Pilih jenis pekerjaan.",
     "field": "Pilih fakultas atau bidang.",
-    "yearMin": "Masukkan tahun mulai 2015.",
-    "yearMax": "Tahun itu belum tiba.",
+    "yearMin": "Masukkan tahun mulai, 2015 atau setelahnya.",
+    "yearMax": "Tahun itu masih di masa depan.",
     "stopReason": "Pilih alasan proyek berhenti.",
     "stoppedNoteMax": "Catatan ini maksimal 400 karakter.",
     "advisorNameMax": "Nama maksimal 120 karakter.",
@@ -235,13 +235,13 @@
     "tasksMin": "Pilih setidaknya satu tugas terverifikasi.",
     "planMin": "Jelaskan bulan pertamamu dalam beberapa kalimat (minimal 40 karakter).",
     "planMax": "Rencana maksimal 1500 karakter.",
-    "purpose": "Pilih untuk apa ini.",
+    "purpose": "Pilih tujuan penggunaan proyek ini.",
     "targetDateRequired": "Pilih tanggal target.",
     "targetDateFuture": "Pilih tanggal di masa depan.",
     "fitNoteMax": "Maksimal 600 karakter.",
     "acknowledge": "Kamu perlu menyetujui kewajiban memberi kredit.",
     "teammatesInvalid": "Salah satu email tidak valid. Pisahkan email dengan koma.",
-    "teamSize": "Tim terdiri dari 3 sampai 4 anggota. Tulis 2 atau 3 teman timmu selain dirimu.",
+    "teamSize": "Tim terdiri atas 3 sampai 4 anggota. Tulis 2 atau 3 teman timmu selain dirimu.",
     "fixAndSave": "Perbaiki kolom yang ditandai lalu simpan lagi.",
     "fixAndSend": "Perbaiki kolom yang ditandai lalu kirim lagi.",
     "reportReason": "Pilih alasan.",
@@ -264,10 +264,10 @@
     "saveLocked": "Perubahanmu tidak bisa disimpan. Mungkin terkunci karena proyek sudah terbit.",
     "verifyFirst": "Verifikasi alamat emailmu dulu. Membagikan proyek butuh email yang sudah dikonfirmasi.",
     "draftFailed": "Draf tidak bisa dibuat. Coba lagi.",
-    "inviteSent": "Undangan terkirim. Orangnya menjadi pemilik bersama setelah menerimanya di dasbornya.",
+    "inviteSent": "Undangan terkirim. Dia menjadi pemilik bersama setelah menerima undangan itu di dasbornya.",
     "notOwnerConsent": "Hanya pemilik proyek yang bisa meminta persetujuan.",
     "advisorFirst": "Isi nama dan email dosen pembimbing di langkah 1 dulu, atau nyatakan bahwa proyek ini tidak punya dosen pembimbing.",
-    "filesLocked": "Proyek yang sudah terbit tidak bisa kehilangan berkas.",
+    "filesLocked": "Berkas proyek yang sudah terbit tidak bisa dihapus.",
     "fileNotFound": "Berkas tidak ditemukan.",
     "summaryTooShort": "Ringkasan draf terlalu pendek untuk dipakai.",
     "summaryFailed": "Ringkasan tidak bisa diperbarui.",
@@ -346,13 +346,13 @@
       }
     },
     "close": {
-      "label": "Dibangun di sekitar satu risiko",
+      "label": "Dirancang di sekitar satu risiko",
       "title": "AI menyusun draf. Manusia memutuskan."
     },
     "hero": {
       "line1": "Lanjutkan dari",
       "line2": "tempat tim sebelumnya berhenti.",
-      "lead": "ESTAFET mengubah proyek mahasiswa yang berhenti menjadi titik awal yang terverifikasi, sehingga tim berikutnya langsung bekerja di minggu pertama, bukan mengorek drive lama.",
+      "lead": "ESTAFET mengubah proyek mahasiswa yang berhenti menjadi titik awal yang terverifikasi, sehingga tim berikutnya langsung bekerja di minggu pertama, bukan menggali drive lama.",
       "explore": "Jelajahi proyek",
       "share": "Bagikan proyek",
       "cardObjectives": "Tujuan",
@@ -390,7 +390,7 @@
     },
     "title": "Jelajahi proyek",
     "lead": "Setiap proyek di bawah ini diterbitkan oleh pemiliknya dan diverifikasi sebelum menjadi publik.",
-    "demo": "Data contoh: proyek ini data tiruan",
+    "demo": "Data contoh: proyek di sini adalah data tiruan",
     "empty": {
       "title": "Tidak ada proyek yang cocok dengan filter ini",
       "text": "Coba kata kunci lain atau hapus satu filter. Proyek baru terus diterbitkan.",
@@ -399,7 +399,7 @@
     "search": "Cari proyek",
     "searchPlaceholder": "Topik, metode, atau kata kunci",
     "sort": "Urutkan",
-    "sortRecent": "Terbaru diterbitkan",
+    "sortRecent": "Terbaru terbit",
     "sortTasks": "Tugas terverifikasi terbanyak",
     "sortProgress": "Paling maju",
     "filters": "Filter",
@@ -479,7 +479,7 @@
     "openTitle": "Lanjutkan proyek ini",
     "openText": "Proyek ini terbuka langsung dengan perjanjian atribusi. Tidak perlu persetujuan, dan pemilik diberi tahu saat kamu mengambil akses.",
     "readAgreement": "Baca perjanjian (versi {version})",
-    "accept": "Saya menyetujui ketentuan ini untuk diri sendiri, dan saya akan menyebut tim asal.",
+    "accept": "Saya menyetujui ketentuan ini atas nama saya sendiri dan akan mencantumkan tim asal.",
     "saving": "Menyimpan…",
     "continue": "Lanjutkan proyek ini"
   },
@@ -516,7 +516,7 @@
     "title": "Perjanjian atribusi",
     "version": "Versi {version}",
     "opensAfter": "Versi {version}, terbuka setelah permintaan disetujui",
-    "t1": "Siapa pun yang mengambil akses (penerus) menyebut nama pemilik dan dosen pembimbing dalam setiap karya, makalah, atau halaman produk yang dibangun dari proyek ini.",
+    "t1": "Siapa pun yang mengambil akses (penerus) mencantumkan nama pemilik dan dosen pembimbing dalam setiap karya, makalah, atau halaman produk yang dibangun dari proyek ini.",
     "t2": "Pemilik menegaskan, saat membagikan proyek, bahwa mereka berhak membagikan berkas-berkas ini.",
     "t3": "Kepemilikan karya asli tetap pada pemiliknya. Karya baru oleh penerus menjadi milik mereka.",
     "t4": "ESTAFET mencatat serah terima dalam jejak estafet proyek.",
@@ -582,7 +582,7 @@
       },
       "agreement": {
         "text": "{name} menyetujui perjanjian atribusi untuk {title}.",
-        "detail": "Mereka sekarang punya akses ke berkas pribadi."
+        "detail": "Dia sekarang punya akses ke berkas pribadi."
       },
       "accessTaken": {
         "text": "{name} mengambil akses ke {title}.",
@@ -608,7 +608,7 @@
         "restored": "{title} dipulihkan oleh tim ESTAFET.",
         "removed": "{title} dihapus dari tampilan publik oleh tim ESTAFET.",
         "hidden": "{title} disembunyikan dari tampilan publik oleh tim ESTAFET.",
-        "detail": "Alasan: “{reason}”. Datamu dan perjanjian yang sudah ditandatangani tidak berubah."
+        "detail": "Alasan: “{reason}”. Datamu dan perjanjian yang sudah disetujui tidak berubah."
       },
       "breakGlass": {
         "text": "Seorang admin membuka berkas pribadi {title} untuk peninjauan darurat.",
@@ -620,7 +620,7 @@
       },
       "joined": {
         "text": "Pemilik bersama baru bergabung di {title}.",
-        "detail": "Mereka perlu mengonfirmasi pembagian proyek sebelum kamu bisa menerbitkan."
+        "detail": "Dia perlu mengonfirmasi pembagian proyek sebelum kamu bisa menerbitkan."
       },
       "default": "Kamu punya notifikasi baru."
     },
@@ -694,7 +694,7 @@
     "notifications": "Notifikasi",
     "unreadCount": "{count} baru",
     "markAll": "Tandai semua sudah dibaca",
-    "caughtUpTitle": "Kamu sudah terkini",
+    "caughtUpTitle": "Kamu sudah mengikuti semuanya",
     "caughtUpText": "Keputusan dosen pembimbing, permintaan baru, perubahan akses, dan pembaruan perjanjian muncul di sini.",
     "new": "Baru",
     "waitingDecision": "Menunggu keputusanmu",
@@ -716,8 +716,8 @@
     "teammatesHint": "Kamu ditambahkan otomatis.",
     "f2": "2. Tugas terverifikasi mana yang akan kamu ambil?",
     "noTasks": "Proyek ini belum punya tugas berikutnya yang terverifikasi, jadi belum bisa diminta.",
-    "effort": "Usaha {size}",
-    "unsized": "Usaha belum ditakar",
+    "effort": "Beban kerja: {size}",
+    "unsized": "Beban kerja belum diperkirakan",
     "f3": "3. Rencanamu",
     "plan": "Apa yang akan kamu kerjakan di bulan pertama?",
     "planPh": "Misalnya, tugas mana yang kamu mulai dan apa yang kamu harapkan di akhir.",
@@ -781,7 +781,7 @@
     "expiresIfNone": " Kalau tidak ada jawaban, permintaan kedaluwarsa pada {date}.",
     "withdrawAsk": "Tarik permintaan ini?",
     "withdrawYes": "Ya, tarik",
-    "keep": "Biarkan",
+    "keep": "Tidak jadi",
     "withdraw": "Tarik permintaan",
     "yourDecision": "Keputusanmu",
     "msgLabel": "Pesan untuk tim (opsional)",
@@ -801,7 +801,7 @@
     "hasAccess": "Punya akses",
     "accessRevoked": "Akses dicabut",
     "verifyFirst": "Verifikasi alamat emailmu dulu. Mengambil akses butuh email yang sudah dikonfirmasi.",
-    "acceptLabel": "Saya menyetujui ketentuan ini untuk diri sendiri, dan saya akan menyebut tim asal.",
+    "acceptLabel": "Saya menyetujui ketentuan ini atas nama saya sendiri dan akan mencantumkan tim asal.",
     "acceptBtn": "Setujui dan dapatkan akses",
     "saving": "Menyimpan…",
     "youAccepted": "Kamu menyetujui versi {version}.",
@@ -811,8 +811,8 @@
     "openWorkspace": "Buka ruang proyek",
     "pdf": "PDF perjanjian",
     "revoke": "Cabut akses",
-    "revokeWhy": "Mengapa kamu mencabut akses {name}? Mereka akan membaca ini.",
-    "revokeMin": "Minimal 15 karakter. Mereka tetap wajib menyebut tim asal.",
+    "revokeWhy": "Mengapa kamu mencabut akses {name}? Dia akan membaca ini.",
+    "revokeMin": "Minimal 15 karakter. Dia tetap wajib menyebut tim asal.",
     "creditTitle": "Kalimat kredit untuk karya berikutnya",
     "copyCredit": "Salin kalimat kredit",
     "copied": "Tersalin",
@@ -824,14 +824,14 @@
     "breadcrumb": "Ruang proyek",
     "badge": "Ruang proyek pribadi",
     "leadOwner": "Kamu pemilik proyek ini. Ini yang dilihat orang yang punya akses.",
-    "leadHolder": "Kamu punya akses karena menyetujui perjanjian atribusi. Tolong sebut tim asal.",
+    "leadHolder": "Kamu punya akses karena menyetujui perjanjian atribusi. Mohon cantumkan tim asal.",
     "publicTeaser": "Ringkasan publik",
     "files": "Berkas pribadi",
     "filesIntro": "Unduhan memakai tautan berumur pendek yang dibuat setelah aksesmu diperiksa.",
     "noFiles": "Tidak ada berkas yang tersimpan untuk proyek ini.",
     "download": "Unduh",
     "downloadAria": "Unduh {name}",
-    "gNext": "Backlog lengkap: tugas berikutnya",
+    "gNext": "Daftar tugas lengkap: tugas berikutnya",
     "gObjectives": "Tujuan",
     "gCompleted": "Pekerjaan selesai",
     "gLessons": "Pelajaran",
@@ -863,7 +863,7 @@
     "privateTitle": "Yang tetap pribadi",
     "privateText": "Laporan, catatan, dan kode. Berkas ini hanya terbuka bagi tim yang meminta lalu disetujui pemilik, atau bagi orang yang mengambil akses jika proyeknya dibuka dengan perjanjian atribusi.",
     "nameTitle": "Namamu tetap tercantum",
-    "nameText": "Tim mana pun yang melanjutkan proyek ini wajib menyebutmu sebagai dosen pembimbing dalam karya-karya berikutnya.",
+    "nameText": "Tim mana pun yang melanjutkan proyek ini wajib mencantumkan namamu sebagai dosen pembimbing dalam karya-karya berikutnya.",
     "approvedOn": "Kamu menyetujui ini pada {date}.",
     "approvedNoDate": "Kamu menyetujui ini.",
     "declinedOn": "Kamu menjawab “Belum sekarang” pada {date}.",
@@ -886,7 +886,7 @@
       "expired": "Tautan ini sudah kedaluwarsa. Minta mahasiswa membuat yang baru.",
       "invalid": "Tautan ini tidak valid.",
       "rate_limited": "Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.",
-      "error": "Terjadi kesalahan. Coba lagi sebentar lagi."
+      "error": "Terjadi kesalahan. Coba lagi sebentar."
     }
   },
   "suspended": {
@@ -906,7 +906,7 @@
     "signupMeta": "Buat akun",
     "signupTitle": "Buat akun",
     "signupDomains": "Gunakan email kampusmu ({domains}).",
-    "signupLead": "Untuk sekarang, email apa pun bisa dipakai. Pembatasan ke domain email kampus bisa dinyalakan.",
+    "signupLead": "Untuk sekarang, email apa pun bisa dipakai. Pembatasan ke domain email kampus bisa diaktifkan.",
     "fullName": "Nama lengkap",
     "faculty": "Fakultas",
     "facultyHint": "Opsional. Membantu penerus melihat latar belakangmu.",
@@ -945,7 +945,7 @@
     "l1": "Kamu boleh membagikan proyek hanya jika kamu ikut mengerjakannya dan berhak membagikannya. Seluruh anggota tim harus setuju.",
     "l2": "Ringkasan publik hanya menampilkan apa yang kamu setujui. Berkasmu tetap pribadi dan hanya terbuka bagi orang yang memegang akses.",
     "l3": "Siapa pun yang mengambil akses menyetujui perjanjian atribusi dan menyebut tim asal.",
-    "l4": "Siapa pun boleh melaporkan proyek. Tim ESTAFET dapat menahan, menyembunyikan, atau menghapus proyek, dengan alasan tertulis yang bisa kamu banding.",
+    "l4": "Siapa pun boleh melaporkan proyek. Tim ESTAFET dapat menahan, menyembunyikan, atau menghapus proyek, dengan alasan tertulis yang bisa kamu ajukan banding.",
     "l5": "Jangan mengunggah rahasia, data pribadi orang lain, atau berkas yang tidak boleh kamu bagikan.",
     "note": "Perjanjian atribusi adalah templat sederhana untuk proyek mahasiswa. Ini bukan nasihat hukum."
   },
@@ -976,7 +976,7 @@
     "consentTitle": "Dapatkan persetujuan sebelum apa pun dibaca",
     "consentIntro": "Teman setimmu mengonfirmasi bahwa mereka setuju proyek ini dibagikan, dan dosen pembimbingmu menyetujui lewat tautan pribadi. ESTAFET membaca berkasmu hanya setelah seluruh anggota tim setuju. Persetujuan dosen hanya menahan penerbitan.",
     "advisorSees": "Yang dilihat dosen pembimbing",
-    "advisorSeesText": "Judul dan ringkasan, apa yang menjadi publik, dan apa yang tetap pribadi. Mereka bisa menyetujui, menjawab “Belum sekarang”, dan menulis komentar.",
+    "advisorSeesText": "Judul dan ringkasan, apa yang menjadi publik, dan apa yang tetap pribadi. Beliau bisa menyetujui, menjawab “Belum sekarang”, dan menulis komentar.",
     "filesTitle": "Tambahkan berkas proyekmu",
     "filesIntro": "ESTAFET membaca berkas ini untuk menyusun ringkasan dan tugas yang belum selesai. Kamu meninjau setiap item sebelum apa pun terbit. Berkas tetap pribadi.",
     "filesBlock": "Seluruh anggota tim harus mengonfirmasi di langkah Persetujuan sebelum ESTAFET membaca berkasmu.",
@@ -1062,7 +1062,7 @@
     "linkLabel": "Tautan pribadi untuk {name}",
     "copy": "Salin tautan",
     "copied": "Tersalin",
-    "copyBlocked": "Browser memblokir penyalinan. Pilih tautannya dan salin manual.",
+    "copyBlocked": "Peramban memblokir penyalinan. Pilih tautannya dan salin manual.",
     "linkCouldNot": "Tautan tidak bisa dibuat.",
     "shownOnce": "Hanya ditampilkan sekali. Siapa pun dengan tautan ini bisa menyetujui selama 14 hari, jadi kirim hanya ke dosen pembimbingmu.",
     "back": "Kembali",
@@ -1082,7 +1082,7 @@
     "pending": "Persetujuan dosen menunggu",
     "none": "Persetujuan dosen belum diminta",
     "advisorDone": "Penerbitan terbuka di sisi ini.",
-    "advisorPending": "Bagikan tautan pribadi ke {email}. Penerbitan tertahan sampai mereka menyetujui. Kamu bisa terus bekerja.",
+    "advisorPending": "Bagikan tautan pribadi ke {email}. Penerbitan tertahan sampai beliau menyetujui. Kamu bisa terus bekerja.",
     "advisorDefault": "dosen pembimbingmu",
     "advisorLocked": "Penerbitan tertahan sampai dosen pembimbingmu menyetujui, atau kamu menyatakan tidak ada dosen pembimbing.",
     "reviewTitle": "Tinjau draf AI",
@@ -1119,8 +1119,8 @@
     "footRemaining": "Tinjau {count, plural, other {# item}} tersisa untuk membuka penerbitan.",
     "footAdvisor": "Semua item sudah ditinjau. Penerbitan tertahan sampai dosen pembimbingmu menyetujui, atau kamu menyatakan tidak ada dosen pembimbing.",
     "footTeam": "Seluruh anggota tim harus mengonfirmasi sebelum kamu bisa menerbitkan.",
-    "mockBold": "Keluaran AI simulasi (mode mock).",
-    "mockText": "Item ini disusun dengan aturan deterministik, bukan oleh model AI sungguhan. Satu item sengaja tidak didukung supaya kamu bisa melihat tampilan bukti yang hilang.",
+    "mockBold": "Keluaran AI simulasi (mode tiruan).",
+    "mockText": "Item ini disusun dengan aturan tetap, bukan oleh model AI sungguhan. Satu item sengaja tidak didukung supaya kamu bisa melihat tampilan bukti yang hilang.",
     "title": "Tinjau draf AI",
     "intro": "AI menyusun item ini dari berkasmu. Pertahankan, ubah, atau hapus tiap item. Tidak ada yang terbit sampai setiap item ditinjau.",
     "reviewedCount": "{reviewed} dari {total} ditinjau",
@@ -1163,7 +1163,7 @@
     "continuePublish": "Lanjut ke penerbitan",
     "addTitle": "Tambahkan itemmu sendiri",
     "type": "Jenis",
-    "effort": "Usaha",
+    "effort": "Beban kerja",
     "lessonType": "Jenis pelajaran",
     "titleMin": "Tulis judul minimal 3 karakter.",
     "descOptional": "Deskripsi (opsional)",
@@ -1177,7 +1177,7 @@
     "readLabel": "Yang dibaca:",
     "readText": "teks PDF dan catatan Markdown-mu, dan untuk ZIP hanya pohon folder, README, dan manifes paket. Kode sumber tidak pernah dibaca.",
     "whoLabel": "Siapa yang membaca:",
-    "whoText": "langkah penyusunan draf ESTAFET (model AI, atau yang disimulasikan dalam mode mock), dan hanya setelah seluruh anggota timmu setuju.",
+    "whoText": "langkah penyusunan draf ESTAFET (model AI, atau yang disimulasikan dalam mode tiruan), dan hanya setelah seluruh anggota timmu setuju.",
     "privateLabel": "Yang tetap pribadi:",
     "privateText": "berkasmu disimpan secara pribadi. Hanya judul, ringkasan, tujuan, tugas terverifikasi, dan pelajaran yang kamu setujui yang menjadi publik.",
     "skippedLabel": "Dilewati demi keamanan:",
@@ -1193,7 +1193,7 @@
     "uploaded": "Berkas terunggah",
     "noFiles": "Belum ada berkas. Tambahkan setidaknya satu PDF, catatan Markdown, atau ZIP untuk lanjut.",
     "removeFile": "Hapus berkas",
-    "keep": "Simpan",
+    "keep": "Batal",
     "removeAria": "Hapus {name}",
     "ready": "Siap",
     "check": "Periksa",
@@ -1201,7 +1201,7 @@
     "toVerify": "Lanjut ke verifikasi",
     "draftBtn": "Susun draf dengan AI dan lanjut",
     "drafting": "Menyusun draf…",
-    "mockPrefix": "Keluaran AI simulasi (mode mock). ",
+    "mockPrefix": "Keluaran AI simulasi (mode tiruan). ",
     "draftingText": "Membaca berkasmu dan memeriksa setiap kutipan terhadap sumbernya. Biasanya butuh beberapa detik."
   },
   "synth": {
