@@ -277,7 +277,7 @@ update public.profiles set university = 'Universitas Hasanuddin (demo)';
 -- ---------------------------------------------------------------------------
 -- One open demo report so the moderation queue is not empty.
 insert into public.reports (project_id, reason, details)
-select id, 'inaccurate', 'Demo report: the summary may overstate how far the classifier got. (Simulated, for the admin demo.)'
+select id, 'false_information', 'Demo report: the summary may overstate how far the classifier got. (Simulated, for the admin demo.)'
 from public.projects where slug = 'fish-freshness-indicator';
 
 -- Illustrative DEMO trial sessions (pseudonym codes only). They are excluded from metrics by default and are not results.
