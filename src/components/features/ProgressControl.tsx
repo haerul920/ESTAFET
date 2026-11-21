@@ -15,7 +15,17 @@ const KEY = { none: "progressNone", in_progress: "progressDoing", done: "progres
  * Access holders (and owners) mark a verified next task "Dikerjakan" or "Selesai". The change is logged in the lineage
  * and the owners are told. The choice is a radio group, so the state is never shown by colour alone.
  */
-export function ProgressControl({ itemId, slug, status, title }: { itemId: string; slug: string; status: Status; title: string }) {
+export function ProgressControl({
+  itemId,
+  slug,
+  status,
+  title,
+}: {
+  itemId: string;
+  slug: string;
+  status: Status;
+  title: string;
+}) {
   const t = useTranslations("workspace");
   const router = useRouter();
   const [value, setValue] = useState<Status>(status);
@@ -51,7 +61,11 @@ export function ProgressControl({ itemId, slug, status, title }: { itemId: strin
             onClick={() => choose(o)}
             className={cn(
               "chip-hover min-h-[44px] cursor-pointer rounded-full border-[1.5px] px-4 text-sm font-semibold",
-              value === o ? (o === "done" ? "border-ok bg-ok-bg text-ok" : "border-blue bg-blue-tint text-blue-dark") : "border-line bg-white text-text-2 hover:bg-surface",
+              value === o
+                ? o === "done"
+                  ? "border-ok bg-ok-bg text-ok"
+                  : "border-blue bg-blue-tint text-blue-dark"
+                : "border-line bg-white text-text-2 hover:bg-surface",
             )}
           >
             {value === o && o !== "none" ? "✓ " : ""}

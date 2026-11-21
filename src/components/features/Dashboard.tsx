@@ -14,7 +14,13 @@ import { markNotificationsRead } from "@/app/actions/requests";
 import { respondToInvite } from "@/app/actions/projects";
 import { useLabels } from "@/lib/use-labels";
 import { cn } from "@/lib/cn";
-import type { DashboardAccess, DashboardData, DashboardInvitation, DashboardProject, DashboardRequest } from "@/lib/db/dashboard";
+import type {
+  DashboardAccess,
+  DashboardData,
+  DashboardInvitation,
+  DashboardProject,
+  DashboardRequest,
+} from "@/lib/db/dashboard";
 
 function ProjectRow({ p }: { p: DashboardProject }) {
   const t = useTranslations("dashboard");
@@ -30,21 +36,38 @@ function ProjectRow({ p }: { p: DashboardProject }) {
                 </Link>
               </h3>
               <span className="flex flex-wrap items-center gap-2 text-sm text-text-2">
-                <Badge tone={p.status === "published" ? "ok" : p.status === "draft" ? "info" : "neutral"}>{p.statusLabel}</Badge>
+                <Badge tone={p.status === "published" ? "ok" : p.status === "draft" ? "info" : "neutral"}>
+                  {p.statusLabel}
+                </Badge>
                 {p.meta}
                 {p.isDemo ? <DemoBadge /> : null}
               </span>
             </div>
-            <ButtonLink href={p.href} variant={p.ctaTone === "lime" ? "primary" : p.ctaTone === "blue" ? "darkSolid" : "outline"} size="md" className={p.ctaTone === "blue" ? "!bg-blue" : ""}>
+            <ButtonLink
+              href={p.href}
+              variant={p.ctaTone === "lime" ? "primary" : p.ctaTone === "blue" ? "darkSolid" : "outline"}
+              size="md"
+              className={p.ctaTone === "blue" ? "!bg-blue" : ""}
+            >
               {p.cta}
             </ButtonLink>
           </div>
           {p.status !== "draft" ? (
-            <Link href={`/proyek/${p.slug}/pengaturan`} className="link-anim self-start text-sm font-semibold text-blue">
+            <Link
+              href={`/proyek/${p.slug}/pengaturan`}
+              className="link-anim self-start text-sm font-semibold text-blue"
+            >
               {t("p.settings")}
             </Link>
           ) : null}
-          <div className={cn("rounded-[14px] px-4 py-3 text-[15px] text-text-3", p.noteTone === "warn" ? "bg-warn-bg" : p.noteTone === "blue" ? "bg-blue-tint" : "bg-chip")}>{p.note}</div>
+          <div
+            className={cn(
+              "rounded-[14px] px-4 py-3 text-[15px] text-text-3",
+              p.noteTone === "warn" ? "bg-warn-bg" : p.noteTone === "blue" ? "bg-blue-tint" : "bg-chip",
+            )}
+          >
+            {p.note}
+          </div>
         </Card>
       </div>
     </StaggerItem>
@@ -95,7 +118,9 @@ function AccessRow({ a }: { a: DashboardAccess }) {
           <strong>{a.projectTitle}</strong>
           <br />
           <span className="text-sm text-text-2">{a.meta}</span>
-          {!a.active && a.revokedReason ? <div className="mt-1 text-sm text-text-2">{t("revokedReason", { reason: a.revokedReason })}</div> : null}
+          {!a.active && a.revokedReason ? (
+            <div className="mt-1 text-sm text-text-2">{t("revokedReason", { reason: a.revokedReason })}</div>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Badge tone={a.active ? "ok" : "neutral"}>{a.active ? t("accessActive") : t("accessRevoked")}</Badge>
@@ -146,7 +171,17 @@ function InvitationRow({ i }: { i: DashboardInvitation }) {
   );
 }
 
-function Empty({ icon, title, text, action }: { icon: React.ReactNode; title: string; text: string; action?: React.ReactNode }) {
+function Empty({
+  icon,
+  title,
+  text,
+  action,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+  action?: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-[28px] border border-dashed border-line-strong bg-surface p-10 text-center">
       {icon}
@@ -165,7 +200,11 @@ export function Dashboard({ data }: { data: DashboardData }) {
   const unread = data.notifications.filter((n) => n.unread).length;
 
   const tiles = [
-    { n: data.tiles.decisions, label: t("tileDecisions", { count: data.tiles.decisions }), cls: "bg-warn-bg text-warn" },
+    {
+      n: data.tiles.decisions,
+      label: t("tileDecisions", { count: data.tiles.decisions }),
+      cls: "bg-warn-bg text-warn",
+    },
     { n: data.tiles.drafts, label: t("tileDrafts", { count: data.tiles.drafts }), cls: "bg-blue-tint text-blue-dark" },
     { n: data.tiles.sentPending, label: t("tileSent", { count: data.tiles.sentPending }), cls: "bg-surface text-ink" },
   ];
@@ -313,14 +352,23 @@ export function Dashboard({ data }: { data: DashboardData }) {
           ) : null}
         </div>
         {data.notifications.length === 0 ? (
-          <Empty icon={<Bell size={32} className="text-text-2" aria-hidden="true" />} title={t("caughtUpTitle")} text={t("caughtUpText")} />
+          <Empty
+            icon={<Bell size={32} className="text-text-2" aria-hidden="true" />}
+            title={t("caughtUpTitle")}
+            text={t("caughtUpText")}
+          />
         ) : (
           <Stagger as="ul" className="m-0 flex list-none flex-col gap-3 p-0">
             {data.notifications.slice(0, 20).map((n) => (
               <StaggerItem key={n.id} as="li">
                 <Link
                   href={n.href}
-                  onClick={() => n.unread && start(async () => { await markNotificationsRead([n.id]); })}
+                  onClick={() =>
+                    n.unread &&
+                    start(async () => {
+                      await markNotificationsRead([n.id]);
+                    })
+                  }
                   className={cn(
                     "flex flex-col gap-1 rounded-3xl border p-4 text-ink no-underline transition-colors hover:bg-surface",
                     n.unread ? "border-lime bg-white" : "border-line-soft bg-white",
@@ -331,7 +379,11 @@ export function Dashboard({ data }: { data: DashboardData }) {
                     <span className="whitespace-nowrap text-[13px] text-text-2">{n.when}</span>
                   </span>
                   {n.detail ? <span className="text-sm text-text-2">{n.detail}</span> : null}
-                  {n.unread ? <Badge tone="lime" className="mt-1 self-start">{t("new")}</Badge> : null}
+                  {n.unread ? (
+                    <Badge tone="lime" className="mt-1 self-start">
+                      {t("new")}
+                    </Badge>
+                  ) : null}
                 </Link>
               </StaggerItem>
             ))}

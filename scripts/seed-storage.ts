@@ -48,7 +48,11 @@ function pdfPages(file: FileRow, projectTitle: string, items: ItemRow[]): string
     for (const it of items) {
       for (const ev of it.evidence) {
         if (ev.file_id === file.id && ev.page === page && it.evidence_status === "matched") {
-          lines.push(`Notes on ${it.title.replace(/\.$/, "")}.`, ev.quote, "See the rest of this demo document for context.");
+          lines.push(
+            `Notes on ${it.title.replace(/\.$/, "")}.`,
+            ev.quote,
+            "See the rest of this demo document for context.",
+          );
         }
       }
     }
@@ -82,7 +86,10 @@ async function main() {
 
   for (const project of projects ?? []) {
     const { data: files } = await admin.from("project_files").select("*").eq("project_id", project.id);
-    const { data: items } = await admin.from("draft_items").select("title, description, kind, evidence, evidence_status").eq("project_id", project.id);
+    const { data: items } = await admin
+      .from("draft_items")
+      .select("title, description, kind, evidence, evidence_status")
+      .eq("project_id", project.id);
     const itemRows = (items ?? []) as ItemRow[];
     const pagesByFile = new Map<string, Map<number, string>>();
 
@@ -103,9 +110,14 @@ async function main() {
       const doc = { fileName: file.original_name, kind: file.kind, pages };
       pagesByFile.set(file.id, new Map(pages.map((p) => [p.page, p.text])));
 
-      const a = await admin.storage.from("project-files").upload(file.storage_path, bytes, { contentType, upsert: true });
-      const b = await admin.storage.from("extracted-text").upload(file.extracted_text_path, JSON.stringify(doc), { contentType: "application/json", upsert: true });
-      if (a.error || b.error) throw new Error(`Upload failed for ${file.original_name}: ${a.error?.message ?? b.error?.message}`);
+      const a = await admin.storage
+        .from("project-files")
+        .upload(file.storage_path, bytes, { contentType, upsert: true });
+      const b = await admin.storage
+        .from("extracted-text")
+        .upload(file.extracted_text_path, JSON.stringify(doc), { contentType: "application/json", upsert: true });
+      if (a.error || b.error)
+        throw new Error(`Upload failed for ${file.original_name}: ${a.error?.message ?? b.error?.message}`);
       await admin.from("project_files").update({ size_bytes: bytes.length }).eq("id", file.id);
       uploaded++;
     }

@@ -12,8 +12,9 @@
     "test:db": "vitest run --config vitest.db.config.ts",
     "test:e2e": "playwright test",
     "i18n:check": "node scripts/check-i18n.mjs",
-    "check": "pnpm lint && pnpm typecheck && pnpm i18n:check && pnpm test",
-    "format": "prettier --write .",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"scripts/**/*.{ts,mjs}\" \"*.{ts,mjs}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"scripts/**/*.{ts,mjs}\" \"*.{ts,mjs}\"",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm i18n:check && pnpm test",
     "db:start": "supabase start -x imgproxy,edge-runtime,logflare,vector,supavisor,mailpit",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset && pnpm seed:storage && pnpm seed:admin",
@@ -24,6 +25,8 @@
     "shots": "tsx scripts/screenshots.ts",
     "shots:design": "tsx scripts/screenshots-design.ts",
     "perf": "tsx scripts/perf-check.ts",
+    "cloud-sql": "node scripts/build-cloud-sql.mjs",
+    "deletions:process": "tsx scripts/process-deletions.ts",
     "test:db:purge": "vitest run --config vitest.db.purge.config.ts"
   },
   "dependencies": {
@@ -59,7 +62,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^6.3.0",
     "dotenv": "^18.0.10",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",

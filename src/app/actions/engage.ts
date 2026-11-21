@@ -36,7 +36,11 @@ export async function postRequestMessage(requestId: string, body: string): Promi
 }
 
 /** Access holders and owners mark a verified next task "in_progress" or "done", or clear it ("none"). */
-export async function setItemProgress(itemId: string, status: "in_progress" | "done" | "none", slug: string): Promise<Result> {
+export async function setItemProgress(
+  itemId: string,
+  status: "in_progress" | "done" | "none",
+  slug: string,
+): Promise<Result> {
   const e = await errs();
   await requireUser(`/projects/${slug}/workspace`);
   const supabase = await createClient();

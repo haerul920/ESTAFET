@@ -14,6 +14,7 @@ import { Badge, DemoBadge, EvidenceChip } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { Lineage } from "@/components/features/Lineage";
 import { ProgressControl } from "@/components/features/ProgressControl";
+import { ProjectMenu } from "@/components/features/ProjectMenu";
 import { CreditLineCard } from "@/components/features/RequestReview";
 import { Reveal } from "@/components/ui/motion";
 import { buildFullLineage } from "@/lib/lineage";
@@ -41,7 +42,7 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
   // Basic project facts come from the server (an unpublished project is not in the public view, but its access holders keep working).
   const { data: teaser } = await createAdminClient()
     .from("projects")
-    .select("id, slug, title, advisor_name, is_demo, status")
+    .select("id, slug, title, is_demo, status")
     .eq("slug", slug)
     .maybeSingle();
   if (!teaser) notFound();
@@ -51,7 +52,14 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
   const owner = await isProjectOwner(teaser.id);
 
   const supabase = await createClient();
-  const [{ data: files }, { data: items }, { data: ownEvents }, { data: publicEvents }, { data: members }, { data: progress }] = await Promise.all([
+  const [
+    { data: files },
+    { data: items },
+    { data: ownEvents },
+    { data: publicEvents },
+    { data: members },
+    { data: progress },
+  ] = await Promise.all([
     supabase.from("project_files").select("*").eq("project_id", teaser.id).order("created_at"),
     supabase.from("draft_items").select("*").eq("project_id", teaser.id).eq("review_status", "kept").order("position"),
     supabase.from("lineage_events").select("*").eq("project_id", teaser.id).order("created_at"),
@@ -59,21 +67,40 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
     supabase.from("project_members").select("profile_id").eq("project_id", teaser.id).eq("status", "active"),
     supabase.from("backlog_progress").select("item_id, status").eq("project_id", teaser.id),
   ]);
-  const progressOf = new Map((progress ?? []).map((p: { item_id: string; status: "in_progress" | "done" }) => [p.item_id, p.status]));
+  const progressOf = new Map(
+    (progress ?? []).map((p: { item_id: string; status: "in_progress" | "done" }) => [p.item_id, p.status]),
+  );
   // Owners see the whole lineage. Someone with access sees the public lineage plus the events of their own request.
   const seen = new Set<string>();
   const events: LineageEvent[] = [
     ...((ownEvents ?? []) as LineageEvent[]),
-    ...((publicEvents ?? []) as { id: string; project_id: string; type: LineageEvent["type"]; created_at: string; team: string | null }[]).map(
-      (e): LineageEvent => ({ id: e.id, project_id: e.project_id, type: e.type, actor_id: null, request_id: null, payload: e.team ? { team: e.team } : {}, created_at: e.created_at }),
-    ),
+    ...(
+      (publicEvents ?? []) as {
+        id: string;
+        project_id: string;
+        type: LineageEvent["type"];
+        created_at: string;
+        team: string | null;
+      }[]
+    ).map((e): LineageEvent => ({
+      id: e.id,
+      project_id: e.project_id,
+      type: e.type,
+      actor_id: null,
+      request_id: null,
+      payload: e.team ? { team: e.team } : {},
+      created_at: e.created_at,
+    })),
   ]
     .filter((e) => (seen.has(e.id) ? false : (seen.add(e.id), true)))
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, full_name")
-    .in("id", (members ?? []).map((m: { profile_id: string }) => m.profile_id));
+    .in(
+      "id",
+      (members ?? []).map((m: { profile_id: string }) => m.profile_id),
+    );
   const creatorNames = (profiles ?? []).map((p: { full_name: string }) => p.full_name);
 
   const fileList = ((files ?? []) as ProjectFile[]).filter((f) => f.storage_path);
@@ -88,7 +115,13 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
 
   return (
     <PageShell>
-      <Breadcrumb items={[{ label: t("breadcrumbDashboard"), href: "/dasbor" }, { label: teaser.title, href: `/projects/${slug}` }, { label: t("breadcrumb") }]} />
+      <Breadcrumb
+        items={[
+          { label: t("breadcrumbDashboard"), href: "/dasbor" },
+          { label: teaser.title, href: `/projects/${slug}` },
+          { label: t("breadcrumb") },
+        ]}
+      />
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="mb-3 flex flex-wrap gap-2">
@@ -98,13 +131,14 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
             {teaser.is_demo ? <DemoBadge /> : null}
           </div>
           <h1 className="mb-2 mt-0 text-[40px] font-medium max-sm:text-[30px]">{teaser.title}</h1>
-          <p className="m-0 text-text-2">
-            {owner ? t("leadOwner") : t("leadHolder")}
-          </p>
+          <p className="m-0 text-text-2">{owner ? t("leadOwner") : t("leadHolder")}</p>
         </div>
-        <ButtonLink href={`/projects/${slug}`} variant="outline">
-          {t("publicTeaser")}
-        </ButtonLink>
+        <div className="flex items-center gap-3">
+          <ButtonLink href={`/projects/${slug}`} variant="outline">
+            {t("publicTeaser")}
+          </ButtonLink>
+          <ProjectMenu projectId={teaser.id} signedIn />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-start gap-8">
@@ -120,7 +154,10 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
                   {fileList.map((f) => {
                     const Icon = f.kind === "pdf" ? FileText : f.kind === "markdown" ? FileCode2 : FileArchive;
                     return (
-                      <li key={f.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-line-soft bg-white p-4">
+                      <li
+                        key={f.id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-line-soft bg-white p-4"
+                      >
                         <span className="flex items-center gap-2 font-code text-sm">
                           <Icon size={18} className="text-text-2" aria-hidden="true" />
                           {f.original_name}
@@ -149,28 +186,44 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
               <Reveal key={g.kind}>
                 <Card as="section">
                   <h2 className="mb-1 mt-0 text-[22px]">{g.title}</h2>
-                  {g.kind === "next_task" ? <p className="mb-4 mt-0 text-sm text-text-2">{t("progressHint")}</p> : <div className="mb-3" />}
+                  {g.kind === "next_task" ? (
+                    <p className="mb-4 mt-0 text-sm text-text-2">{t("progressHint")}</p>
+                  ) : (
+                    <div className="mb-3" />
+                  )}
                   <ul className="m-0 flex list-none flex-col gap-3 p-0">
                     {list.map((it) => {
                       const ev = it.evidence[0];
                       const f = ev ? fileById.get(ev.file_id) : undefined;
                       return (
-                        <li key={it.id} className="flex flex-col gap-2 rounded-[18px] border border-line-soft bg-white p-4">
+                        <li
+                          key={it.id}
+                          className="flex flex-col gap-2 rounded-[18px] border border-line-soft bg-white p-4"
+                        >
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <strong>{it.title}</strong>
                             <span className="flex gap-2">
-                              {it.kind === "lesson" && it.lesson_type ? <Badge tone="info">{L.lesson[it.lesson_type]}</Badge> : null}
+                              {it.kind === "lesson" && it.lesson_type ? (
+                                <Badge tone="info">{L.lesson[it.lesson_type]}</Badge>
+                              ) : null}
                               {it.effort ? <Badge tone="neutral">{L.effort[it.effort]}</Badge> : null}
                               <span className="sr-only">{L.itemKind[it.kind]}</span>
                             </span>
                           </div>
                           {it.description ? <span className="text-[15px] text-text-2">{it.description}</span> : null}
                           {it.kind === "next_task" ? (
-                            <ProgressControl itemId={it.id} slug={slug} title={it.title} status={progressOf.get(it.id) ?? "none"} />
+                            <ProgressControl
+                              itemId={it.id}
+                              slug={slug}
+                              title={it.title}
+                              status={progressOf.get(it.id) ?? "none"}
+                            />
                           ) : null}
                           {ev && f ? (
                             <figure className="m-0 flex flex-col gap-1.5 rounded-[14px] bg-surface p-3">
-                              <blockquote className="m-0 text-sm italic text-text-3">&ldquo;{ev.quote}&rdquo;</blockquote>
+                              <blockquote className="m-0 text-sm italic text-text-3">
+                                &ldquo;{ev.quote}&rdquo;
+                              </blockquote>
                               <figcaption className="font-code text-xs text-text-2">
                                 {f.original_name} · {f.kind === "markdown" ? t("section") : t("page")} {ev.page}
                               </figcaption>
@@ -194,12 +247,14 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
         <aside className="flex min-w-[280px] flex-[0_1_380px] flex-col gap-4">
           <Reveal>
             <CreditLineCard
-              creditLine={creditLine({
-                title: teaser.title,
-                creators: creatorNames,
-                advisor: teaser.advisor_name,
-                lineageId: events.find((e) => e.type === "continued")?.id.slice(0, 8) ?? teaser.id.slice(0, 8),
-              }, ag as unknown as TFn)}
+              creditLine={creditLine(
+                {
+                  title: teaser.title,
+                  creators: creatorNames,
+                  lineageId: events.find((e) => e.type === "continued")?.id.slice(0, 8) ?? teaser.id.slice(0, 8),
+                },
+                ag as unknown as TFn,
+              )}
             />
           </Reveal>
           <Reveal>

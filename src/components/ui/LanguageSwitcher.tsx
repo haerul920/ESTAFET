@@ -29,7 +29,11 @@ export function LanguageSwitcher({ tone = "dark", className }: { tone?: "dark" |
   }
 
   return (
-    <div role="group" aria-label={t("label")} className={cn("flex items-center gap-1 text-[12.5px] font-semibold", className)}>
+    <div
+      role="group"
+      aria-label={t("label")}
+      className={cn("flex items-center gap-1 text-[12.5px] font-semibold", className)}
+    >
       {routing.locales.map((l, i) => (
         <span key={l} className="flex items-center gap-1">
           {i > 0 ? (

@@ -12,7 +12,8 @@ const nextConfig: NextConfig = {
   partialPrefetching: false,
   // Accept Supabase's newer "publishable key" name as an alias for the anon key (public by design).
   env: {
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
   },
   // The dashboard moved to /dasbor (CLAUDE.md 14.3). Old links keep working, in both languages.
   async redirects() {
@@ -22,7 +23,13 @@ const nextConfig: NextConfig = {
       // R4: the share wizard moved to /bagikan with new step names. Old links and bookmarks keep working.
       { source: "/share", destination: "/bagikan", permanent: true },
       { source: "/en/share", destination: "/en/bagikan", permanent: true },
-      ...[["basics", "info"], ["files", "berkas"], ["verify", "tinjau"], ["consent", "tim"], ["publish", "terbit"]].flatMap(([from, to]) => [
+      ...[
+        ["basics", "info"],
+        ["files", "berkas"],
+        ["verify", "tinjau"],
+        ["consent", "tim"],
+        ["publish", "terbit"],
+      ].flatMap(([from, to]) => [
         { source: `/share/:id/${from}`, destination: `/bagikan/:id/${to}`, permanent: true },
         { source: `/en/share/:id/${from}`, destination: `/en/bagikan/:id/${to}`, permanent: true },
       ]),

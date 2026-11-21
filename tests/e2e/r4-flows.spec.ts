@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 
 /**
  * R4 flows (run in English: the other specs do too).
- *  1. Manual mode, the "no advisor" path and open access: share, publish, unpublish, publish again. No AI is involved.
+ *  1. Manual mode and open access: share, publish, unpublish, publish again. No AI is involved.
  *  2. A project that is paused, then full, then open again, with "Notify me". Uses seeded demo data and restores it.
  * The by-request approval, the declined request and "the same account shares and continues" are in core-flow.spec.ts.
  */
@@ -12,7 +12,10 @@ const PASSWORD = "E2e-Pass-2026!";
 const DEMO_PASSWORD = "Demo-Pass-2026!";
 const stamp = Date.now();
 
-const admin = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
+const admin = () =>
+  createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false },
+  });
 
 async function newPage(browser: Browser) {
   const context = await browser.newContext();
@@ -21,7 +24,7 @@ async function newPage(browser: Browser) {
 
 async function signIn(page: Page, email: string, password = DEMO_PASSWORD) {
   await page.goto("/en/login");
-  await page.getByLabel("University email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForURL(/\/(dasbor|mulai)/);
@@ -30,21 +33,23 @@ async function signIn(page: Page, email: string, password = DEMO_PASSWORD) {
 async function signUp(page: Page, name: string, email: string) {
   await page.goto("/en/signup");
   await page.getByLabel("Full name").fill(name);
-  await page.getByLabel("University email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByLabel(/I accept the Terms and the Privacy Policy/).check();
   await page.getByRole("button", { name: "Create account" }).click();
   await page.waitForURL("**/mulai");
 }
 
-test("manual mode, no advisor and open access: share, publish, unpublish and publish again", async ({ browser, page }) => {
+test("manual mode and open access: share, publish, unpublish and publish again", async ({ browser, page }) => {
   const title = `E2E Manual Notes ${stamp}`;
   await signUp(page, "E2E Manual Owner", `e2e.manual.${stamp}@example.test`);
 
   // ---- Step 1: basics
   await page.goto("/en/bagikan");
   await page.getByLabel("Project title").fill(title);
-  await page.getByLabel("Short summary").fill("A synthetic project whose notes are written by hand, with no AI involved at any point.");
+  await page
+    .getByLabel("Short summary")
+    .fill("A synthetic project whose notes are written by hand, with no AI involved at any point.");
   await page.getByLabel("Type of work").selectOption("hackathon");
   await page.getByLabel("Faculty or field").selectOption("Engineering");
   await page.getByLabel("Why did it stop?").selectOption("team_graduated");
@@ -64,9 +69,7 @@ test("manual mode, no advisor and open access: share, publish, unpublish and pub
   await page.getByRole("link", { name: "Continue to team and access" }).click();
   await page.waitForURL("**/tim");
 
-  // ---- Step 4: no advisor, team consent, open access with one team at a time
-  await page.getByRole("button", { name: "This project has no advisor" }).click();
-  await expect(page.getByText(/Declared: no advisor/)).toBeVisible();
+  // ---- Step 4: team consent (there is no advisor step), open access with one team at a time
   await page.getByRole("button", { name: "I confirm" }).click();
   await page.getByRole("radio", { name: /^Open with an agreement/ }).check();
   await page.getByLabel("How many continuing teams at once").selectOption("1");
@@ -146,7 +149,11 @@ test("paused, then full, then open again: the call to action changes and watcher
     await owner.page.getByRole("button", { name: "Save access rules" }).click();
     await expect(owner.page.getByText("Access rules saved.")).toBeVisible();
     const creator = await db.from("profiles").select("id").eq("full_name", "Demo Creator A").maybeSingle();
-    const notes = await db.from("notifications").select("payload").eq("type", "watch_open").eq("payload->>project_id", PROJECT);
+    const notes = await db
+      .from("notifications")
+      .select("payload")
+      .eq("type", "watch_open")
+      .eq("payload->>project_id", PROJECT);
     expect((notes.data ?? []).length).toBeGreaterThanOrEqual(1);
     void creator;
 
@@ -170,7 +177,10 @@ test("paused, then full, then open again: the call to action changes and watcher
     // the access holder marks a task from the workspace, and it shows in the owner's lineage
     await taker.page.goto(`/en/projects/${SLUG}/workspace`);
     await taker.page.getByRole("radio", { name: "In progress" }).first().click();
-    await expect(taker.page.getByRole("radio", { name: "In progress" }).first()).toHaveAttribute("aria-checked", "true");
+    await expect(taker.page.getByRole("radio", { name: "In progress" }).first()).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
   } finally {
     await owner.context.close();
     await watcher.context.close();

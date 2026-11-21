@@ -8,7 +8,10 @@ const BUNDLES = { en, id } as Record<string, Record<string, unknown>>;
 export function translator(namespace: string, locale: "en" | "id" = "en"): TFn {
   return (key, values = {}) => {
     const path = `${namespace}.${key}`.split(".");
-    const found = path.reduce<unknown>((o, part) => (o as Record<string, unknown> | undefined)?.[part], BUNDLES[locale]);
+    const found = path.reduce<unknown>(
+      (o, part) => (o as Record<string, unknown> | undefined)?.[part],
+      BUNDLES[locale],
+    );
     if (typeof found !== "string") throw new Error(`Missing message ${namespace}.${key} (${locale})`);
     return found.replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? `{${name}}`));
   };

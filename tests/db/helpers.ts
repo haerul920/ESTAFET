@@ -23,11 +23,30 @@ export interface TestUser {
  */
 function clearEmailConfirmation(userId: string) {
   if (!/^[0-9a-f-]{36}$/.test(userId)) throw new Error("Unexpected user id");
-  execFileSync("docker", ["exec", "supabase_db_estafet", "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", `update auth.users set email_confirmed_at = null where id = '${userId}'`], { stdio: "pipe" });
+  execFileSync(
+    "docker",
+    [
+      "exec",
+      "supabase_db_estafet",
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-c",
+      `update auth.users set email_confirmed_at = null where id = '${userId}'`,
+    ],
+    { stdio: "pipe" },
+  );
 }
 
 /** A signed-in user. `verified: false` gives an account whose email is not confirmed. */
-export async function makeUser(label: string, opts: { verified?: boolean; policies?: boolean } = {}): Promise<TestUser> {
+export async function makeUser(
+  label: string,
+  opts: { verified?: boolean; policies?: boolean } = {},
+): Promise<TestUser> {
   const email = `db.${label}.${run}.${counter++}@example.test`;
   const { data, error } = await svc.auth.admin.createUser({
     email,
@@ -53,8 +72,11 @@ export interface Fixture {
   fileId: string;
 }
 
-/** A published project owned by `owner`: one file, one kept next task, advisor approved, team consented. */
-export async function publishedProject(owner: TestUser, opts: { mode?: "open" | "by_request" | "paused"; max?: number | null; title?: string } = {}): Promise<Fixture> {
+/** A published project owned by `owner`: one file, one kept next task, team consented. */
+export async function publishedProject(
+  owner: TestUser,
+  opts: { mode?: "open" | "by_request" | "paused"; max?: number | null; title?: string } = {},
+): Promise<Fixture> {
   const { data, error } = await owner.client
     .from("projects")
     .insert({
@@ -64,30 +86,48 @@ export async function publishedProject(owner: TestUser, opts: { mode?: "open" | 
       field: "Engineering",
       year: 2025,
       stop_reason: "other",
-      advisor_name: "Dr. A",
-      advisor_email: "a@example.test",
       created_by: owner.id,
     })
     .select("id")
     .single();
   if (error) throw error;
   const projectId = data.id as string;
-  const f = await svc.from("project_files").insert({ project_id: projectId, kind: "markdown", storage_path: "x/y.md", original_name: "notes.md", created_by: owner.id }).select("id").single();
+  const f = await svc
+    .from("project_files")
+    .insert({
+      project_id: projectId,
+      kind: "markdown",
+      storage_path: "x/y.md",
+      original_name: "notes.md",
+      created_by: owner.id,
+    })
+    .select("id")
+    .single();
   if (f.error) throw f.error;
   const t = await svc
     .from("draft_items")
-    .insert({ project_id: projectId, kind: "next_task", title: "A task", effort: "small", evidence: [{ file_id: f.data.id, page: 1, quote: "q" }], evidence_status: "matched", review_status: "kept" })
+    .insert({
+      project_id: projectId,
+      kind: "next_task",
+      title: "A task",
+      effort: "small",
+      evidence: [{ file_id: f.data.id, page: 1, quote: "q" }],
+      evidence_status: "matched",
+      review_status: "kept",
+    })
     .select("id")
     .single();
   if (t.error) throw t.error;
-  const c = await svc.from("advisor_consents").insert({ project_id: projectId, token_hash: `hash-${run}-${counter++}`, status: "approved", expires_at: new Date(Date.now() + 1e9).toISOString() });
-  if (c.error) throw c.error;
   const consent = await owner.client.rpc("confirm_team_consent", { p_project_id: projectId });
   if (consent.error) throw consent.error;
   const pub = await owner.client.rpc("publish_project", { p_project_id: projectId });
   if (pub.error) throw pub.error;
   if (opts.mode || opts.max !== undefined) {
-    const s = await owner.client.rpc("set_access_settings", { p_project_id: projectId, p_mode: opts.mode ?? "by_request", p_max: opts.max === undefined ? 3 : opts.max });
+    const s = await owner.client.rpc("set_access_settings", {
+      p_project_id: projectId,
+      p_mode: opts.mode ?? "by_request",
+      p_max: opts.max === undefined ? 3 : opts.max,
+    });
     if (s.error) throw s.error;
   }
   return { projectId, taskId: t.data.id as string, fileId: f.data.id as string };

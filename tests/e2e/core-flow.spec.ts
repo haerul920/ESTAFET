@@ -13,7 +13,7 @@ const title = `E2E Reef Counter ${stamp}`;
 async function signUp(page: Page, name: string, email: string) {
   await page.goto("/en/signup");
   await page.getByLabel("Full name").fill(name);
-  await page.getByLabel("University email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByLabel(/I accept the Terms and the Privacy Policy/).check();
   await page.getByRole("button", { name: "Create account" }).click();
@@ -40,8 +40,6 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
   await page.getByLabel("Type of work").selectOption("research");
   await page.getByLabel("Faculty or field").selectOption("Marine Science and Fisheries");
   await page.getByLabel("Why did it stop?").selectOption("funding_not_granted");
-  await page.getByLabel("Advisor name").fill("Dr. Test Advisor");
-  await page.getByLabel("Advisor email").fill("advisor@example.test");
   await page.getByRole("button", { name: "Save and continue" }).click();
   await page.waitForURL("**/berkas");
 
@@ -63,7 +61,11 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
   );
   await page.locator("#file-input").setInputFiles([
     { name: "survey-report.pdf", mimeType: "application/pdf", buffer: pdf },
-    { name: "field-notes.md", mimeType: "text/markdown", buffer: Buffer.from("# Notes\n\n## Labeling\nTODO: edge class needs far more labeled images.\n") },
+    {
+      name: "field-notes.md",
+      mimeType: "text/markdown",
+      buffer: Buffer.from("# Notes\n\n## Labeling\nTODO: edge class needs far more labeled images.\n"),
+    },
     { name: "code.zip", mimeType: "application/zip", buffer: zipBytes },
   ]);
   await expect(page.getByText("Text extracted from 2 pages.")).toBeVisible();
@@ -71,7 +73,9 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
   await expect(page.getByText(/1 sensitive file was skipped and not stored \(\.env\)/)).toBeVisible();
 
   // a file whose extension lies is rejected
-  await page.locator("#file-input").setInputFiles([{ name: "fake.pdf", mimeType: "application/pdf", buffer: Buffer.from("not a pdf at all") }]);
+  await page
+    .locator("#file-input")
+    .setInputFiles([{ name: "fake.pdf", mimeType: "application/pdf", buffer: Buffer.from("not a pdf at all") }]);
   await expect(page.getByText(/content is not a PDF/)).toBeVisible();
 
   // ---- Draft in mock mode, then verify every item
@@ -96,22 +100,7 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
   await page.getByRole("link", { name: "Continue to team and access" }).click();
   await page.waitForURL("**/tim");
 
-  // ---- Team and access: the advisor link (approved in a separate, signed-out browser context) and the access rules
-  await page.getByRole("button", { name: "Create consent link" }).click();
-  const link = await page.getByLabel(/Private link for/).inputValue();
-  expect(link).toContain("/consent/");
-
-  const advisor = await newUserPage(browser);
-  await advisor.page.goto(link);
-  await expect(advisor.page.getByRole("heading", { name: /wants to share a project/ })).toBeVisible();
-  await advisor.page.getByRole("button", { name: "Approve publishing" }).click();
-  await expect(advisor.page.getByText(/approval is recorded/)).toBeVisible();
-  // a second attempt on the same link is refused (single decision)
-  await advisor.page.reload();
-  await expect(advisor.page.getByText(/This link allows one decision/)).toBeVisible();
-  await advisor.context.close();
-
-  await page.reload();
+  // ---- Team and access: the owner already confirmed on the Files step, so the preview is next
   await page.getByRole("link", { name: "Continue to the preview" }).click();
   await page.waitForURL("**/terbit");
 
@@ -126,9 +115,12 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
   // only a source label is public, never the evidence quote from the private file
   await expect(page.getByText("Source: survey-report.pdf, p.2").first()).toBeVisible();
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-  const leak = await page.request.get(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/public_teaser_items?select=evidence`, {
-    headers: { apikey: anonKey },
-  });
+  const leak = await page.request.get(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/public_teaser_items?select=evidence`,
+    {
+      headers: { apikey: anonKey },
+    },
+  );
   expect(leak.status()).toBe(400); // the public view has no evidence column
   const base = await page.request.get(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/draft_items?select=evidence`, {
     headers: { apikey: anonKey },
@@ -147,9 +139,11 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
 
   await ap.goto(`/en/projects/${slug}/request`);
   await ap.getByLabel("Team name").fill("Team E2E");
-  await ap.getByLabel("Teammates' university emails").fill("mate.one@example.test, mate.two@example.test");
+  await ap.getByLabel("Teammates' emails").fill("mate.one@example.test, mate.two@example.test");
   await ap.locator("input[name='task_ids']").first().check();
-  await ap.getByLabel("What will you do in your first month?").fill("We will start with the first verified task and report back with a revised evaluation.");
+  await ap
+    .getByLabel("What will you do in your first month?")
+    .fill("We will start with the first verified task and report back with a revised evaluation.");
   await ap.getByLabel("What is this for?").selectOption("competition");
   const future = new Date(Date.now() + 60 * 86_400_000).toISOString().slice(0, 10);
   await ap.getByLabel("Target date").fill(future);
@@ -177,7 +171,10 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
   await expect(ap.getByText("TODO: a second annotator must check")).toBeVisible();
 
   // download the PDF through a signed URL
-  const [download] = await Promise.all([ap.waitForEvent("download"), ap.getByRole("link", { name: "Download survey-report.pdf" }).click()]);
+  const [download] = await Promise.all([
+    ap.waitForEvent("download"),
+    ap.getByRole("link", { name: "Download survey-report.pdf" }).click(),
+  ]);
   expect(download.suggestedFilename()).toBe("survey-report.pdf");
 
   // the agreement PDF is available to both sides
@@ -190,7 +187,9 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
 
 test("a declined request leaves the project published", async ({ browser }) => {
   // Make the test repeatable: put the seeded demo request back to pending (lineage stays append-only).
-  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false },
+  });
   await admin
     .from("continuation_requests")
     .update({ status: "pending", decided_at: null, decided_by: null, decision_note: null })
@@ -198,7 +197,7 @@ test("a declined request leaves the project published", async ({ browser }) => {
 
   const creator = await newUserPage(browser);
   await creator.page.goto("/en/login");
-  await creator.page.getByLabel("University email").fill("creator@estafet.demo");
+  await creator.page.getByLabel("Email", { exact: true }).fill("creator@estafet.demo");
   await creator.page.getByLabel("Password").fill("Demo-Pass-2026!");
   await creator.page.getByRole("button", { name: "Sign in" }).click();
   await creator.page.waitForURL("**/dasbor");
@@ -214,13 +213,19 @@ test("a declined request leaves the project published", async ({ browser }) => {
 
 test("the same account shares projects and continues another one, through open mode", async ({ browser }) => {
   // Make the test repeatable: remove this account's earlier access to the open demo project (lineage stays append-only).
-  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
-  await admin.from("project_access").delete().eq("project_id", "b0000000-0000-4000-8000-000000000002").eq("profile_id", "c0000000-0000-4000-8000-000000000001");
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false },
+  });
+  await admin
+    .from("project_access")
+    .delete()
+    .eq("project_id", "b0000000-0000-4000-8000-000000000002")
+    .eq("profile_id", "c0000000-0000-4000-8000-000000000001");
 
   const person = await newUserPage(browser);
   const p = person.page;
   await p.goto("/en/login");
-  await p.getByLabel("University email").fill("creator@estafet.demo");
+  await p.getByLabel("Email", { exact: true }).fill("creator@estafet.demo");
   await p.getByLabel("Password").fill("Demo-Pass-2026!");
   await p.getByRole("button", { name: "Sign in" }).click();
   await p.waitForURL("**/dasbor");

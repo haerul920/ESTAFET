@@ -46,12 +46,14 @@ export async function callAndValidate(call: RawCall, docs: ExtractedDoc[]): Prom
       note = "The answer was not valid JSON.";
     }
   }
-  throw new SynthesisError(`The AI answer did not match the expected format after one retry (${note}). Try again, or add the items by hand.`);
+  throw new SynthesisError(
+    `The AI answer did not match the expected format after one retry (${note}). Try again, or add the items by hand.`,
+  );
 }
 
 function merge(parts: SynthesisOutput[]): SynthesisOutput {
   const seen = new Set<string>();
-  const dedupe = <T,>(items: T[], key: (t: T) => string) =>
+  const dedupe = <T>(items: T[], key: (t: T) => string) =>
     items.filter((i) => {
       const k = key(i).toLowerCase().trim();
       if (seen.has(k)) return false;
@@ -60,10 +62,22 @@ function merge(parts: SynthesisOutput[]): SynthesisOutput {
     });
   return {
     summary: parts[0].summary,
-    objectives: dedupe(parts.flatMap((p) => p.objectives), (o) => "o:" + o.title),
-    completed: dedupe(parts.flatMap((p) => p.completed), (o) => "c:" + o.title),
-    next_tasks: dedupe(parts.flatMap((p) => p.next_tasks), (o) => "n:" + o.title),
-    lessons: dedupe(parts.flatMap((p) => p.lessons), (o) => "l:" + o.text),
+    objectives: dedupe(
+      parts.flatMap((p) => p.objectives),
+      (o) => "o:" + o.title,
+    ),
+    completed: dedupe(
+      parts.flatMap((p) => p.completed),
+      (o) => "c:" + o.title,
+    ),
+    next_tasks: dedupe(
+      parts.flatMap((p) => p.next_tasks),
+      (o) => "n:" + o.title,
+    ),
+    lessons: dedupe(
+      parts.flatMap((p) => p.lessons),
+      (o) => "l:" + o.text,
+    ),
     tech: [...new Set(parts.flatMap((p) => p.tech))],
   };
 }
@@ -89,10 +103,13 @@ export async function synthesize(
     rawCall ??
     (async (user) => {
       if (!config.model) throw new Error("LLM_MODEL is not set.");
-      return config.provider === "gemini" ? callGemini(config.model, user, undefined, language) : callAnthropic(config.model, user, undefined, language);
+      return config.provider === "gemini"
+        ? callGemini(config.model, user, undefined, language)
+        : callAnthropic(config.model, user, undefined, language);
     });
 
-  const chunks = estimateTokens(renderDocuments(docs)) > MAX_INPUT_TOKENS ? chunkDocuments(docs, MAX_INPUT_TOKENS * 4) : [docs];
+  const chunks =
+    estimateTokens(renderDocuments(docs)) > MAX_INPUT_TOKENS ? chunkDocuments(docs, MAX_INPUT_TOKENS * 4) : [docs];
   const results: SynthesisOutput[] = [];
   for (const chunk of chunks) results.push(await callAndValidate(call, chunk));
   return results.length === 1 ? results[0] : merge(results);

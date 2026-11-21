@@ -25,15 +25,7 @@ function Fieldset({ legend, children }: { legend: string; children: React.ReactN
   );
 }
 
-export function RequestForm({
-  projectId,
-  slug,
-  tasks,
-}: {
-  projectId: string;
-  slug: string;
-  tasks: TeaserItem[];
-}) {
+export function RequestForm({ projectId, slug, tasks }: { projectId: string; slug: string; tasks: TeaserItem[] }) {
   const t = useTranslations("reqForm");
   const L = useLabels();
   const [state, action, pending] = useActionState<FormState, FormData>(submitRequest, {});
@@ -48,7 +40,14 @@ export function RequestForm({
       {state.error ? <FormMessage tone="error">{state.error}</FormMessage> : null}
 
       <Fieldset legend={t("f1")}>
-        <TextField label={t("teamName")} name="team_name" placeholder={t("teamNamePh")} defaultValue={v.team_name} error={fe.team_name} required />
+        <TextField
+          label={t("teamName")}
+          name="team_name"
+          placeholder={t("teamNamePh")}
+          defaultValue={v.team_name}
+          error={fe.team_name}
+          required
+        />
         <TextField
           label={t("teammates")}
           name="teammates"
@@ -70,11 +69,19 @@ export function RequestForm({
                 key={task.id}
                 className="flex min-h-[44px] cursor-pointer items-start gap-3 rounded-[14px] border border-line-soft bg-white p-3 transition-colors has-[:checked]:border-blue has-[:checked]:bg-blue-tint"
               >
-                <input type="checkbox" name="task_ids" value={task.id} defaultChecked={chosen.has(task.id)} className="mt-0.5 h-5 w-5 flex-none accent-[#1760d6]" />
+                <input
+                  type="checkbox"
+                  name="task_ids"
+                  value={task.id}
+                  defaultChecked={chosen.has(task.id)}
+                  className="mt-0.5 h-5 w-5 flex-none accent-[#1760d6]"
+                />
                 <span>
                   <strong>{task.title}</strong>
                   <br />
-                  <span className="text-sm text-text-2">{task.effort ? t("effort", { size: L.effort[task.effort] }) : t("unsized")}</span>
+                  <span className="text-sm text-text-2">
+                    {task.effort ? t("effort", { size: L.effort[task.effort] }) : t("unsized")}
+                  </span>
                 </span>
               </label>
             ))}
@@ -88,7 +95,15 @@ export function RequestForm({
       </Fieldset>
 
       <Fieldset legend={t("f3")}>
-        <TextArea label={t("plan")} name="plan" rows={4} placeholder={t("planPh")} defaultValue={v.plan} error={fe.plan} required />
+        <TextArea
+          label={t("plan")}
+          name="plan"
+          rows={4}
+          placeholder={t("planPh")}
+          defaultValue={v.plan}
+          error={fe.plan}
+          required
+        />
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-4">
           <SelectField label={t("purpose")} name="purpose" defaultValue={v.purpose ?? ""} error={fe.purpose} required>
             <option value="" disabled>
@@ -100,13 +115,32 @@ export function RequestForm({
               </option>
             ))}
           </SelectField>
-          <TextField label={t("targetDate")} name="target_date" type="date" defaultValue={v.target_date} error={fe.target_date} required />
+          <TextField
+            label={t("targetDate")}
+            name="target_date"
+            type="date"
+            defaultValue={v.target_date}
+            error={fe.target_date}
+            required
+          />
         </div>
-        <TextArea label={t("fit")} name="fit_note" rows={3} placeholder={t("fitPh")} defaultValue={v.fit_note} error={fe.fit_note} />
+        <TextArea
+          label={t("fit")}
+          name="fit_note"
+          rows={3}
+          placeholder={t("fitPh")}
+          defaultValue={v.fit_note}
+          error={fe.fit_note}
+        />
       </Fieldset>
 
       <Card tone="warn" className="!rounded-[28px] !p-5">
-        <CheckboxField name="acknowledge" defaultChecked={v.acknowledge === "on"} error={fe.acknowledge} label={t("ack")} />
+        <CheckboxField
+          name="acknowledge"
+          defaultChecked={v.acknowledge === "on"}
+          error={fe.acknowledge}
+          label={t("ack")}
+        />
       </Card>
 
       <div className="flex flex-wrap gap-3">

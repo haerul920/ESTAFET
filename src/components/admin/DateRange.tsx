@@ -18,10 +18,22 @@ export function DateRange({ from, to }: { from?: string; to?: string }) {
   return (
     <div className="mb-4 flex flex-wrap items-center gap-3 text-sm" role="group" aria-label="Date range">
       <label className="flex items-center gap-2">
-        From <input type="date" value={from ?? ""} onChange={(e) => set("from", e.target.value)} className="min-h-[40px] rounded-xl border border-line-strong bg-white px-3" />
+        From{" "}
+        <input
+          type="date"
+          value={from ?? ""}
+          onChange={(e) => set("from", e.target.value)}
+          className="min-h-[40px] rounded-xl border border-line-strong bg-white px-3"
+        />
       </label>
       <label className="flex items-center gap-2">
-        To <input type="date" value={to ?? ""} onChange={(e) => set("to", e.target.value)} className="min-h-[40px] rounded-xl border border-line-strong bg-white px-3" />
+        To{" "}
+        <input
+          type="date"
+          value={to ?? ""}
+          onChange={(e) => set("to", e.target.value)}
+          className="min-h-[40px] rounded-xl border border-line-strong bg-white px-3"
+        />
       </label>
     </div>
   );

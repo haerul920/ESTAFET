@@ -32,7 +32,9 @@ export function MeadowCta() {
         style={{ background: "var(--meadow-sky)" }}
       >
         <Reveal className="relative z-raised mx-auto max-w-[640px]">
-          <h2 className="mb-4 text-[72px] font-medium leading-[1.02] tracking-[-0.045em] text-[#1A1A2E] max-md:text-5xl">{t("title")}</h2>
+          <h2 className="mb-4 text-[72px] font-medium leading-[1.02] tracking-[-0.045em] text-[#1A1A2E] max-md:text-5xl">
+            {t("title")}
+          </h2>
           <p className="mb-7 text-lg text-[#3C3A4D]">{t("text")}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <ButtonLink href="/bagikan" variant="white" size="md" className="px-7 py-3.5 text-base">

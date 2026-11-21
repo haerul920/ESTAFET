@@ -64,8 +64,12 @@ export function ProjectCta({ state, projectId, slug }: { state: CtaState; projec
       return (
         <Card tone="lime" className="flex flex-col gap-3">
           <h2 className="m-0 text-xl">{state.status === "approved" ? t("approvedTitle") : t("pendingTitle")}</h2>
-          <p className="m-0 text-[15px] text-text-2">{state.status === "approved" ? t("approvedText") : t("pendingText")}</p>
-          <ButtonLink href={`/requests/${state.requestId}`}>{state.status === "approved" ? t("acceptAgreement") : t("viewRequest")}</ButtonLink>
+          <p className="m-0 text-[15px] text-text-2">
+            {state.status === "approved" ? t("approvedText") : t("pendingText")}
+          </p>
+          <ButtonLink href={`/requests/${state.requestId}`}>
+            {state.status === "approved" ? t("acceptAgreement") : t("viewRequest")}
+          </ButtonLink>
         </Card>
       );
     case "paused":
@@ -90,14 +94,22 @@ export function ProjectCta({ state, projectId, slug }: { state: CtaState; projec
           <h2 className="m-0 text-xl">{t("guestTitle")}</h2>
           {state.mode === "paused" || state.quotaFull ? (
             <>
-              <p className="m-0 text-[15px] text-text-2">{state.mode === "paused" ? t("guestPaused") : t("guestFull")}</p>
-              <ButtonLink href={`/login?next=${encodeURIComponent(`/projects/${slug}`)}`} variant="outline" className="justify-center">
+              <p className="m-0 text-[15px] text-text-2">
+                {state.mode === "paused" ? t("guestPaused") : t("guestFull")}
+              </p>
+              <ButtonLink
+                href={`/login?next=${encodeURIComponent(`/projects/${slug}`)}`}
+                variant="outline"
+                className="justify-center"
+              >
                 {t("signInToWatch")}
               </ButtonLink>
             </>
           ) : (
             <>
-              <p className="m-0 text-[15px] text-text-2">{state.mode === "open" ? t("guestOpen") : t("guestRequest")}</p>
+              <p className="m-0 text-[15px] text-text-2">
+                {state.mode === "open" ? t("guestOpen") : t("guestRequest")}
+              </p>
               <ButtonLink href={`/login?next=${encodeURIComponent(`/projects/${slug}`)}`} className="justify-center">
                 {t("signInContinue")}
               </ButtonLink>
@@ -125,7 +137,17 @@ export function ProjectCta({ state, projectId, slug }: { state: CtaState; projec
 }
 
 /** Open mode: read the agreement, tick one box, and the files open. Owners are told, no approval needed. */
-function OpenAccessCard({ projectId, slug, verified, email }: { projectId: string; slug: string; verified: boolean; email: string }) {
+function OpenAccessCard({
+  projectId,
+  slug,
+  verified,
+  email,
+}: {
+  projectId: string;
+  slug: string;
+  verified: boolean;
+  email: string;
+}) {
   const t = useTranslations("cta");
   const ag = useTranslations("agreement");
   const [accepted, setAccepted] = useState(false);
@@ -145,7 +167,12 @@ function OpenAccessCard({ projectId, slug, verified, email }: { projectId: strin
         </ul>
         <p className="m-0 text-[12.5px] text-text-2">{ag("disclaimer")}</p>
       </details>
-      <CheckboxField checked={accepted} onChange={(e) => setAccepted(e.target.checked)} disabled={!verified} label={t("accept")} />
+      <CheckboxField
+        checked={accepted}
+        onChange={(e) => setAccepted(e.target.checked)}
+        disabled={!verified}
+        label={t("accept")}
+      />
       {error ? <FormMessage tone="error">{error}</FormMessage> : null}
       <Button
         className="justify-center"

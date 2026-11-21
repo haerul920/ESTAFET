@@ -79,7 +79,12 @@ export function Stagger({
 }) {
   const [ref, inView] = useInViewOnce<HTMLElement>();
   return (
-    <Tag ref={ref as never} data-in={inView} className={cn("stagger", className)} style={{ "--gap": `${Math.round(gap * 1000)}ms` } as Vars}>
+    <Tag
+      ref={ref as never}
+      data-in={inView}
+      className={cn("stagger", className)}
+      style={{ "--gap": `${Math.round(gap * 1000)}ms` } as Vars}
+    >
       {children}
     </Tag>
   );
@@ -98,7 +103,15 @@ export function StaggerItem({
 }
 
 /** Splits a headline into words that rise in one after another. Screen readers get the whole sentence once. */
-export function WordReveal({ text, baseDelay = 100, className }: { text: string; baseDelay?: number; className?: string }) {
+export function WordReveal({
+  text,
+  baseDelay = 100,
+  className,
+}: {
+  text: string;
+  baseDelay?: number;
+  className?: string;
+}) {
   const words = text.split(/\s+/).filter(Boolean);
   return (
     <span className={className}>
@@ -212,7 +225,11 @@ export function Cloud({
 }) {
   const ref = useLoop<HTMLDivElement>();
   return (
-    <div aria-hidden="true" className={cn("parallax pointer-events-none absolute", className)} style={{ "--depth": depth } as Vars}>
+    <div
+      aria-hidden="true"
+      className={cn("parallax pointer-events-none absolute", className)}
+      style={{ "--depth": depth } as Vars}
+    >
       <div
         ref={ref}
         data-loop
@@ -264,10 +281,25 @@ export function Floating({
 }
 
 /** An element in an SVG that sways (flowers). Pauses off screen. */
-export function SwayGroup({ children, duration = 4, delay = 0, angle = 3 }: { children: ReactNode; duration?: number; delay?: number; angle?: number }) {
+export function SwayGroup({
+  children,
+  duration = 4,
+  delay = 0,
+  angle = 3,
+}: {
+  children: ReactNode;
+  duration?: number;
+  delay?: number;
+  angle?: number;
+}) {
   const ref = useLoop<SVGGElement>();
   return (
-    <g ref={ref} data-loop className="sway" style={{ "--dur": `${duration}s`, "--delay": `${-delay}s`, "--sway": `${angle}deg` } as Vars}>
+    <g
+      ref={ref}
+      data-loop
+      className="sway"
+      style={{ "--dur": `${duration}s`, "--delay": `${-delay}s`, "--sway": `${angle}deg` } as Vars}
+    >
       {children}
     </g>
   );

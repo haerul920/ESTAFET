@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { REAUTH_COOKIE, REAUTH_MINUTES, verifyReauth } from "./reauth";
 
 /** Asks the database (is_admin()), never a client flag. */
-export const isAdminUser = cache(async (): Promise<boolean> => {
+const isAdminUser = cache(async (): Promise<boolean> => {
   const supabase = await createClient();
   const { data } = await supabase.rpc("is_admin");
   return data === true;
@@ -20,7 +20,7 @@ export async function requireAdmin(): Promise<CurrentUser> {
   return user;
 }
 
-export async function hasRecentAuth(userId: string, minutes: number = REAUTH_MINUTES): Promise<boolean> {
+async function hasRecentAuth(userId: string, minutes: number = REAUTH_MINUTES): Promise<boolean> {
   const store = await cookies();
   return verifyReauth(store.get(REAUTH_COOKIE)?.value, userId, minutes);
 }

@@ -1,8 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing, type Locale } from "@/i18n/routing";
+import { SUPABASE_PUBLIC_KEY, SUPABASE_URL } from "./keys";
 
-const PROTECTED_PREFIXES = ["/dasbor", "/dashboard", "/mulai", "/bagikan", "/proyek", "/requests"];
+const PROTECTED_PREFIXES = [
+  "/dasbor",
+  "/dashboard",
+  "/mulai",
+  "/bagikan",
+  "/proyek",
+  "/requests",
+  "/laporan-saya",
+  "/akun",
+  "/kebijakan",
+];
 
 function needsSession(pathname: string) {
   if (PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) return true;
@@ -17,7 +28,8 @@ export function splitLocale(pathname: string): { locale: Locale; path: string } 
   return { locale: routing.defaultLocale, path: pathname };
 }
 
-const withLocale = (locale: Locale, path: string) => (locale === routing.defaultLocale ? path : `/${locale}${path === "/" ? "" : path}`);
+const withLocale = (locale: Locale, path: string) =>
+  locale === routing.defaultLocale ? path : `/${locale}${path === "/" ? "" : path}`;
 
 /**
  * Refreshes the Supabase session cookie and redirects guests away from protected routes.
@@ -26,21 +38,17 @@ const withLocale = (locale: Locale, path: string) => (locale === routing.default
 export async function updateSession(request: NextRequest, base?: NextResponse) {
   const response = base ?? NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
-          for (const { name, value, options } of cookiesToSet) response.cookies.set(name, value, options);
-        },
+  const supabase = createServerClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
+        for (const { name, value, options } of cookiesToSet) response.cookies.set(name, value, options);
       },
     },
-  );
+  });
 
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims);

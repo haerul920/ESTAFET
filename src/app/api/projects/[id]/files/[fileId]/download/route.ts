@@ -32,9 +32,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     .maybeSingle();
   if (!file || !file.storage_path) return NextResponse.json({ error: api("downloadNoAccess") }, { status: 403 });
 
-  const downloadName = file.kind === "code_tree" ? file.original_name.replace(/\.zip$/i, "") + ".tree.json" : file.original_name;
+  const downloadName =
+    file.kind === "code_tree" ? file.original_name.replace(/\.zip$/i, "") + ".tree.json" : file.original_name;
   const admin = createAdminClient();
-  const { data, error } = await admin.storage.from("project-files").createSignedUrl(file.storage_path, 60, { download: downloadName });
+  const { data, error } = await admin.storage
+    .from("project-files")
+    .createSignedUrl(file.storage_path, 60, { download: downloadName });
   if (error || !data) return NextResponse.json({ error: api("downloadFailed") }, { status: 500 });
   return NextResponse.redirect(data.signedUrl, 302);
 }

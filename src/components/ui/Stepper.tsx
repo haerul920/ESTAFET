@@ -12,7 +12,12 @@ export interface StepDef {
 }
 
 /** Step progress with `aria-current="step"`. Completed steps with an href are links. */
-export function Stepper({ steps, current, label, showNumbers = true }: {
+export function Stepper({
+  steps,
+  current,
+  label,
+  showNumbers = true,
+}: {
   steps: StepDef[];
   current: number;
   label?: string;

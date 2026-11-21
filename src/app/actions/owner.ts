@@ -6,11 +6,15 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { dbErrorMessage } from "@/lib/errors";
-import { fieldErrorsFrom, emailSchema } from "@/lib/validation";
+import { fieldErrorsFrom } from "@/lib/validation";
 import type { TFn } from "@/lib/labels";
 
 async function tr() {
-  const [v, a, e] = await Promise.all([getTranslations("validation"), getTranslations("actions"), getTranslations("errors")]);
+  const [v, a, e] = await Promise.all([
+    getTranslations("validation"),
+    getTranslations("actions"),
+    getTranslations("errors"),
+  ]);
   return { v: v as unknown as TFn, a: a as unknown as TFn, e: e as unknown as TFn };
 }
 
@@ -33,11 +37,15 @@ function basicsSchema(v: TFn) {
     summary: z.string().trim().min(30, v("summaryMin")).max(700, v("summaryMax")),
     kind: z.enum(["student_program", "hackathon", "research"], { message: v("kind") }),
     field: z.string().trim().min(2, v("field")),
-    year: z.coerce.number().int().min(2015, v("yearMin")).max(new Date().getFullYear() + 1, v("yearMax")),
-    stop_reason: z.enum(["funding_not_granted", "team_graduated", "time_or_people", "other"], { message: v("stopReason") }),
+    year: z.coerce
+      .number()
+      .int()
+      .min(2015, v("yearMin"))
+      .max(new Date().getFullYear() + 1, v("yearMax")),
+    stop_reason: z.enum(["funding_not_granted", "team_graduated", "time_or_people", "other"], {
+      message: v("stopReason"),
+    }),
     stopped_note: z.string().trim().max(400, v("stoppedNoteMax")).optional(),
-    advisor_name: z.string().trim().max(120, v("advisorNameMax")).optional(),
-    advisor_email: z.union([z.literal(""), emailSchema(v)]).optional(),
   });
 }
 
@@ -45,7 +53,10 @@ function basicsSchema(v: TFn) {
  * Autosave for the Info step. It only writes when every field is valid, so a half-typed form never overwrites a good
  * draft. A project that does not exist yet is created by the normal "Save and continue" (saveBasics).
  */
-export async function autosaveBasics(projectId: string, values: Record<string, string>): Promise<{ saved: boolean; fieldErrors?: Record<string, string> }> {
+export async function autosaveBasics(
+  projectId: string,
+  values: Record<string, string>,
+): Promise<{ saved: boolean; fieldErrors?: Record<string, string> }> {
   const t = await tr();
   await requireUser(`/bagikan/${projectId}/info`);
   const parsed = basicsSchema(t.v).safeParse(values);
@@ -54,8 +65,6 @@ export async function autosaveBasics(projectId: string, values: Record<string, s
   const input = {
     ...parsed.data,
     stopped_note: parsed.data.stopped_note ?? "",
-    advisor_name: parsed.data.advisor_name ?? "",
-    advisor_email: parsed.data.advisor_email ?? "",
   };
   const { data, error } = await supabase.from("projects").update(input).eq("id", projectId).select("id");
   if (error || !data || data.length === 0) return { saved: false };
@@ -63,7 +72,11 @@ export async function autosaveBasics(projectId: string, values: Record<string, s
 }
 
 /** Access mode and team limit (Team and access step, and the project settings). The database logs it in the lineage. */
-export async function saveAccessSettings(projectId: string, mode: "open" | "by_request" | "paused", max: number | null): Promise<Result> {
+export async function saveAccessSettings(
+  projectId: string,
+  mode: "open" | "by_request" | "paused",
+  max: number | null,
+): Promise<Result> {
   const t = await tr();
   await requireUser(`/bagikan/${projectId}/tim`);
   const supabase = await createClient();
@@ -75,7 +88,10 @@ export async function saveAccessSettings(projectId: string, mode: "open" | "by_r
   return {};
 }
 
-async function lifecycle(projectId: string, fn: "unpublish_project" | "publish_project" | "archive_project"): Promise<Result> {
+async function lifecycle(
+  projectId: string,
+  fn: "unpublish_project" | "publish_project" | "archive_project",
+): Promise<Result> {
   const t = await tr();
   await requireUser("/dasbor");
   const supabase = await createClient();

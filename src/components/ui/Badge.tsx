@@ -1,4 +1,4 @@
-import { CheckCircle2, FileSearch, ShieldCheck, FlaskConical } from "lucide-react";
+import { FileSearch, ShieldCheck, FlaskConical } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
 
@@ -50,16 +50,6 @@ export function OwnerVerified() {
   );
 }
 
-export function AdvisorApproved() {
-  const t = useTranslations("badge");
-  return (
-    <Badge tone="info">
-      <CheckCircle2 size={14} aria-hidden="true" />
-      {t("advisorApproved")}
-    </Badge>
-  );
-}
-
 export function DemoBadge({ children }: { children?: React.ReactNode }) {
   const t = useTranslations("badge");
   return (
@@ -78,7 +68,12 @@ export function EvidenceChip({ status, detail }: { status: "matched" | "not_foun
     <Badge tone={ok ? "ok" : "warn"} className="max-w-full self-start whitespace-normal [overflow-wrap:anywhere]">
       <FileSearch size={14} aria-hidden="true" className="flex-none" />
       {ok ? t("evidenceMatched") : partial ? t("evidencePartial") : t("evidenceNotFound")}
-      {detail ? <span className="font-normal">{ok || partial ? " · " : t("evidenceIn")}{detail}</span> : null}
+      {detail ? (
+        <span className="font-normal">
+          {ok || partial ? " · " : t("evidenceIn")}
+          {detail}
+        </span>
+      ) : null}
     </Badge>
   );
 }

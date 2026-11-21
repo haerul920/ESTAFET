@@ -7,7 +7,7 @@ function startsWith(buf: Uint8Array, bytes: number[], offset = 0): boolean {
   return bytes.every((b, i) => buf[offset + i] === b);
 }
 
-export function looksLikePdf(buf: Uint8Array): boolean {
+function looksLikePdf(buf: Uint8Array): boolean {
   // The PDF header may be preceded by up to 1024 bytes of junk.
   const head = buf.subarray(0, 1024);
   for (let i = 0; i + 5 <= head.length; i++) {
@@ -16,7 +16,7 @@ export function looksLikePdf(buf: Uint8Array): boolean {
   return false;
 }
 
-export function looksLikeZip(buf: Uint8Array): boolean {
+function looksLikeZip(buf: Uint8Array): boolean {
   return (
     startsWith(buf, [0x50, 0x4b, 0x03, 0x04]) || // local file header
     startsWith(buf, [0x50, 0x4b, 0x05, 0x06]) // empty archive
@@ -24,7 +24,7 @@ export function looksLikeZip(buf: Uint8Array): boolean {
 }
 
 /** Markdown has no magic bytes: require valid UTF-8 text with no NUL bytes. */
-export function looksLikeText(buf: Uint8Array): boolean {
+function looksLikeText(buf: Uint8Array): boolean {
   const sample = buf.subarray(0, 8192);
   if (sample.includes(0)) return false;
   try {

@@ -37,7 +37,9 @@ describe("environment badge", () => {
     expect(environmentName({})).toBe("PRODUCTION");
   });
   it("APP_ENV wins, and purge is blocked only in PRODUCTION", () => {
-    expect(environmentName({ APP_ENV: "staging", NEXT_PUBLIC_SUPABASE_URL: "https://abc.supabase.co" })).toBe("STAGING");
+    expect(environmentName({ APP_ENV: "staging", NEXT_PUBLIC_SUPABASE_URL: "https://abc.supabase.co" })).toBe(
+      "STAGING",
+    );
     expect(isProduction({ APP_ENV: "PRODUCTION" })).toBe(true);
     expect(isProduction({ APP_ENV: "LOCAL" })).toBe(false);
   });
@@ -48,17 +50,28 @@ describe("settings override env defaults", () => {
   it("uses env when nothing is stored, and built-in defaults otherwise", () => {
     const s = resolveSettings([], env);
     expect(s.max_upload_mb).toMatchObject({ value: 30, source: "env" });
-    expect(s.advisor_token_ttl_days).toMatchObject({ value: 14, source: "default" });
     expect(s.allowed_email_domains.value).toEqual(["student.unhas.ac.id"]);
     expect(resolveSettings([], {}).max_upload_mb.value).toBe(25);
   });
   it("a stored setting wins and remembers the fallback", () => {
-    const s = resolveSettings([{ key: "max_upload_mb", value: 12 }, { key: "show_demo_banner", value: false }], env);
+    const s = resolveSettings(
+      [
+        { key: "max_upload_mb", value: 12 },
+        { key: "show_demo_banner", value: false },
+      ],
+      env,
+    );
     expect(s.max_upload_mb).toMatchObject({ value: 12, source: "setting", fallback: 30 });
     expect(s.show_demo_banner.value).toBe(false);
   });
   it("ignores invalid stored values instead of breaking the app", () => {
-    const s = resolveSettings([{ key: "max_upload_mb", value: "lots" }, { key: "synthesis_daily_cap", value: -4 }], env);
+    const s = resolveSettings(
+      [
+        { key: "max_upload_mb", value: "lots" },
+        { key: "synthesis_daily_cap", value: -4 },
+      ],
+      env,
+    );
     expect(s.max_upload_mb).toMatchObject({ value: 30, source: "env" });
     expect(s.synthesis_daily_cap.value).toBe(8);
   });
@@ -84,7 +97,10 @@ describe("settings override env defaults", () => {
 
 describe("table params and time", () => {
   it("falls back to safe defaults for bad sort, dir and page", () => {
-    const p = parseTableParams({ sort: "drop table", dir: "sideways", page: "-3" }, { sortable: ["title"], defaultSort: "title" });
+    const p = parseTableParams(
+      { sort: "drop table", dir: "sideways", page: "-3" },
+      { sortable: ["title"], defaultSort: "title" },
+    );
     expect(p).toMatchObject({ sort: "title", dir: "desc", page: 1 });
     expect(rangeFor({ ...p, page: 3, pageSize: 10 })).toEqual([20, 29]);
   });
@@ -105,12 +121,38 @@ describe("table params and time", () => {
 
 describe("trials: CSV, methods text and sample-size rule", () => {
   const rows: TrialRow[] = [
-    { id: "1", participant_code: "P01", cohort: "estafet", project_title: "Mangrove, the \"classifier\"", started_at: "2026-11-20T01:00:00Z", minutes_to_understand: 24, completed: true, correct_answers: 4, total_questions: 5, sus_score: 80, is_demo: false },
-    { id: "2", participant_code: "=P02", cohort: "baseline", project_title: null, started_at: "2026-11-20T02:00:00Z", minutes_to_understand: null, completed: false, correct_answers: null, total_questions: null, sus_score: null, is_demo: true },
+    {
+      id: "1",
+      participant_code: "P01",
+      cohort: "estafet",
+      project_title: 'Mangrove, the "classifier"',
+      started_at: "2026-11-20T01:00:00Z",
+      minutes_to_understand: 24,
+      completed: true,
+      correct_answers: 4,
+      total_questions: 5,
+      sus_score: 80,
+      is_demo: false,
+    },
+    {
+      id: "2",
+      participant_code: "=P02",
+      cohort: "baseline",
+      project_title: null,
+      started_at: "2026-11-20T02:00:00Z",
+      minutes_to_understand: null,
+      completed: false,
+      correct_answers: null,
+      total_questions: null,
+      sus_score: null,
+      is_demo: true,
+    },
   ];
   it("exports pseudonym codes only and neutralizes formulas", () => {
     const csv = trialsCsv(rows);
-    expect(csv.split("\n")[0]).toBe("participant_code,cohort,project,started_at_utc,minutes_to_understand,completed,correct_answers,total_questions,sus_score,is_demo");
+    expect(csv.split("\n")[0]).toBe(
+      "participant_code,cohort,project,started_at_utc,minutes_to_understand,completed,correct_answers,total_questions,sus_score,is_demo",
+    );
     expect(csv).toContain('"Mangrove, the ""classifier"""');
     expect(csv).toContain("'=P02");
     expect(csv).not.toMatch(/@|full_name|email|name/i);
@@ -120,9 +162,24 @@ describe("trials: CSV, methods text and sample-size rule", () => {
     expect(tooFew(5)).toBe(false);
     expect(tooFew(undefined)).toBe(true);
   });
-  const s = (cohort: "baseline" | "estafet", n: number): CohortSummary => ({ cohort, n, completed_n: n, median_minutes: 30, mean_minutes: 31, completion_rate: 1, mean_score: 0.8, mean_sus: 75, within30_n: 3, within30_share: 0.6 });
+  const s = (cohort: "baseline" | "estafet", n: number): CohortSummary => ({
+    cohort,
+    n,
+    completed_n: n,
+    median_minutes: 30,
+    mean_minutes: 31,
+    completion_rate: 1,
+    mean_score: 0.8,
+    mean_sus: 75,
+    within30_n: 3,
+    within30_share: 0.6,
+  });
   it("the methods paragraph states n, one university and that results are indicative", () => {
-    const t = methodsParagraph([s("baseline", 6), s("estafet", 6)], { includesDemo: false, first: "2026-11-01T00:00:00Z", last: "2026-11-20T00:00:00Z" });
+    const t = methodsParagraph([s("baseline", 6), s("estafet", 6)], {
+      includesDemo: false,
+      first: "2026-11-01T00:00:00Z",
+      last: "2026-11-20T00:00:00Z",
+    });
     expect(t).toContain("12 onboarding trial sessions");
     expect(t).toContain("one university");
     expect(t).toContain("indicative only");
@@ -135,7 +192,17 @@ describe("trials: CSV, methods text and sample-size rule", () => {
     expect(methodsParagraph([], { includesDemo: false })).toContain("No sessions");
   });
   it("validates a session: pseudonym, consent, SUS range, correct <= asked", () => {
-    const ok = { participant_code: "P01", cohort: "estafet", started_at: "2026-11-20T01:00", minutes_to_understand: 20, completed: true, correct_answers: 4, total_questions: 5, consent_confirmed: true, is_demo: false };
+    const ok = {
+      participant_code: "P01",
+      cohort: "estafet",
+      started_at: "2026-11-20T01:00",
+      minutes_to_understand: 20,
+      completed: true,
+      correct_answers: 4,
+      total_questions: 5,
+      consent_confirmed: true,
+      is_demo: false,
+    };
     expect(trialSchema.safeParse(ok).success).toBe(true);
     expect(trialSchema.safeParse({ ...ok, participant_code: "Budi Santoso" }).success).toBe(false);
     expect(trialSchema.safeParse({ ...ok, consent_confirmed: false }).success).toBe(false);
@@ -153,7 +220,17 @@ describe("audit viewer helpers", () => {
     expect(d.find((x) => x.key === "fresh")?.kind).toBe("added");
   });
   it("exports CSV with quoting and formula protection", () => {
-    const e: AuditEvent = { id: "1", actor_name: "A, B", action: "project.hidden", target_type: "project", target_id: null, reason: "=cmd bad", before: { s: "ok" }, after: null, created_at: "2026-11-20T00:00:00Z" };
+    const e: AuditEvent = {
+      id: "1",
+      actor_name: "A, B",
+      action: "project.hidden",
+      target_type: "project",
+      target_id: null,
+      reason: "=cmd bad",
+      before: { s: "ok" },
+      after: null,
+      created_at: "2026-11-20T00:00:00Z",
+    };
     const csv = auditCsv([e]);
     expect(csv).toContain('"A, B"');
     expect(csv).toContain("'=cmd bad");
@@ -162,7 +239,9 @@ describe("audit viewer helpers", () => {
 
 describe("admin code never writes tables directly", () => {
   function walk(dir: string): string[] {
-    return fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(path.join(dir, d.name)) : [path.join(dir, d.name)]));
+    return fs
+      .readdirSync(dir, { withFileTypes: true })
+      .flatMap((d) => (d.isDirectory() ? walk(path.join(dir, d.name)) : [path.join(dir, d.name)]));
   }
   const files = walk(path.resolve(__dirname, "../../src/app/[locale]/admin")).filter((f) => /\.(ts|tsx)$/.test(f));
 
@@ -171,9 +250,14 @@ describe("admin code never writes tables directly", () => {
   it("no file under src/app/admin calls a table writer or imports the service-role client", () => {
     const offenders: string[] = [];
     for (const f of files) {
-      const src = fs.readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-      if (/\.(insert|update|delete|upsert)\s*\(/.test(src)) offenders.push(`${path.relative(process.cwd(), f)}: table writer`);
-      if (/createAdminClient|supabase\/admin/.test(src)) offenders.push(`${path.relative(process.cwd(), f)}: service-role client`);
+      const src = fs
+        .readFileSync(f, "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/^\s*\/\/.*$/gm, "");
+      if (/\.(insert|update|delete|upsert)\s*\(/.test(src))
+        offenders.push(`${path.relative(process.cwd(), f)}: table writer`);
+      if (/createAdminClient|supabase\/admin/.test(src))
+        offenders.push(`${path.relative(process.cwd(), f)}: service-role client`);
     }
     expect(offenders).toEqual([]);
   });

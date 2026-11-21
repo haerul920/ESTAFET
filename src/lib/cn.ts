@@ -4,7 +4,9 @@ import { extendTailwindMerge } from "tailwind-merge";
 const merge = extendTailwindMerge({
   extend: {
     classGroups: {
-      z: [{ z: ["base", "raised", "sticky", "nav", "dropdown", "drawer", "overlay", "modal", "toast", "system-banner"] }],
+      z: [
+        { z: ["base", "raised", "sticky", "nav", "dropdown", "drawer", "overlay", "modal", "toast", "system-banner"] },
+      ],
     },
   },
 });

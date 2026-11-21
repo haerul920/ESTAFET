@@ -10,7 +10,6 @@ import {
   getOwnedProject,
   getFiles,
   getItems,
-  getLatestConsent,
   getLatestRun,
   getTeam,
 } from "@/lib/db/owner";
@@ -55,19 +54,14 @@ export default async function WizardStepPage({ params }: Params) {
   const project = await getOwnedProject(id);
   if (!project) notFound();
 
-  const [team, consent, files, items, run, policiesAccepted] = await Promise.all([
+  const [team, files, items, run, policiesAccepted] = await Promise.all([
     getTeam(id),
-    getLatestConsent(id),
     getFiles(id),
     getItems(id),
     getLatestRun(id),
     hasAcceptedPolicies(),
   ]);
-  const checklist = buildChecklist(team, consent, items, {
-    advisorMode: project.advisor_mode,
-    noAdvisorDeclared: project.no_advisor_declared_at !== null,
-    policiesAccepted,
-  });
+  const checklist = buildChecklist(team, items, { policiesAccepted });
   const config = getConfig();
   const me = team.find((m) => m.profile_id === user.id);
   const selfConsented = !!me?.consented_at;
@@ -89,15 +83,11 @@ export default async function WizardStepPage({ params }: Params) {
         <StepHeader title={t("teamTitle")} intro={t("teamIntro")} />
         <div className="flex flex-wrap items-start gap-8">
           <div className="flex min-w-0 flex-[1_1_600px] flex-col gap-6">
-            <ConsentStep project={project} team={team} currentUserId={user.id} consent={consent} />
+            <ConsentStep project={project} team={team} currentUserId={user.id} />
             <AccessSettings projectId={id} mode={project.access_mode} max={project.max_active_adopters} />
           </div>
           <div className="flex min-w-[260px] flex-[0_1_340px] flex-col gap-4">
-            <PublishChecklist projectId={id} checklist={checklist} advisorEmail={project.advisor_email} step="tim" />
-            <Card tone="blue">
-              <h2 className="mb-2 mt-0 text-base">{t("advisorSees")}</h2>
-              <p className="m-0 text-[15px] text-text-3">{t("advisorSeesText")}</p>
-            </Card>
+            <PublishChecklist projectId={id} checklist={checklist} step="tim" />
           </div>
         </div>
       </WizardFrame>
@@ -111,10 +101,7 @@ export default async function WizardStepPage({ params }: Params) {
       <WizardFrame projectId={id} current="berkas">
         <div className="flex flex-wrap items-start gap-8">
           <div className="flex min-w-0 flex-[1_1_600px] flex-col gap-6">
-            <StepHeader
-              title={t("filesTitle")}
-              intro={t("filesIntro")}
-            />
+            <StepHeader title={t("filesTitle")} intro={t("filesIntro")} />
             <FilesStep
               projectId={id}
               files={files}
@@ -128,7 +115,7 @@ export default async function WizardStepPage({ params }: Params) {
             />
           </div>
           <div className="mt-[88px] flex min-w-[260px] flex-[0_1_340px] flex-col gap-4 max-lg:mt-0">
-            <PublishChecklist projectId={id} checklist={checklist} advisorEmail={project.advisor_email} step="berkas" />
+            <PublishChecklist projectId={id} checklist={checklist} step="berkas" />
             <Card tone="blue">
               <h2 className="mb-2 mt-0 text-base">{t("publicTitle")}</h2>
               <p className="m-0 text-[15px] text-text-3">{t("publicText")}</p>
@@ -187,7 +174,6 @@ export default async function WizardStepPage({ params }: Params) {
     year: project.year,
     stop_reason: project.stop_reason,
     status: project.status,
-    advisor_name: project.advisor_name,
     is_demo: project.is_demo,
     published_at: project.published_at,
     stopped_note: project.stopped_note,
@@ -199,15 +185,8 @@ export default async function WizardStepPage({ params }: Params) {
     access_mode: project.access_mode,
     max_active_adopters: project.max_active_adopters,
     active_adopters: 0,
-    no_advisor: project.advisor_mode === "none",
   };
-  const reason = !checklist.team.done
-    ? t("reasonTeam")
-    : !checklist.advisor.done
-      ? t("reasonAdvisor")
-      : !checklist.review.done
-        ? t("reasonReview")
-        : "";
+  const reason = !checklist.team.done ? t("reasonTeam") : !checklist.review.done ? t("reasonReview") : "";
 
   return (
     <WizardFrame projectId={id} current="terbit">
@@ -218,7 +197,8 @@ export default async function WizardStepPage({ params }: Params) {
       {published ? (
         <Card tone="blue" className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <span className="flex items-center gap-2">
-            <CheckCircle2 size={20} className="text-ok" aria-hidden="true" /> <strong>{t("publishedBold")}</strong> {t("publishedText")}
+            <CheckCircle2 size={20} className="text-ok" aria-hidden="true" /> <strong>{t("publishedBold")}</strong>{" "}
+            {t("publishedText")}
           </span>
           <ButtonLink href={`/projects/${project.slug}`} arrow>
             {t("viewPublic")}
@@ -235,14 +215,23 @@ export default async function WizardStepPage({ params }: Params) {
           items={teaserItems}
           lineageSteps={[
             { id: "o", title: tl("origin"), sub: tl("originSub", { year: project.year }), state: "done" },
-            { id: "p", title: tl("published"), sub: published ? tl("live") : tl("afterPublish"), state: published ? "done" : "next" },
+            {
+              id: "p",
+              title: tl("published"),
+              sub: published ? tl("live") : tl("afterPublish"),
+              state: published ? "done" : "next",
+            },
             { id: "n", title: tl("next"), sub: tl("nextWaiting"), state: "next" },
           ]}
           cta={
             <Card tone="lime" className="flex flex-col gap-2">
               <h2 className="m-0 text-xl">{t("ctaTitle")}</h2>
               <p className="m-0 text-[15px] text-text-2">
-                {project.access_mode === "open" ? t("ctaOpen") : project.access_mode === "paused" ? t("ctaPaused") : t("ctaRequest")}
+                {project.access_mode === "open"
+                  ? t("ctaOpen")
+                  : project.access_mode === "paused"
+                    ? t("ctaPaused")
+                    : t("ctaRequest")}
               </p>
             </Card>
           }
@@ -253,11 +242,22 @@ export default async function WizardStepPage({ params }: Params) {
           {t("effectsTitle")}
         </h2>
         <ul className="m-0 flex list-disc flex-col gap-1.5 pl-5 text-[15px] text-text-3">
-          <li>{project.access_mode === "open" ? t("effectOpen") : project.access_mode === "paused" ? t("effectPaused") : t("effectRequest")}</li>
+          <li>
+            {project.access_mode === "open"
+              ? t("effectOpen")
+              : project.access_mode === "paused"
+                ? t("effectPaused")
+                : t("effectRequest")}
+          </li>
           {project.access_mode === "paused" ? null : (
             <li>
               {t("effectLimit", {
-                limit: project.max_active_adopters === null ? t("limitNone") : project.max_active_adopters === 1 ? t("limit1") : t("limit3"),
+                limit:
+                  project.max_active_adopters === null
+                    ? t("limitNone")
+                    : project.max_active_adopters === 1
+                      ? t("limit1")
+                      : t("limit3"),
               })}
             </li>
           )}
@@ -266,13 +266,13 @@ export default async function WizardStepPage({ params }: Params) {
       </Card>
       {published ? null : (
         <div className="mt-6">
-          <PublishChecklist projectId={id} checklist={checklist} advisorEmail={project.advisor_email} step="terbit" />
+          <PublishChecklist projectId={id} checklist={checklist} step="terbit" />
         </div>
       )}
       {published ? null : (
         <PublishBar
           projectId={id}
-          ready={checklist.team.done && checklist.advisor.done && checklist.review.done}
+          ready={checklist.team.done && checklist.review.done}
           reason={reason}
           policiesAccepted={policiesAccepted}
           verified={user.verified}

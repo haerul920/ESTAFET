@@ -42,7 +42,11 @@ export function ProjectCard({ project }: { project: TeaserProject }) {
             {project.is_demo ? <DemoBadge /> : null}
           </div>
           <div className="mt-auto flex flex-col gap-1.5 pt-2">
-            <AnimatedBar pct={pct} height={6} label={t("objectivesDone", { done: project.objectives_done, total: project.objectives_total })} />
+            <AnimatedBar
+              pct={pct}
+              height={6}
+              label={t("objectivesDone", { done: project.objectives_done, total: project.objectives_total })}
+            />
             <div className="flex justify-between text-[13px] text-text-2">
               <span>{t("objectivesDone", { done: project.objectives_done, total: project.objectives_total })}</span>
               <span>{t("tasks", { count: project.tasks_count })}</span>

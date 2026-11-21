@@ -1,6 +1,5 @@
 import "server-only";
 import { cache } from "react";
-import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveSettings, type EffectiveSettings } from "@/lib/settings-core";
 
@@ -16,5 +15,3 @@ export const getSettings = cache(async (): Promise<EffectiveSettings> => {
     return resolveSettings([], process.env);
   }
 });
-
-export const uuidSchema = z.string().uuid();

@@ -10,13 +10,15 @@ import { requireUser } from "@/lib/auth";
 import { fieldErrorsFrom, formValues, emailSchema, type FormState } from "@/lib/validation";
 import { dbErrorMessage } from "@/lib/errors";
 import type { TFn } from "@/lib/labels";
-import { generateToken, hashToken, tokenExpiry } from "@/lib/token";
 import { getOwnedProject } from "@/lib/db/owner";
-import { getSettings } from "@/lib/settings";
 
 /** Translators for the namespaces the actions use. */
 async function tr() {
-  const [v, a, e] = await Promise.all([getTranslations("validation"), getTranslations("actions"), getTranslations("errors")]);
+  const [v, a, e] = await Promise.all([
+    getTranslations("validation"),
+    getTranslations("actions"),
+    getTranslations("errors"),
+  ]);
   return { v: v as unknown as TFn, a: a as unknown as TFn, e: e as unknown as TFn };
 }
 
@@ -26,16 +28,19 @@ function basicsSchema(v: TFn) {
     summary: z.string().trim().min(30, v("summaryMin")).max(700, v("summaryMax")),
     kind: z.enum(["student_program", "hackathon", "research"], { message: v("kind") }),
     field: z.string().trim().min(2, v("field")),
-    year: z.coerce.number().int().min(2015, v("yearMin")).max(new Date().getFullYear() + 1, v("yearMax")),
-    stop_reason: z.enum(["funding_not_granted", "team_graduated", "time_or_people", "other"], { message: v("stopReason") }),
+    year: z.coerce
+      .number()
+      .int()
+      .min(2015, v("yearMin"))
+      .max(new Date().getFullYear() + 1, v("yearMax")),
+    stop_reason: z.enum(["funding_not_granted", "team_graduated", "time_or_people", "other"], {
+      message: v("stopReason"),
+    }),
     stopped_note: z.string().trim().max(400, v("stoppedNoteMax")).optional(),
-    // Optional: a project without a supervising lecturer declares that on the Consent step instead.
-    advisor_name: z.string().trim().max(120, v("advisorNameMax")).optional(),
-    advisor_email: z.union([z.literal(""), emailSchema(v)]).optional(),
   });
 }
 
-/** Step 1. Creates the draft on first save, updates it afterwards, then moves to the Consent step. */
+/** Step 1. Creates the draft on first save, updates it afterwards, then moves to the Files step. */
 export async function saveBasics(_prev: FormState, formData: FormData): Promise<FormState> {
   const t = await tr();
   const locale = await getLocale();
@@ -48,8 +53,6 @@ export async function saveBasics(_prev: FormState, formData: FormData): Promise<
   const input = {
     ...parsed.data,
     stopped_note: parsed.data.stopped_note ?? "",
-    advisor_name: parsed.data.advisor_name ?? "",
-    advisor_email: parsed.data.advisor_email ?? "",
   };
   const id = values.id;
 
@@ -99,17 +102,6 @@ export async function respondToInvite(projectId: string, accept: boolean): Promi
   return {};
 }
 
-/** The project has no supervising lecturer. Publishing then needs this declaration instead of an advisor approval. */
-export async function declareNoAdvisor(projectId: string): Promise<{ error?: string }> {
-  const t = await tr();
-  await requireUser(`/bagikan/${projectId}/tim`);
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("declare_no_advisor", { p_project_id: projectId });
-  if (error) return { error: dbErrorMessage(t.e, error) };
-  revalidatePath(`/bagikan/${projectId}`, "layout");
-  return {};
-}
-
 /** Records that the signed-in user accepted the current Terms and Privacy Policy. */
 export async function acceptPolicies(projectId?: string): Promise<{ error?: string }> {
   const t = await tr();
@@ -139,32 +131,6 @@ export async function confirmTeamConsent(projectId: string) {
   return { ok: true };
 }
 
-/**
- * Creates a fresh private advisor link (replacing any pending one). The token is shown once and only
- * its hash is stored. Sending the link is up to the owner: ESTAFET does not send email for this yet.
- */
-export async function createConsentLink(projectId: string): Promise<{ url?: string; error?: string }> {
-  const t = await tr();
-  const locale = await getLocale();
-  await requireUser(`/bagikan/${projectId}/tim`);
-  const project = await getOwnedProject(projectId);
-  if (!project) return { error: t.a("notOwnerConsent") };
-  if (!project.advisor_name || !project.advisor_email) return { error: t.a("advisorFirst") };
-
-  const token = generateToken();
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("issue_advisor_consent", {
-    p_project_id: projectId,
-    p_token_hash: hashToken(token),
-    p_expires_at: tokenExpiry(new Date(), (await getSettings()).advisor_token_ttl_days.value).toISOString(),
-  });
-  if (error) return { error: dbErrorMessage(t.e, error) };
-  revalidatePath(`/bagikan/${projectId}`, "layout");
-  const base = process.env.APP_URL ?? "http://localhost:3000";
-  // The advisor opens the link in the language of the person who created it.
-  return { url: `${base}${locale === "id" ? "" : `/${locale}`}/consent/${token}` };
-}
-
 export async function deleteFile(projectId: string, fileId: string): Promise<{ error?: string }> {
   const t = await tr();
   await requireUser(`/bagikan/${projectId}/berkas`);
@@ -173,7 +139,12 @@ export async function deleteFile(projectId: string, fileId: string): Promise<{ e
   if (!["draft", "unpublished"].includes(project.status)) return { error: t.a("filesLocked") };
 
   const supabase = await createClient();
-  const { data: file } = await supabase.from("project_files").select("*").eq("id", fileId).eq("project_id", projectId).maybeSingle();
+  const { data: file } = await supabase
+    .from("project_files")
+    .select("*")
+    .eq("id", fileId)
+    .eq("project_id", projectId)
+    .maybeSingle();
   if (!file) return { error: t.a("fileNotFound") };
 
   const admin = createAdminClient();

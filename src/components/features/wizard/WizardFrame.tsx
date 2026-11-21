@@ -5,7 +5,13 @@ import { Stepper } from "@/components/ui/Stepper";
 // Order (R4): info, files, review the AI draft, team and access, preview and publish.
 export const WIZARD_STEPS = ["info", "berkas", "tinjau", "tim", "terbit"] as const;
 export type WizardStep = (typeof WIZARD_STEPS)[number];
-const LABEL_KEY = { info: "stepBasics", berkas: "stepFiles", tinjau: "stepVerify", tim: "stepConsent", terbit: "stepPublish" } as const;
+const LABEL_KEY = {
+  info: "stepBasics",
+  berkas: "stepFiles",
+  tinjau: "stepVerify",
+  tim: "stepConsent",
+  terbit: "stepPublish",
+} as const;
 
 export function WizardFrame({
   projectId,

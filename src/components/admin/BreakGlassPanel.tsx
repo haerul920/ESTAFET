@@ -26,7 +26,8 @@ export function BreakGlassPanel({ projectId, files }: { projectId: string; files
         <TriangleAlert size={18} aria-hidden="true" /> Emergency access to private files
       </h2>
       <p className="mb-3 mt-1.5 text-sm text-text-3">
-        Only for legal or safety review. The creators are told, the access expires after 5 minutes, and it is written to the audit log. Admins cannot see private work any other way.
+        Only for legal or safety review. The creators are told, the access expires after 5 minutes, and it is written to
+        the audit log. Admins cannot see private work any other way.
       </p>
       {stored.length === 0 ? (
         <p className="m-0 text-sm text-text-2">This project has no stored private files.</p>
@@ -35,7 +36,12 @@ export function BreakGlassPanel({ projectId, files }: { projectId: string; files
           <label htmlFor="bg-file" className="mb-1 block text-sm font-semibold">
             File to open (one at a time)
           </label>
-          <select id="bg-file" value={fileId} onChange={(e) => setFileId(e.target.value)} className="mb-3 min-h-[44px] w-full rounded-[14px] border border-line-strong bg-white px-3.5">
+          <select
+            id="bg-file"
+            value={fileId}
+            onChange={(e) => setFileId(e.target.value)}
+            className="mb-3 min-h-[44px] w-full rounded-[14px] border border-line-strong bg-white px-3.5"
+          >
             {stored.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.name} ({f.kind}, {Math.max(1, Math.round(f.size_bytes / 1024))} KB)

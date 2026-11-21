@@ -33,7 +33,12 @@ export const useToast = () => useContext(Ctx);
  */
 export function ToastProvider({ children, labels }: { children: React.ReactNode; labels?: ToastLabels }) {
   const t = useTranslations("ui");
-  const L: ToastLabels = labels ?? { undo: t("undo"), undone: t("undone"), dismiss: t("dismiss"), region: t("notifications") };
+  const L: ToastLabels = labels ?? {
+    undo: t("undo"),
+    undone: t("undone"),
+    dismiss: t("dismiss"),
+    region: t("notifications"),
+  };
   const [items, setItems] = useState<ToastItem[]>([]);
   const seq = useRef(0);
 
@@ -73,7 +78,10 @@ export function ToastProvider({ children, labels }: { children: React.ReactNode;
                 {L.undo}
               </RT.Action>
             ) : null}
-            <RT.Close aria-label={L.dismiss} className="icon-btn flex h-8 w-8 cursor-pointer items-center justify-center rounded-full opacity-70 hover:opacity-100">
+            <RT.Close
+              aria-label={L.dismiss}
+              className="icon-btn flex h-8 w-8 cursor-pointer items-center justify-center rounded-full opacity-70 hover:opacity-100"
+            >
               <X size={16} aria-hidden="true" />
             </RT.Close>
           </RT.Root>

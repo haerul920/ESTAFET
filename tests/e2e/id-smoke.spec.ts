@@ -42,7 +42,7 @@ test("key public pages are fully Indonesian, with Indonesian formats", async ({ 
 
 test("the signed-in dashboard is Indonesian", async ({ page }) => {
   await page.goto("/login");
-  await page.getByLabel("Email kampus").fill("creator@estafet.demo");
+  await page.getByLabel("Email", { exact: true }).fill("creator@estafet.demo");
   await page.getByLabel("Kata sandi").fill("Demo-Pass-2026!");
   await page.getByRole("button", { name: "Masuk" }).last().click();
   await page.waitForURL("**/dasbor");

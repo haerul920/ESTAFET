@@ -27,7 +27,8 @@ export function diffObjects(before: Record<string, unknown> | null, after: Recor
     const a = after?.[key];
     const bs = show(b);
     const as = show(a);
-    const kind: DiffLine["kind"] = b === undefined ? "added" : a === undefined ? "removed" : bs === as ? "same" : "changed";
+    const kind: DiffLine["kind"] =
+      b === undefined ? "added" : a === undefined ? "removed" : bs === as ? "same" : "changed";
     return { key, before: bs, after: as, kind };
   });
 }
@@ -41,7 +42,18 @@ const esc = (v: string | null) => {
 export function auditCsv(rows: AuditEvent[]): string {
   const head = "when_utc,actor,action,target_type,target_id,reason,before,after";
   const lines = rows.map((r) =>
-    [r.created_at, r.actor_name, r.action, r.target_type, r.target_id, r.reason, r.before ? JSON.stringify(r.before) : null, r.after ? JSON.stringify(r.after) : null].map((v) => esc(v as string | null)).join(","),
+    [
+      r.created_at,
+      r.actor_name,
+      r.action,
+      r.target_type,
+      r.target_id,
+      r.reason,
+      r.before ? JSON.stringify(r.before) : null,
+      r.after ? JSON.stringify(r.after) : null,
+    ]
+      .map((v) => esc(v as string | null))
+      .join(","),
   );
   return [head, ...lines].join("\n") + "\n";
 }

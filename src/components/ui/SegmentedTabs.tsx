@@ -45,7 +45,9 @@ export function SegmentedTabs({
             >
               {t.label}
               {typeof t.count === "number" && t.count > 0 ? (
-                <span className="chip-hover ml-2 rounded-full bg-lime px-2 py-0.5 text-xs font-semibold text-black">{t.count}</span>
+                <span className="chip-hover ml-2 rounded-full bg-lime px-2 py-0.5 text-xs font-semibold text-black">
+                  {t.count}
+                </span>
               ) : null}
               {active ? (
                 <motion.span

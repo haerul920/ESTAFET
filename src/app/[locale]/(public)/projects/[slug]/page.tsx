@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { PageShell, Breadcrumb } from "@/components/ui/PageShell";
 import { ButtonLink } from "@/components/ui/Button";
+import { HeldNotice } from "@/components/features/HeldNotice";
 import { TeaserContent } from "@/components/features/TeaserContent";
 import { ProjectCta, type CtaState } from "@/components/features/ProjectCta";
 import { getTeaserBySlug, getTeaserItems, getTeaserLineage } from "@/lib/db/public";
@@ -10,13 +11,18 @@ import { getMyAccess, isProjectOwner } from "@/lib/db/access";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { buildPublicLineage } from "@/lib/lineage";
-import { ReportProject } from "@/components/features/ReportProject";
+import { ReportDialog } from "@/components/features/ReportDialog";
+import { ProjectMenu } from "@/components/features/ProjectMenu";
 import type { TFn } from "@/lib/labels";
 import type { TeaserProject } from "@/lib/db/types";
 
 type Params = { params: Promise<{ slug: string }> };
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string; locale: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; locale: string }>;
+}): Promise<Metadata> {
   const { slug, locale } = await params;
   const tm = await getTranslations({ locale, namespace: "teaser" });
   const project = await getTeaserBySlug(slug).catch(() => null);
@@ -55,7 +61,14 @@ async function ctaStateFor(project: TeaserProject, asVisitor: boolean): Promise<
 
   const watching =
     project.access_mode === "paused" || full
-      ? !!(await supabase.from("project_watchers").select("project_id").eq("project_id", project.id).eq("profile_id", user.id).maybeSingle()).data
+      ? !!(
+          await supabase
+            .from("project_watchers")
+            .select("project_id")
+            .eq("project_id", project.id)
+            .eq("profile_id", user.id)
+            .maybeSingle()
+        ).data
       : false;
   if (project.access_mode === "paused") return { kind: "paused", watching };
   if (full) return { kind: "quota_full", watching };
@@ -64,37 +77,58 @@ async function ctaStateFor(project: TeaserProject, asVisitor: boolean): Promise<
     : { kind: "by_request", verified: user.verified, email: user.email };
 }
 
-export default async function ProjectTeaserPage({ params, searchParams }: Params & { searchParams: Promise<{ as?: string }> }) {
+export default async function ProjectTeaserPage({
+  params,
+  searchParams,
+}: Params & { searchParams: Promise<{ as?: string }> }) {
   const { slug } = await params;
   const { as } = await searchParams;
   const project = await getTeaserBySlug(slug);
-  if (!project) notFound();
+  if (!project) {
+    // A project that is being held (after reports or by an admin) is not shown, but visitors get a neutral notice
+    // instead of a confusing "not found". No reason and no title are revealed.
+    const supabase = await createClient();
+    const { data: held } = await supabase.rpc("is_project_held", { p_slug: slug });
+    if (held === true) return <HeldNotice />;
+    notFound();
+  }
   const [locale, t, tl] = await Promise.all([getLocale(), getTranslations("teaser"), getTranslations("lineage")]);
 
   // Only an owner can ask for the visitor preview. For everyone else the parameter is ignored.
   const asVisitor = as === "visitor" && (await isProjectOwner(project.id));
-  const [items, lineageEvents, state] = await Promise.all([getTeaserItems(project.id), getTeaserLineage(project.id), ctaStateFor(project, asVisitor)]);
+  const [items, lineageEvents, state] = await Promise.all([
+    getTeaserItems(project.id),
+    getTeaserLineage(project.id),
+    ctaStateFor(project, asVisitor),
+  ]);
+  const signedIn = (await getCurrentUser()) !== null;
   const unlocked = state.kind === "owner" || state.kind === "holder";
   const workspace = `/projects/${project.slug}/workspace`;
 
   const cta = (
     <div className="flex flex-col gap-4">
       <ProjectCta state={state} projectId={project.id} slug={project.slug} />
-      <ReportProject projectId={project.id} />
+      <ReportDialog projectId={project.id} signedIn={signedIn} />
     </div>
   );
 
   return (
     <PageShell footerNote={project.is_demo ? t("demoFooter") : undefined}>
       {asVisitor ? (
-        <div role="status" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[18px] bg-blue-tint p-4 text-blue-dark">
+        <div
+          role="status"
+          className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[18px] bg-blue-tint p-4 text-blue-dark"
+        >
           <span>{t("previewBanner")}</span>
           <ButtonLink href={`/proyek/${project.slug}/pengaturan`} variant="outlineBlue" size="md">
             {t("previewExit")}
           </ButtonLink>
         </div>
       ) : null}
-      <Breadcrumb items={[{ label: t("explore"), href: "/explore" }, { label: project.title }]} />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Breadcrumb items={[{ label: t("explore"), href: "/explore" }, { label: project.title }]} />
+        <ProjectMenu projectId={project.id} signedIn={signedIn} />
+      </div>
       <TeaserContent
         project={project}
         items={items}

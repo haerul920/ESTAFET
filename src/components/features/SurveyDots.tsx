@@ -17,7 +17,10 @@ export function SurveyDots({ filled, total }: { filled: number; total: number })
         <motion.span
           key={i}
           className={`h-[22px] w-[22px] rounded-full ${i < filled ? "bg-blue" : "bg-[#D3D6DA]"}`}
-          variants={{ hidden: { scale: 0 }, show: { scale: 1, transition: { type: "spring", stiffness: 500, damping: 18 } } }}
+          variants={{
+            hidden: { scale: 0 },
+            show: { scale: 1, transition: { type: "spring", stiffness: 500, damping: 18 } },
+          }}
         />
       ))}
     </motion.div>

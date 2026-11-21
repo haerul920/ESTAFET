@@ -79,15 +79,33 @@ html[data-page-hidden="true"] [data-loop] * {
   opacity: 1;
   transform: none;
 }
-.stagger > .reveal-item:nth-child(1) { --i: 0; }
-.stagger > .reveal-item:nth-child(2) { --i: 1; }
-.stagger > .reveal-item:nth-child(3) { --i: 2; }
-.stagger > .reveal-item:nth-child(4) { --i: 3; }
-.stagger > .reveal-item:nth-child(5) { --i: 4; }
-.stagger > .reveal-item:nth-child(6) { --i: 5; }
-.stagger > .reveal-item:nth-child(7) { --i: 6; }
-.stagger > .reveal-item:nth-child(8) { --i: 7; }
-.stagger > .reveal-item:nth-child(n + 9) { --i: 8; }
+.stagger > .reveal-item:nth-child(1) {
+  --i: 0;
+}
+.stagger > .reveal-item:nth-child(2) {
+  --i: 1;
+}
+.stagger > .reveal-item:nth-child(3) {
+  --i: 2;
+}
+.stagger > .reveal-item:nth-child(4) {
+  --i: 3;
+}
+.stagger > .reveal-item:nth-child(5) {
+  --i: 4;
+}
+.stagger > .reveal-item:nth-child(6) {
+  --i: 5;
+}
+.stagger > .reveal-item:nth-child(7) {
+  --i: 6;
+}
+.stagger > .reveal-item:nth-child(8) {
+  --i: 7;
+}
+.stagger > .reveal-item:nth-child(n + 9) {
+  --i: 8;
+}
 
 /* Without scripting nothing may stay hidden. */
 @media (scripting: none) {
@@ -358,17 +376,39 @@ html[data-page-hidden="true"] [data-loop] * {
     transform: translate3d(24px, 0, 0);
   }
 }
-.o-overlay[data-state="open"] { animation: overlay-in var(--dur-std) var(--ease); }
-.o-overlay[data-state="closed"] { animation: overlay-out var(--dur-micro) var(--ease) forwards; }
-.o-dialog[data-state="open"] { animation: dialog-in var(--dur-std) var(--ease); }
-.o-dialog[data-state="closed"] { animation: dialog-out var(--dur-micro) var(--ease) forwards; }
-.o-drawer[data-state="open"] { animation: drawer-in var(--dur-std) var(--ease); }
-.o-drawer[data-state="closed"] { animation: drawer-out var(--dur-micro) var(--ease) forwards; }
-.o-sheet[data-state="open"] { animation: sheet-in var(--dur-std) var(--ease); }
-.o-menu[data-state="open"] { animation: menu-in var(--dur-micro) var(--ease); }
-.o-menu[data-state="closed"] { animation: menu-out 100ms var(--ease) forwards; }
-.o-toast[data-state="open"] { animation: toast-in var(--dur-std) var(--ease); }
-.o-toast[data-state="closed"] { animation: toast-out var(--dur-micro) var(--ease) forwards; }
+.o-overlay[data-state="open"] {
+  animation: overlay-in var(--dur-std) var(--ease);
+}
+.o-overlay[data-state="closed"] {
+  animation: overlay-out var(--dur-micro) var(--ease) forwards;
+}
+.o-dialog[data-state="open"] {
+  animation: dialog-in var(--dur-std) var(--ease);
+}
+.o-dialog[data-state="closed"] {
+  animation: dialog-out var(--dur-micro) var(--ease) forwards;
+}
+.o-drawer[data-state="open"] {
+  animation: drawer-in var(--dur-std) var(--ease);
+}
+.o-drawer[data-state="closed"] {
+  animation: drawer-out var(--dur-micro) var(--ease) forwards;
+}
+.o-sheet[data-state="open"] {
+  animation: sheet-in var(--dur-std) var(--ease);
+}
+.o-menu[data-state="open"] {
+  animation: menu-in var(--dur-micro) var(--ease);
+}
+.o-menu[data-state="closed"] {
+  animation: menu-out 100ms var(--ease) forwards;
+}
+.o-toast[data-state="open"] {
+  animation: toast-in var(--dur-std) var(--ease);
+}
+.o-toast[data-state="closed"] {
+  animation: toast-out var(--dur-micro) var(--ease) forwards;
+}
 
 /* Tab and accordion content slides in. */
 @keyframes slide-in {

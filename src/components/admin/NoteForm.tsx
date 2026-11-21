@@ -30,10 +30,28 @@ export function NoteForm({ targetType, targetId }: { targetType: "request" | "pr
         });
       }}
     >
-      <label htmlFor="admin-note" className="text-sm font-semibold">Admin note (only admins can see it)</label>
-      <textarea id="admin-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} className="w-full resize-y rounded-[14px] border border-line-strong bg-white px-3.5 py-2.5 text-[15px]" />
-      {error ? <span role="alert" className="text-[13px] font-semibold text-danger">{error}</span> : null}
-      <Button type="submit" size="md" variant="outline" disabled={pending || note.trim().length < 3} className="self-start">
+      <label htmlFor="admin-note" className="text-sm font-semibold">
+        Admin note (only admins can see it)
+      </label>
+      <textarea
+        id="admin-note"
+        rows={2}
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        className="w-full resize-y rounded-[14px] border border-line-strong bg-white px-3.5 py-2.5 text-[15px]"
+      />
+      {error ? (
+        <span role="alert" className="text-[13px] font-semibold text-danger">
+          {error}
+        </span>
+      ) : null}
+      <Button
+        type="submit"
+        size="md"
+        variant="outline"
+        disabled={pending || note.trim().length < 3}
+        className="self-start"
+      >
         {pending ? "Saving…" : "Add note"}
       </Button>
     </form>

@@ -3,8 +3,26 @@ import { Inbox } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatWita, relativeTime } from "@/lib/admin/time";
 
-export function StatCard({ label, value, hint, href, tone = "grey" }: { label: string; value: React.ReactNode; hint?: string; href?: string; tone?: "grey" | "warn" | "blue" | "ok" | "danger" }) {
-  const tones = { grey: "bg-surface", warn: "bg-warn-bg", blue: "bg-blue-tint", ok: "bg-ok-bg", danger: "bg-[#fdecea]" };
+export function StatCard({
+  label,
+  value,
+  hint,
+  href,
+  tone = "grey",
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+  href?: string;
+  tone?: "grey" | "warn" | "blue" | "ok" | "danger";
+}) {
+  const tones = {
+    grey: "bg-surface",
+    warn: "bg-warn-bg",
+    blue: "bg-blue-tint",
+    ok: "bg-ok-bg",
+    danger: "bg-[#fdecea]",
+  };
   const inner = (
     <>
       <span className="mono-label block text-[11px] text-text-2">{label}</span>
@@ -12,7 +30,11 @@ export function StatCard({ label, value, hint, href, tone = "grey" }: { label: s
       {hint ? <span className="mt-1.5 block text-[13px] text-text-2">{hint}</span> : null}
     </>
   );
-  const cls = cn("block rounded-3xl p-4 text-ink no-underline", tones[tone], href && "transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5");
+  const cls = cn(
+    "block rounded-3xl p-4 text-ink no-underline",
+    tones[tone],
+    href && "transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5",
+  );
   return href ? (
     <Link href={href} className={cls}>
       {inner}
@@ -32,14 +54,24 @@ const PILL = {
 } as const;
 
 export function StatusPill({ tone = "neutral", children }: { tone?: keyof typeof PILL; children: React.ReactNode }) {
-  return <span className={cn("inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold", PILL[tone])}>{children}</span>;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold",
+        PILL[tone],
+      )}
+    >
+      {children}
+    </span>
+  );
 }
 
 /** Maps common statuses to pill tones so every table reads the same way. */
 export function toneFor(status: string): keyof typeof PILL {
   if (["ok", "published", "approved", "done", "resolved", "matched", "restored", "mock"].includes(status)) return "ok";
   if (["open", "pending", "in_review", "running", "queued", "unpublished", "partial"].includes(status)) return "warn";
-  if (["hidden", "removed", "failed", "declined", "not_found", "suspended", "expired"].includes(status)) return "danger";
+  if (["hidden", "removed", "failed", "declined", "not_found", "suspended", "expired"].includes(status))
+    return "danger";
   if (["live"].includes(status)) return "info";
   return "neutral";
 }
@@ -108,7 +140,17 @@ export function PageHeader({ title, intro, actions }: { title: string; intro?: s
   );
 }
 
-export function Panel({ title, children, className, action }: { title?: string; children: React.ReactNode; className?: string; action?: React.ReactNode }) {
+export function Panel({
+  title,
+  children,
+  className,
+  action,
+}: {
+  title?: string;
+  children: React.ReactNode;
+  className?: string;
+  action?: React.ReactNode;
+}) {
   return (
     <section className={cn("rounded-3xl bg-surface p-5", className)}>
       {title ? (

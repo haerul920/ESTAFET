@@ -404,3 +404,16 @@ Rules:
 - SEO and sharing: Indonesian metadata, sitemap, robots, Open Graph images, canonical URLs, structured data for public projects (not for held or hidden ones), `noindex` for staging and demo.
 - Performance budget: LCP under 2.5 s on a mid range phone for Home and Explore, JS budget documented, images optimized, fonts preloaded and subsetted.
 - Accessibility: WCAG 2.1 AA, keyboard complete, screen reader labels in Indonesian, contrast checks, reduced motion.
+
+## 15. Amendments by the owner (these supersede everything above)
+
+### 15.1 No advisor (lecturer) role. Decided 2026-11-21
+ESTAFET is for students only. There is no dosen pembimbing anywhere in the product.
+- Removed from the product: advisor fields, the private approval link and its page, the "no advisor" declaration, advisor credit in agreements and the credit line, advisor badges and notifications, the admin consent tools.
+- Publishing a project needs only: at least one kept item, every drafted item reviewed, every active member consented, and the current policies accepted by the publisher. This replaces the advisor requirements in sections 1, 5, 6, 8, 14.2 and 14.5 and the "advisor consent" email in 14.10.
+- AI drafting needs team consent only (unchanged).
+- Old advisor columns and the `advisor_consents` table stay in the database, marked deprecated, so nothing is destroyed. A later cleanup migration may drop them. No code may write to them.
+- Do not add anything advisor-related again without a new decision from the owner.
+
+### 15.2 Any email address can sign up. Decided 2026-11-21
+Sign-up and sign-in work with any email, not only a university email. UI copy says "Email", never "university email". `ALLOWED_EMAIL_DOMAINS` stays only as an optional admin restriction and is empty (off) by default. Email confirmation is still required before sharing a project or taking access.

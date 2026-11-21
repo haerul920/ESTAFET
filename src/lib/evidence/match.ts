@@ -8,7 +8,7 @@ export interface MatchResult {
   score: number;
 }
 
-export const FUZZY_THRESHOLD = 0.9;
+const FUZZY_THRESHOLD = 0.9;
 
 function levenshtein(a: string, b: string): number {
   if (a === b) return 0;
@@ -31,7 +31,7 @@ function similarity(a: string, b: string): number {
 }
 
 /** Best fuzzy similarity between the quote and any window of the page with a similar word count. */
-export function bestFuzzyScore(quote: string, pageText: string): number {
+function bestFuzzyScore(quote: string, pageText: string): number {
   const q = words(quote);
   const p = words(pageText);
   if (q.length === 0 || p.length === 0) return 0;

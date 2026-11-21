@@ -68,7 +68,16 @@ function ArrowCircle({ variant, size }: { variant: ButtonVariant; size: ButtonSi
 
 type ButtonProps = Shared & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children" | "className">;
 
-export function Button({ variant = "primary", size = "md", arrow, glow, className, children, type = "button", ...rest }: ButtonProps) {
+export function Button({
+  variant = "primary",
+  size = "md",
+  arrow,
+  glow,
+  className,
+  children,
+  type = "button",
+  ...rest
+}: ButtonProps) {
   const showArrow = arrow ?? false;
   return (
     <button type={type} className={cn(styles(variant, size, showArrow, glow), className)} {...rest}>
@@ -89,7 +98,15 @@ type ButtonLinkProps = Shared & {
   "aria-label"?: string;
 };
 
-export function ButtonLink({ variant = "primary", size = "md", arrow, glow, className, children, ...rest }: ButtonLinkProps) {
+export function ButtonLink({
+  variant = "primary",
+  size = "md",
+  arrow,
+  glow,
+  className,
+  children,
+  ...rest
+}: ButtonLinkProps) {
   const showArrow = arrow ?? false;
   const cls = cn(styles(variant, size, showArrow, glow), className);
   // API routes (downloads, PDFs) are not pages: they must not get a language prefix, so they use a plain anchor.

@@ -12,7 +12,9 @@ const id = JSON.parse(readFileSync(join(ROOT, "messages/id.json"), "utf8"));
 const en = JSON.parse(readFileSync(join(ROOT, "messages/en.json"), "utf8"));
 
 const flat = (obj, prefix = "") =>
-  Object.entries(obj).flatMap(([k, v]) => (v && typeof v === "object" ? flat(v, `${prefix}${k}.`) : [[`${prefix}${k}`, v]]));
+  Object.entries(obj).flatMap(([k, v]) =>
+    v && typeof v === "object" ? flat(v, `${prefix}${k}.`) : [[`${prefix}${k}`, v]],
+  );
 const idMap = new Map(flat(id));
 const enMap = new Map(flat(en));
 
@@ -39,7 +41,8 @@ const fail = (m) => errors.push(m);
 for (const k of idMap.keys()) if (!enMap.has(k)) fail(`missing in en.json: ${k}`);
 for (const k of enMap.keys()) if (!idMap.has(k)) fail(`missing in id.json: ${k}`);
 for (const [k, v] of idMap) {
-  if (enMap.has(k) && placeholders(String(v)) !== placeholders(String(enMap.get(k)))) fail(`placeholders differ for ${k}`);
+  if (enMap.has(k) && placeholders(String(v)) !== placeholders(String(enMap.get(k))))
+    fail(`placeholders differ for ${k}`);
   if (String(v).trim() === "") fail(`empty id message: ${k}`);
 }
 
@@ -60,9 +63,45 @@ const FILE_NS = {
   "src/lib/errors.ts": { t: "errors" },
 };
 // Keys that are built from data at run time (enum values, SQL hints), so a static scan cannot see them used.
-const DYNAMIC_PREFIXES = ["labels.", "errors.hints.", "lineage.events.", "report.r.", "advisor.r.", "auth.demo", "terms.l", "privacy.l", "wizard.step", "board.f", "board.st", "access.open", "access.byRequest", "access.paused", "wizard.limit", "wizard.effect", "settings.req.", "settings.pub.", "review.tpl", "workspace.progressNone", "workspace.progressDoing", "workspace.progressDone"];
+const DYNAMIC_PREFIXES = [
+  "labels.",
+  "errors.hints.",
+  "lineage.events.",
+  "report.r.",
+  "auth.demo",
+  "legal.",
+  "decision.status",
+  "decision.action.",
+  "myReports.status.",
+  "myReports.explain.",
+  "report.d.",
+  "account.delete.l",
+  "wizard.step",
+  "board.f",
+  "board.st",
+  "access.open",
+  "access.byRequest",
+  "access.paused",
+  "wizard.limit",
+  "wizard.effect",
+  "settings.req.",
+  "settings.pub.",
+  "review.tpl",
+  "workspace.progressNone",
+  "workspace.progressDoing",
+  "workspace.progressDone",
+];
 // Single keys picked by a variable (for example t(link.key) or ag(k)).
-const DYNAMIC_KEYS = ["nav.explore", "nav.dashboard", "lang.id", "lang.en", "agreement.t1", "agreement.t2", "agreement.t3", "agreement.t4"];
+const DYNAMIC_KEYS = [
+  "nav.explore",
+  "nav.dashboard",
+  "lang.id",
+  "lang.en",
+  "agreement.t1",
+  "agreement.t2",
+  "agreement.t3",
+  "agreement.t4",
+];
 
 const used = new Set();
 const usedPrefixes = new Set();
@@ -75,7 +114,10 @@ function markIn(nsList, key, file, strict) {
   }
   const hit = nsList.map((ns) => fullKey(ns, key)).filter((k) => idMap.has(k));
   if (hit.length) for (const k of hit) used.add(k);
-  else if (strict) fail(`${relative(ROOT, file)}: unknown message key "${fullKey(nsList[0], key)}"${nsList.length > 1 ? ` (also tried ${nsList.slice(1).join(", ")})` : ""}`);
+  else if (strict)
+    fail(
+      `${relative(ROOT, file)}: unknown message key "${fullKey(nsList[0], key)}"${nsList.length > 1 ? ` (also tried ${nsList.slice(1).join(", ")})` : ""}`,
+    );
 }
 
 for (const file of files) {
@@ -84,11 +126,15 @@ for (const file of files) {
   // A name can be declared in several scopes of one file (for example `t` in generateMetadata and in the page),
   // so each name maps to every namespace declared for it. A key is valid when it exists in any of them.
   const vars = {};
-  const addVar = (name, ns) => ((vars[name] ??= new Set()).add(ns));
+  const addVar = (name, ns) => (vars[name] ??= new Set()).add(ns);
   for (const [n, ns] of Object.entries(FILE_NS[rel] ?? {})) addVar(n, ns);
 
-  for (const m of src.matchAll(/const\s+(\w+)\s*=\s*(?:await\s+)?(?:useTranslations|getTranslations)\(\s*"([\w.]+)"\s*\)/g)) addVar(m[1], m[2]);
-  for (const m of src.matchAll(/const\s+(\w+)\s*=\s*await\s+getTranslations\(\{[^}]*namespace:\s*"([\w.]+)"[^}]*\}\)/g)) addVar(m[1], m[2]);
+  for (const m of src.matchAll(
+    /const\s+(\w+)\s*=\s*(?:await\s+)?(?:useTranslations|getTranslations)\(\s*"([\w.]+)"\s*\)/g,
+  ))
+    addVar(m[1], m[2]);
+  for (const m of src.matchAll(/const\s+(\w+)\s*=\s*await\s+getTranslations\(\{[^}]*namespace:\s*"([\w.]+)"[^}]*\}\)/g))
+    addVar(m[1], m[2]);
   for (const m of src.matchAll(/const\s+\[([^\]]+)\]\s*=\s*(?:\()?await\s+Promise\.all\(\[([\s\S]*?)\]\)/g)) {
     const names = m[1].split(",").map((x) => x.trim());
     const items = [];
@@ -118,7 +164,8 @@ for (const file of files) {
     }
   }
   // (await getTranslations({ locale, namespace: "x" }))("key")
-  for (const m of src.matchAll(/getTranslations\(\{[^}]*namespace:\s*"([\w.]+)"[^}]*\}\)\)\(\s*(["`])([^"`]+)/g)) markIn([m[1]], m[3], file, true);
+  for (const m of src.matchAll(/getTranslations\(\{[^}]*namespace:\s*"([\w.]+)"[^}]*\}\)\)\(\s*(["`])([^"`]+)/g))
+    markIn([m[1]], m[3], file, true);
 
   for (const [name, nsSet] of Object.entries(vars)) {
     const escaped = name.replace(/\./g, "\\.");
@@ -153,8 +200,27 @@ for (const k of idMap.keys()) {
 }
 
 // 4. hard-coded strings in components (admin area exempt until R6)
-const EXEMPT = [/^src\/app\/\[locale\]\/admin\//, /^src\/components\/admin\//, /^src\/lib\/admin\//, /^src\/app\/api\//];
-const ALLOW_WORDS = new Set(["ESTAFET", "STACK", "PDF", "Markdown", "ZIP", "ID", "EN", "Supabase", "Beban", "Server", "Promise", "DemoPass2026", "env"]);
+const EXEMPT = [
+  /^src\/app\/\[locale\]\/admin\//,
+  /^src\/components\/admin\//,
+  /^src\/lib\/admin\//,
+  /^src\/app\/api\//,
+];
+const ALLOW_WORDS = new Set([
+  "ESTAFET",
+  "STACK",
+  "PDF",
+  "Markdown",
+  "ZIP",
+  "ID",
+  "EN",
+  "Supabase",
+  "Beban",
+  "Server",
+  "Promise",
+  "DemoPass2026",
+  "env",
+]);
 for (const file of files) {
   const rel = relative(ROOT, file).replace(/\\/g, "/");
   if (!/\.tsx$/.test(rel) || EXEMPT.some((r) => r.test(rel))) continue;
@@ -179,4 +245,6 @@ if (errors.length) {
   if (errors.length > 200) console.error(` ... and ${errors.length - 200} more`);
   process.exit(1);
 }
-console.log(`i18n check passed: ${idMap.size} keys, both languages, no missing or unused keys, no hard-coded component text.`);
+console.log(
+  `i18n check passed: ${idMap.size} keys, both languages, no missing or unused keys, no hard-coded component text.`,
+);

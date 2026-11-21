@@ -69,7 +69,9 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
     return (
       <Card as="section">
         <h2 className="mb-2 mt-0 text-[22px]">{t("decisionTitle")}</h2>
-        <p className="m-0">{decidedAt ? t("stateOn", { state, date: formatDate(decidedAt, locale) }) : t("stateNoDate", { state })}</p>
+        <p className="m-0">
+          {decidedAt ? t("stateOn", { state, date: formatDate(decidedAt, locale) }) : t("stateNoDate", { state })}
+        </p>
         {decisionNote ? <p className="mb-0 mt-2 text-text-2">{t("decisionMessage", { note: decisionNote })}</p> : null}
         {status === "declined" ? <p className="mb-0 mt-2 text-sm text-text-2">{t("declinedNote")}</p> : null}
         {status === "expired" ? <p className="mb-0 mt-2 text-sm text-text-2">{t("expiredNote")}</p> : null}
@@ -90,7 +92,12 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
             {confirmDecline ? (
               <div className="flex flex-wrap items-center gap-3">
                 <span>{t("withdrawAsk")}</span>
-                <Button variant="danger" size="md" disabled={pending} onClick={() => run(() => withdrawRequest(requestId))}>
+                <Button
+                  variant="danger"
+                  size="md"
+                  disabled={pending}
+                  onClick={() => run(() => withdrawRequest(requestId))}
+                >
                   {t("withdrawYes")}
                 </Button>
                 <Button variant="outline" size="md" onClick={() => setConfirmDecline(false)}>
@@ -165,7 +172,12 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
         </Button>
         {confirmDecline ? (
           <span className="flex flex-wrap items-center gap-2">
-            <Button variant="danger" size="md" disabled={pending} onClick={() => run(() => decideRequest(requestId, "declined", message))}>
+            <Button
+              variant="danger"
+              size="md"
+              disabled={pending}
+              onClick={() => run(() => decideRequest(requestId, "declined", message))}
+            >
               {t("declineYes")}
             </Button>
             <Button variant="outline" size="md" onClick={() => setConfirmDecline(false)}>
@@ -217,7 +229,9 @@ export function AgreementCard(p: ReviewProps) {
       <div>
         <h2 className="mb-1 mt-0 text-xl">{ag("title")}</h2>
         <span className="text-[13px] text-text-2">
-          {p.status === "approved" ? ag("version", { version: AGREEMENT_VERSION }) : ag("opensAfter", { version: AGREEMENT_VERSION })}
+          {p.status === "approved"
+            ? ag("version", { version: AGREEMENT_VERSION })
+            : ag("opensAfter", { version: AGREEMENT_VERSION })}
         </span>
       </div>
       <ul className="m-0 flex flex-col gap-2 pl-5 text-[15px]">
@@ -236,9 +250,15 @@ export function AgreementCard(p: ReviewProps) {
               <li key={h.accessId} className="flex flex-col gap-2 text-sm">
                 <span className="flex flex-wrap items-center justify-between gap-2">
                   <span>{t("acceptedOn", { name: h.name, date: formatDate(h.acceptedAt, locale) })}</span>
-                  {h.status === "active" ? <Badge tone="ok">{t("hasAccess")}</Badge> : <Badge tone="neutral">{t("accessRevoked")}</Badge>}
+                  {h.status === "active" ? (
+                    <Badge tone="ok">{t("hasAccess")}</Badge>
+                  ) : (
+                    <Badge tone="neutral">{t("accessRevoked")}</Badge>
+                  )}
                 </span>
-                {p.isOwner && h.status === "active" ? <RevokeControl accessId={h.accessId} requestId={p.requestId} name={h.name} /> : null}
+                {p.isOwner && h.status === "active" ? (
+                  <RevokeControl accessId={h.accessId} requestId={p.requestId} name={h.name} />
+                ) : null}
               </li>
             ))}
           </ul>
@@ -276,7 +296,12 @@ export function AgreementCard(p: ReviewProps) {
               <ButtonLink href={p.workspaceHref} size="md">
                 <FolderOpen size={18} aria-hidden="true" /> {t("openWorkspace")}
               </ButtonLink>
-              <ButtonLink href={`/api/requests/${p.requestId}/agreement?lang=${locale}`} variant="outline" size="md" download>
+              <ButtonLink
+                href={`/api/requests/${p.requestId}/agreement?lang=${locale}`}
+                variant="outline"
+                size="md"
+                download
+              >
                 <Download size={18} aria-hidden="true" /> {t("pdf")}
               </ButtonLink>
             </div>
@@ -347,7 +372,9 @@ export function CreditLineCard({ creditLine }: { creditLine: string }) {
   return (
     <Card as="section" className="flex flex-col gap-3">
       <h2 className="m-0 text-base">{t("creditTitle")}</h2>
-      <div className="rounded-[14px] border border-line-soft bg-white p-3.5 font-code text-[13px] leading-[1.6] text-text-3">{creditLine}</div>
+      <div className="rounded-[14px] border border-line-soft bg-white p-3.5 font-code text-[13px] leading-[1.6] text-text-3">
+        {creditLine}
+      </div>
       <Button
         variant="outlineBlue"
         size="md"

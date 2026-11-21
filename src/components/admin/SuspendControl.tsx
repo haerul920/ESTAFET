@@ -4,7 +4,17 @@ import { useState } from "react";
 import { ReasonAction } from "./ReasonDialog";
 import { restoreUser, suspendUser } from "@/app/[locale]/admin/actions";
 
-export function SuspendControl({ userId, suspended, self, isAdmin }: { userId: string; suspended: boolean; self: boolean; isAdmin: boolean }) {
+export function SuspendControl({
+  userId,
+  suspended,
+  self,
+  isAdmin,
+}: {
+  userId: string;
+  suspended: boolean;
+  self: boolean;
+  isAdmin: boolean;
+}) {
   const [until, setUntil] = useState("");
   if (self) return <p className="m-0 text-sm text-text-2">You cannot suspend yourself.</p>;
   if (suspended) {
@@ -34,8 +44,17 @@ export function SuspendControl({ userId, suspended, self, isAdmin }: { userId: s
       successMessage="User suspended."
     >
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="suspend-until" className="text-sm font-semibold">Suspend until (optional)</label>
-        <input id="suspend-until" type="date" value={until} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setUntil(e.target.value)} className="min-h-[44px] rounded-[14px] border border-line-strong px-3.5" />
+        <label htmlFor="suspend-until" className="text-sm font-semibold">
+          Suspend until (optional)
+        </label>
+        <input
+          id="suspend-until"
+          type="date"
+          value={until}
+          min={new Date().toISOString().slice(0, 10)}
+          onChange={(e) => setUntil(e.target.value)}
+          className="min-h-[44px] rounded-[14px] border border-line-strong px-3.5"
+        />
         <span className="text-[13px] text-text-2">Leave empty to suspend until you restore the account.</span>
       </div>
     </ReasonAction>

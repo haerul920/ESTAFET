@@ -1,15 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type {
-  AdvisorConsent,
-  AdvisorMode,
-  DraftItem,
-  Project,
-  ProjectFile,
-  ProjectMember,
-  SynthesisRun,
-} from "./types";
+import type { DraftItem, Project, ProjectFile, ProjectMember, SynthesisRun } from "./types";
 import type { ExtractedDoc } from "@/lib/ingest/types";
 import { locateQuote } from "@/lib/evidence/match";
 
@@ -28,7 +20,6 @@ export interface SourceView {
 export interface PublishChecklist {
   /** Active members only. People who were invited but have not accepted do not count. */
   team: { confirmed: number; total: number; done: boolean };
-  advisor: { status: AdvisorConsent["status"] | "none" | "not_needed"; done: boolean; expiresAt: string | null; mode: AdvisorMode };
   review: { reviewed: number; total: number; kept: number; done: boolean };
   policies: { done: boolean };
   canPublish: boolean;
@@ -60,17 +51,6 @@ export async function getTeam(projectId: string): Promise<(ProjectMember & { ful
   return rows.map((r) => ({ ...r, full_name: names.get(r.profile_id) ?? "Team member" }));
 }
 
-export async function getLatestConsent(projectId: string): Promise<AdvisorConsent | null> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("advisor_consents")
-    .select("id, project_id, status, comment, expires_at, decided_at, created_at")
-    .eq("project_id", projectId)
-    .order("created_at", { ascending: false });
-  const rows = (data ?? []) as AdvisorConsent[];
-  return rows.find((r) => r.status === "approved") ?? rows[0] ?? null;
-}
-
 export async function getFiles(projectId: string): Promise<ProjectFile[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -93,7 +73,9 @@ export async function getItems(projectId: string): Promise<DraftItem[]> {
   return (data ?? []) as DraftItem[];
 }
 
-export async function getLatestRun(projectId: string): Promise<(SynthesisRun & { summary_draft: string | null }) | null> {
+export async function getLatestRun(
+  projectId: string,
+): Promise<(SynthesisRun & { summary_draft: string | null }) | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("synthesis_runs")
@@ -107,38 +89,25 @@ export async function getLatestRun(projectId: string): Promise<(SynthesisRun & {
 
 export function buildChecklist(
   team: { consented_at: string | null; status?: string }[],
-  consent: AdvisorConsent | null,
   items: DraftItem[],
-  extra: { advisorMode: AdvisorMode; noAdvisorDeclared: boolean; policiesAccepted: boolean } = {
-    advisorMode: "advisor",
-    noAdvisorDeclared: false,
-    policiesAccepted: true,
-  },
+  extra: { policiesAccepted: boolean } = { policiesAccepted: true },
 ): PublishChecklist {
   const active = team.filter((m) => (m.status ?? "active") === "active");
   const confirmed = active.filter((m) => m.consented_at).length;
   const reviewed = items.filter((i) => i.review_status !== "pending").length;
   const kept = items.filter((i) => i.review_status === "kept").length;
   const teamDone = active.length > 0 && confirmed === active.length;
-  const noAdvisor = extra.advisorMode === "none" && extra.noAdvisorDeclared;
-  const advisorDone = noAdvisor || (extra.advisorMode === "advisor" && consent?.status === "approved");
   const reviewDone = items.length > 0 && reviewed === items.length && kept > 0;
   return {
     team: { confirmed, total: active.length, done: teamDone },
-    advisor: {
-      status: noAdvisor ? "not_needed" : (consent?.status ?? "none"),
-      done: advisorDone,
-      expiresAt: consent?.expires_at ?? null,
-      mode: extra.advisorMode,
-    },
     review: { reviewed, total: items.length, kept, done: reviewDone },
     policies: { done: extra.policiesAccepted },
-    canPublish: teamDone && advisorDone && reviewDone && extra.policiesAccepted,
+    canPublish: teamDone && reviewDone && extra.policiesAccepted,
   };
 }
 
 /** Reads the extracted text of the project's files (service role, after the caller checked access). */
-export async function loadExtractedDocs(files: ProjectFile[]): Promise<Map<string, ExtractedDoc>> {
+async function loadExtractedDocs(files: ProjectFile[]): Promise<Map<string, ExtractedDoc>> {
   const admin = createAdminClient();
   const out = new Map<string, ExtractedDoc>();
   for (const f of files) {
@@ -162,7 +131,16 @@ export async function buildSourceViews(items: DraftItem[], files: ProjectFile[])
   for (const item of items) {
     const ev = item.evidence[0];
     if (!ev) {
-      out[item.id] = { file: "No source", pageLabel: "", found: false, before: "", quote: "", after: "", context: "", fileMissing: true };
+      out[item.id] = {
+        file: "No source",
+        pageLabel: "",
+        found: false,
+        before: "",
+        quote: "",
+        after: "",
+        context: "",
+        fileMissing: true,
+      };
       continue;
     }
     const file = fileById.get(ev.file_id);
@@ -170,12 +148,30 @@ export async function buildSourceViews(items: DraftItem[], files: ProjectFile[])
     const page = doc?.pages.find((p) => p.page === ev.page);
     const pageLabel = file?.kind === "markdown" ? `section ${ev.page}` : `page ${ev.page}`;
     if (!file || !doc || !page) {
-      out[item.id] = { file: file?.original_name ?? "Removed file", pageLabel, found: false, before: "", quote: ev.quote, after: "", context: "", fileMissing: true };
+      out[item.id] = {
+        file: file?.original_name ?? "Removed file",
+        pageLabel,
+        found: false,
+        before: "",
+        quote: ev.quote,
+        after: "",
+        context: "",
+        fileMissing: true,
+      };
       continue;
     }
     const loc = ev.quote ? locateQuote(ev.quote, page.text) : null;
     out[item.id] = loc
-      ? { file: file.original_name, pageLabel, found: true, before: loc.before, quote: loc.match, after: loc.after, context: "", fileMissing: false }
+      ? {
+          file: file.original_name,
+          pageLabel,
+          found: true,
+          before: loc.before,
+          quote: loc.match,
+          after: loc.after,
+          context: "",
+          fileMissing: false,
+        }
       : {
           file: file.original_name,
           pageLabel,

@@ -19,7 +19,9 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
   return (
     <PageShell width={520}>
       <h1 className="mb-2 mt-0 text-[36px] font-medium">{t("signupTitle")}</h1>
-      <p className="mb-6 mt-0 text-text-2">{domains.length ? t("signupDomains", { domains: domains.join(", ") }) : t("signupLead")}</p>
+      <p className="mb-6 mt-0 text-text-2">
+        {domains.length ? t("signupDomains", { domains: domains.join(", ") }) : t("signupLead")}
+      </p>
       <AuthForm mode="signup" action={signup} next={safeNext(next)} />
     </PageShell>
   );

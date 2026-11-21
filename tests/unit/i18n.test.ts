@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import en from "../../messages/en.json";
 import id from "../../messages/id.json";
@@ -8,15 +10,31 @@ import { splitLocale } from "@/lib/supabase/middleware";
 import { translator } from "./i18n-helpers";
 
 const flat = (o: Record<string, unknown>, p = ""): string[] =>
-  Object.entries(o).flatMap(([k, v]) => (v && typeof v === "object" ? flat(v as Record<string, unknown>, `${p}${k}.`) : [`${p}${k}`]));
+  Object.entries(o).flatMap(([k, v]) =>
+    v && typeof v === "object" ? flat(v as Record<string, unknown>, `${p}${k}.`) : [`${p}${k}`],
+  );
 
 describe("messages", () => {
   it("have the same keys in Indonesian and English", () => {
     expect(flat(id).sort()).toEqual(flat(en).sort());
   });
-  it("have a message for every database error hint", () => {
-    const keys = new Set(flat(id));
-    for (const hint of KNOWN_HINTS) expect(keys.has(`errors.hints.${hint}`), hint).toBe(true);
+  it("have a message, in both languages, for every hint a database function can raise", () => {
+    const dir = path.resolve(__dirname, "../../supabase/migrations");
+    // Hints of the retired advisor flow still appear in the old migration files (history). Nothing raises them any more.
+    const retired = new Set(["advisor_approved", "advisor_required"]);
+    const raised = new Set<string>();
+    for (const file of fs.readdirSync(dir).filter((f) => f.endsWith(".sql"))) {
+      for (const m of fs.readFileSync(path.join(dir, file), "utf8").matchAll(/hint\s*=\s*'([a-z_]+)'/g)) {
+        if (!retired.has(m[1])) raised.add(m[1]);
+      }
+    }
+    expect(raised.size).toBeGreaterThan(40);
+    const missing = [...raised].filter((h) => !KNOWN_HINTS.has(h));
+    expect(missing).toEqual([]);
+    for (const h of raised) {
+      expect(flat(id), h).toContain(`errors.hints.${h}`);
+      expect(flat(en), h).toContain(`errors.hints.${h}`);
+    }
   });
 });
 
@@ -60,9 +78,13 @@ describe("database errors", () => {
   it("maps a hint to a message in the language, and never leaks raw text", () => {
     const tid = translator("errors", "id");
     const ten = translator("errors", "en");
-    expect(dbErrorMessage(tid, { message: "The team quota for this project is full", hint: "quota_full" })).toBe("Kuota tim penerus penuh.");
+    expect(dbErrorMessage(tid, { message: "The team quota for this project is full", hint: "quota_full" })).toBe(
+      "Kuota tim penerus penuh.",
+    );
     expect(dbErrorMessage(ten, { hint: "email_unverified" })).toBe("Verify your email address first.");
-    expect(dbErrorMessage(tid, { message: "duplicate key value violates unique constraint", hint: null })).toBe(id.errors.generic);
+    expect(dbErrorMessage(tid, { message: "duplicate key value violates unique constraint", hint: null })).toBe(
+      id.errors.generic,
+    );
     expect(dbErrorMessage(tid, { code: "42501" })).toBe(id.errors.forbidden);
   });
 });

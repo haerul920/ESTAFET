@@ -21,7 +21,12 @@ export default async function StartPage() {
   const t = await getTranslations("welcome");
   const cards = [
     { href: "/bagikan", icon: <Share2 size={28} aria-hidden="true" />, title: t("shareTitle"), text: t("shareText") },
-    { href: "/explore", icon: <Compass size={28} aria-hidden="true" />, title: t("exploreTitle"), text: t("exploreText") },
+    {
+      href: "/explore",
+      icon: <Compass size={28} aria-hidden="true" />,
+      title: t("exploreTitle"),
+      text: t("exploreText"),
+    },
   ];
   return (
     <PageShell width={880}>

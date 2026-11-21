@@ -17,7 +17,10 @@ export function VerifyEmailNotice({ email, compact = false }: { email: string; c
   const [error, setError] = useState("");
 
   return (
-    <div role="status" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[18px] bg-warn-bg p-4 text-warn-ink">
+    <div
+      role="status"
+      className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[18px] bg-warn-bg p-4 text-warn-ink"
+    >
       <span className="flex items-start gap-3">
         <MailCheck size={20} className="mt-0.5 flex-none" aria-hidden="true" />
         <span>

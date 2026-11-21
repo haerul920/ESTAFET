@@ -59,7 +59,7 @@ RLS is enabled on every table. Column privileges close gaps RLS cannot express.
 
 ## Security notes
 
-- Advisor tokens: 32 random bytes, SHA-256 hash stored, 14-day expiry (`ADVISOR_TOKEN_TTL_DAYS`), single decision, DB-backed rate limit.
+- There is no advisor role (R5). The old advisor tokens, functions and page were removed; old columns are deprecated.
 - Uploads: allowed types by **content**, size limit (`MAX_UPLOAD_MB`), ZIP entry and size limits, traversal rejected, nothing executed.
 - ZIPs are never stored: a sanitized tree JSON (tree, README, manifests) is stored instead. `.env`, keys and credentials are skipped and reported.
 - File text is passed to the model as data inside `<document>` tags, tags inside the text are neutralized, and the system prompt tells the model to ignore embedded instructions.

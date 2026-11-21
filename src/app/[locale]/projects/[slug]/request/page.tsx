@@ -21,7 +21,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function RequestPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const user = await requireUser(`/projects/${slug}/request`);
-  const [locale, t, L, nav] = await Promise.all([getLocale(), getTranslations("reqPage"), getLabels(), getTranslations("teaser")]);
+  const [locale, t, L, nav] = await Promise.all([
+    getLocale(),
+    getTranslations("reqPage"),
+    getLabels(),
+    getTranslations("teaser"),
+  ]);
   const project = await getTeaserBySlug(slug);
   if (!project) notFound();
   if (await isProjectOwner(project.id)) redirect({ href: `/projects/${slug}`, locale });
@@ -52,9 +57,7 @@ export default async function RequestPage({ params }: { params: Promise<{ slug: 
         ]}
       />
       <h1 className="mb-2 mt-0 text-4xl font-medium max-sm:text-[28px]">{t("title")}</h1>
-      <p className="mb-8 mt-0 max-w-[640px] text-text-2">
-        {t("lead")}
-      </p>
+      <p className="mb-8 mt-0 max-w-[640px] text-text-2">{t("lead")}</p>
       <div className="flex flex-wrap items-start gap-8">
         <RequestForm projectId={project.id} slug={slug} tasks={tasks} />
         <aside className="flex min-w-[260px] flex-[0_1_340px] flex-col gap-4">

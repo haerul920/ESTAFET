@@ -15,10 +15,7 @@ export default async function ShareNewPage() {
   const t = await getTranslations("wizard");
   return (
     <WizardFrame projectId={null} current="info">
-      <StepHeader
-        title={t("basicsTitle")}
-        intro={t("newIntro")}
-      />
+      <StepHeader title={t("basicsTitle")} intro={t("newIntro")} />
       <BasicsForm project={null} />
     </WizardFrame>
   );

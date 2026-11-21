@@ -23,7 +23,12 @@ interface Sample {
 
 async function measure(path: string): Promise<Sample> {
   const browser = await chromium.launch();
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const ctx = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
+  });
   const page = await ctx.newPage();
   const cdp = await ctx.newCDPSession(page);
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
@@ -55,11 +60,14 @@ async function measure(path: string): Promise<Sample> {
       for (const e of l.getEntries() as unknown as { startTime: number; element?: Element; size: number }[]) {
         w.__lcp = e.startTime;
         const el = e.element;
-        w.__lcpEl = el ? `${el.tagName.toLowerCase()}.${String(el.className).slice(0, 40)} "${(el.textContent ?? "").trim().slice(0, 30)}" size=${e.size}` : "(removed)";
+        w.__lcpEl = el
+          ? `${el.tagName.toLowerCase()}.${String(el.className).slice(0, 40)} "${(el.textContent ?? "").trim().slice(0, 30)}" size=${e.size}`
+          : "(removed)";
       }
     }).observe({ type: "largest-contentful-paint", buffered: true });
     new PerformanceObserver((l) => {
-      for (const e of l.getEntries() as unknown as { value: number; hadRecentInput: boolean }[]) if (!e.hadRecentInput) w.__cls += e.value;
+      for (const e of l.getEntries() as unknown as { value: number; hadRecentInput: boolean }[])
+        if (!e.hadRecentInput) w.__cls += e.value;
     }).observe({ type: "layout-shift", buffered: true });
   });
   await page.goto(base + path, { waitUntil: "load" });
