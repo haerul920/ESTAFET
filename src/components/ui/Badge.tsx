@@ -25,7 +25,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-[3px] text-[13px] font-semibold",
+        "chip-hover inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-[3px] text-[13px] font-semibold",
         TONE[tone],
         className,
       )}
@@ -75,8 +75,8 @@ export function EvidenceChip({ status, detail }: { status: "matched" | "not_foun
   const ok = status === "matched";
   const partial = status === "partial";
   return (
-    <Badge tone={ok ? "ok" : "warn"} className="self-start">
-      <FileSearch size={14} aria-hidden="true" />
+    <Badge tone={ok ? "ok" : "warn"} className="max-w-full self-start whitespace-normal [overflow-wrap:anywhere]">
+      <FileSearch size={14} aria-hidden="true" className="flex-none" />
       {ok ? t("evidenceMatched") : partial ? t("evidencePartial") : t("evidenceNotFound")}
       {detail ? <span className="font-normal">{ok || partial ? " · " : t("evidenceIn")}{detail}</span> : null}
     </Badge>

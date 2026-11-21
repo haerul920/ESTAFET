@@ -3,7 +3,8 @@ import { DM_Mono, Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Providers } from "@/components/ui/Providers";
+import { MotionRuntime } from "@/components/ui/MotionRuntime";
+import { UiProviders } from "@/components/ui/UiProviders";
 import { getSettings } from "@/lib/settings";
 import { isProduction } from "@/lib/admin/env";
 import { routing } from "@/i18n/routing";
@@ -58,7 +59,7 @@ export default async function RootLayout({ children, params }: { children: React
       <body>
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-lime focus:px-5 focus:py-3 focus:font-semibold focus:text-black"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-system-banner focus:rounded-full focus:bg-lime focus:px-5 focus:py-3 focus:font-semibold focus:text-black"
         >
           {t("skip")}
         </a>
@@ -68,7 +69,9 @@ export default async function RootLayout({ children, params }: { children: React
           </div>
         ) : null}
         <NextIntlClientProvider>
-          <Providers>{children}</Providers>
+          <MotionRuntime>
+            <UiProviders>{children}</UiProviders>
+          </MotionRuntime>
         </NextIntlClientProvider>
       </body>
     </html>

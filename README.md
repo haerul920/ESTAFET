@@ -20,7 +20,7 @@ There is **one account type**. "Owner" (shares a project) and "adopter" (continu
 
 ## Stack
 
-Next.js 16 (App Router, Server Actions) · TypeScript strict · Tailwind CSS 4 · **framer-motion** (animations, respects `prefers-reduced-motion`) ·
+Next.js 16 (App Router, Server Actions) · TypeScript strict · Tailwind CSS 4 · **Radix UI** (overlays) · CSS motion with **framer-motion** only for the nav pill, tab underline and list or wizard transitions (all respect `prefers-reduced-motion`) ·
 Supabase (Postgres, Auth, Storage, RLS) · Zod · `pdfjs-dist`, `remark`, `jszip` · `@react-pdf/renderer` · Vitest · Playwright · **pnpm**.
 
 ## Setup (works offline with the local stack)
@@ -105,7 +105,7 @@ select public.promote_admin('person@student.unhas.ac.id');   -- demote_admin(...
 
 | Area | Status | Notes |
 |---|---|---|
-| Design system, UI kit, motion | **Done** | Tokens, glass nav, sky strip, buttons, badges, stepper, tabs. Compared against the approved design screens. |
+| Design system v2: layering, Radix, motion, overlap audit (R3) | **Done, except the settings page and a native-reviewed copy** | Z-index token scale (checked by a unit test), Radix dialog, drawer, dropdown menu, tooltip, tabs and toast in portals (hand-written overlays removed), CSS motion system (floating cards, drifting clouds, word-by-word headline, count-up, reveals, parallax, swaying flowers, hover and press, focus ring), reduced-motion mode, phone drawer with focus trap. Overlap audit (Playwright) passes on 38 routes at 6 viewports and runs in CI (the CI workflow has not run on GitHub yet). Numbers in `docs/performance.md` (Home LCP 1.34 s, Explore 1.08 s, CLS 0, emulated phone, local server, not a real device). Screenshots in `docs/design/`. **Not re-run after R3:** the older Playwright specs (core flow, admin, axe, Indonesian smoke) were not run again after the Radix and button changes, because the machine ran out of memory; the owner chose to merge anyway. Treat those flows as unverified until they are run. **Not done:** `/proyek/[slug]/pengaturan` does not exist until R4, so it is not audited; form `<select>` stays the native element on purpose. |
 | Home, Explore (URL filters), Project teaser | **Done** | Reads from Supabase through public views. Survey numbers carry the "indicative only" note. |
 | Auth (email + password, optional domain check) | **Done** | `ALLOWED_EMAIL_DOMAINS` enforced in the sign-up action. |
 | Database, RLS, state rules | **Done** | 12 tables, all with RLS. Rules live in SQL functions. Verified by `pnpm test:db`. |

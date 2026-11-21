@@ -21,10 +21,10 @@ export function ProjectCard({ project }: { project: TeaserProject }) {
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
-      <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 22 }} className="h-full">
+      <div className="h-full">
         <Link
           href={`/projects/${project.slug}`}
-          className="flex h-full flex-col gap-3 rounded-[28px] border border-surface bg-surface p-6 text-ink no-underline transition-shadow hover:shadow-[0_18px_40px_rgba(10,60,150,0.12)]"
+          className="lift flex h-full flex-col gap-3 rounded-[28px] border border-surface bg-surface p-6 text-ink no-underline"
         >
           <div className="flex items-start justify-between gap-2">
             <span className="text-[13px] font-semibold text-text-2">
@@ -49,7 +49,7 @@ export function ProjectCard({ project }: { project: TeaserProject }) {
             </div>
           </div>
         </Link>
-      </motion.div>
+      </div>
     </motion.li>
   );
 }

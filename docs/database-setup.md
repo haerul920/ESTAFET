@@ -40,6 +40,8 @@ Studio (table browser and SQL editor): http://127.0.0.1:54323 . Direct connectio
 
 Demo data is synthetic. Do not seed a production project that real students use.
 
+Ready-to-use queries (verify, daily reads, housekeeping, backup, RLS check) are in `docs/sql-queries.md`. That file also lists where each kind of data lives in Supabase.
+
 ## Verify the setup
 
 Run these in the SQL Editor (or `docker exec supabase_db_estafet psql -U postgres -c "..."`).

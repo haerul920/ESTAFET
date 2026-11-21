@@ -37,4 +37,22 @@
   --glass-bg: rgba(255, 255, 255, 0.34);
   --glass-border: rgba(255, 255, 255, 0.7);
   --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 10px 30px rgba(10, 60, 150, 0.18);
+
+  /* Layering scale (CLAUDE.md 14.9). Use only these through the z-* utilities in globals.css. */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 20;
+  --z-nav: 30;
+  --z-dropdown: 40;
+  --z-drawer: 50;
+  --z-overlay: 60;
+  --z-modal: 70;
+  --z-toast: 80;
+  --z-system-banner: 90;
+
+  /* Motion (CLAUDE.md 14.8). Animate transform and opacity only. */
+  --dur-micro: 150ms;
+  --dur-std: 250ms;
+  --dur-reveal: 500ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
