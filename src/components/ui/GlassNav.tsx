@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { motion } from "framer-motion";
-import { Bell, LogOut, Menu as MenuIcon, LayoutDashboard } from "lucide-react";
+import { Bell, Flag, LogOut, Menu as MenuIcon, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { LogoMark } from "./Logo";
 import { ButtonLink } from "./Button";
 import { LanguageSwitcher } from "./LanguageSwitcher";
@@ -132,6 +132,16 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
                   {user.unread > 0 ? (
                     <span className="ml-auto rounded-full bg-lime px-2 text-xs font-semibold">{user.unread}</span>
                   ) : null}
+                </Link>
+              </MenuItem>
+              <MenuItem asChild>
+                <Link href="/laporan-saya">
+                  <Flag size={18} aria-hidden="true" /> {t("myReports")}
+                </Link>
+              </MenuItem>
+              <MenuItem asChild>
+                <Link href="/akun/privasi">
+                  <ShieldCheck size={18} aria-hidden="true" /> {t("accountPrivacy")}
                 </Link>
               </MenuItem>
               <form action={signOut}>

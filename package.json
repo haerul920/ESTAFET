@@ -15,7 +15,6 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"scripts/**/*.{ts,mjs}\" \"*.{ts,mjs}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"scripts/**/*.{ts,mjs}\" \"*.{ts,mjs}\"",
     "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm i18n:check && pnpm test",
-    "format": "prettier --write .",
     "db:start": "supabase start -x imgproxy,edge-runtime,logflare,vector,supavisor,mailpit",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset && pnpm seed:storage && pnpm seed:admin",
@@ -27,6 +26,7 @@
     "shots:design": "tsx scripts/screenshots-design.ts",
     "perf": "tsx scripts/perf-check.ts",
     "cloud-sql": "node scripts/build-cloud-sql.mjs",
+    "deletions:process": "tsx scripts/process-deletions.ts",
     "test:db:purge": "vitest run --config vitest.db.purge.config.ts"
   },
   "dependencies": {
