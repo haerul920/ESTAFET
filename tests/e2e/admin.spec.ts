@@ -20,7 +20,9 @@ async function fresh(browser: Browser) {
 /** Fills the reason dialog and confirms. Handles the password check when it appears. */
 async function confirmDialog(page: Page, confirmName: string, opts: { reason?: string; phrase?: string } = {}) {
   const dialog = page.getByRole("dialog");
-  await dialog.getByLabel(/Reason|Resolution note|Why are you|Note on what/).fill(opts.reason ?? REASON);
+  await dialog
+    .getByLabel(/Reason|Resolution note|Why are you|Note on what|Why this announcement|Why you are ending/)
+    .fill(opts.reason ?? REASON);
   if (opts.phrase) await dialog.getByLabel(/Type .* to confirm/).fill(opts.phrase);
   await dialog.getByRole("button", { name: confirmName, exact: true }).click();
   const pw = dialog.getByLabel("Confirm your password");
@@ -42,13 +44,15 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
   // 1. A visitor reports a published demo project (no account).
   const visitor = await fresh(browser);
   await visitor.page.goto("/en/projects/fish-freshness-indicator");
-  await visitor.page.getByRole("button", { name: "Report this project" }).click();
-  await visitor.page.getByLabel("Reason").selectOption("false_information");
-  await visitor.page.getByLabel("What is wrong?").fill("E2E: the summary says more than the files support.");
-  await visitor.page.getByRole("button", { name: "Send report" }).click();
-  await expect(
-    visitor.page.getByText(/Your report was sent to the ESTAFET team. Reference code: LP-[0-9A-F]{8}/),
-  ).toBeVisible();
+  await visitor.page.getByRole("button", { name: "Project menu" }).click();
+  await visitor.page.getByRole("menuitem", { name: /Report/ }).click();
+  const reportDialog = visitor.page.getByRole("dialog");
+  await reportDialog.getByRole("radio", { name: /False or misleading/ }).check();
+  await reportDialog.getByLabel("What is wrong?").fill("E2E: the summary says more than the files support.");
+  // The local bot check rejects a form that is sent faster than a person could fill it.
+  await visitor.page.waitForTimeout(3500);
+  await reportDialog.getByRole("button", { name: "Send report" }).click();
+  await expect(visitor.page.getByText(/Reference code: LP-[0-9A-F]{8}/)).toBeVisible();
   await visitor.context.close();
 
   // 2. The admin opens it and hides the project with a reason.
@@ -175,7 +179,7 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   await a.locator("[data-setting=max_upload_mb]").getByRole("button", { name: "Save" }).click();
   await expect(a.getByRole("dialog").getByText(/changes from/)).toBeVisible();
   await confirmDialog(a, "Save");
-  await expect(a.getByText("Maximum upload size saved.")).toBeVisible();
+  await expect(a.getByText("Maximum upload size saved.").first()).toBeVisible();
   await a.goto("/admin/audit?action=setting.");
   await a.locator("tbody tr").first().getByRole("link").click();
   await expect(a.getByRole("complementary", { name: "Audit entry" })).toContainText("max_upload_mb");
@@ -184,7 +188,7 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   await a.locator("#set-max_upload_mb").fill("25");
   await a.locator("[data-setting=max_upload_mb]").getByRole("button", { name: "Save" }).click();
   await confirmDialog(a, "Save");
-  await expect(a.getByText("Maximum upload size saved.")).toBeVisible();
+  await expect(a.getByText("Maximum upload size saved.").first()).toBeVisible();
 
   // A trial session (demo-flagged so it never pollutes real metrics).
   await a.goto("/admin/trials");
@@ -197,7 +201,7 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   await form.getByLabel("Participant consented to being included").check();
   await form.getByLabel(/This is a demo row/).check();
   await form.getByRole("button", { name: "Save session" }).click();
-  await expect(a.getByText("Session recorded.")).toBeVisible();
+  await expect(a.getByText("Session recorded.").first()).toBeVisible();
   // Without demo rows there are no real sessions, so the page refuses to draw a conclusion.
   await a.goto("/admin/trials");
   await expect(a.getByText(/Too few sessions to conclude \(n = 0/).first()).toBeVisible();
@@ -242,5 +246,35 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
     await a.goto(`/admin/audit?action=${action}`);
     await expect(a.getByText(action).first(), action).toBeVisible();
   }
+  await admin.context.close();
+});
+
+test("announcements: an admin publishes one, visitors see it in their language, and it can be ended", async ({
+  browser,
+}) => {
+  const admin = await fresh(browser);
+  const a = admin.page;
+  await login(a, "admin@estafet.demo");
+  await a.goto("/admin/announcements");
+  await a.getByLabel("Text in Indonesian").fill("Pemeliharaan terjadwal malam ini (uji e2e).");
+  await a.getByLabel("Text in English").fill("Scheduled maintenance tonight (e2e test).");
+  await a.getByRole("button", { name: "Publish announcement", exact: true }).click();
+  await confirmDialog(a, "Publish announcement");
+
+  const visitor = await fresh(browser);
+  await visitor.page.goto("/en/explore");
+  await expect(visitor.page.getByText("Scheduled maintenance tonight (e2e test).")).toBeVisible();
+  await visitor.page.goto("/explore");
+  await expect(visitor.page.getByText("Pemeliharaan terjadwal malam ini (uji e2e).")).toBeVisible();
+  // Dismissing hides it for this browser.
+  await visitor.page.getByRole("button", { name: "Tutup pengumuman" }).click();
+  await expect(visitor.page.getByText("Pemeliharaan terjadwal malam ini (uji e2e).")).toBeHidden();
+
+  await a.goto("/admin/announcements");
+  await a.getByRole("button", { name: "End now" }).first().click();
+  await confirmDialog(a, "End now");
+  await visitor.page.goto("/en/explore");
+  await expect(visitor.page.getByText("Scheduled maintenance tonight (e2e test).")).toHaveCount(0);
+  await visitor.context.close();
   await admin.context.close();
 });

@@ -9,6 +9,7 @@ import { ReauthRequired, requireAdmin, requireRecentAuth } from "@/lib/admin/gua
 import { REAUTH_COOKIE, REAUTH_MINUTES, signReauth } from "@/lib/admin/reauth";
 import { isProduction } from "@/lib/admin/env";
 import { setAuthBan } from "@/lib/admin/ban";
+import { sendConfirmationAgain } from "@/lib/admin/auth-users";
 import { removeDemoObjects } from "@/lib/admin/purge";
 import { SUPABASE_PUBLIC_KEY, SUPABASE_URL } from "@/lib/supabase/keys";
 import { runSynthesis } from "@/lib/synthesis";
@@ -99,6 +100,104 @@ export async function resolveAppeal(
   return run(false, async (db) =>
     fail((await db.rpc("admin_resolve_appeal", { p_appeal: appealId, p_outcome: outcome, p_note: note })).error),
   );
+}
+
+export async function bulkDismissSpam(ids: string[], note: string): Promise<ActionResult> {
+  return run(false, async (db) => {
+    const { data, error } = await db.rpc("admin_bulk_dismiss_spam", { p_ids: ids, p_note: note });
+    if (error) return { error: error.message };
+    return { data: { dismissed: data as number } };
+  });
+}
+
+// ---- Announcements and policies ---------------------------------------------------------------
+
+export interface AnnouncementInput {
+  id: string | null;
+  severity: "info" | "warning" | "critical";
+  textId: string;
+  textEn: string;
+  startsAt: string | null;
+  endsAt: string | null;
+  dismissible: boolean;
+}
+
+const announcementSchema = z.object({
+  severity: z.enum(["info", "warning", "critical"]),
+  textId: z.string().trim().min(3, "Write the Indonesian text.").max(280, "At most 280 characters."),
+  textEn: z.string().trim().min(3, "Write the English text.").max(280, "At most 280 characters."),
+});
+
+function toIso(v: string | null): string | null | "invalid" {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? "invalid" : d.toISOString();
+}
+
+export async function saveAnnouncement(input: AnnouncementInput, reason: string): Promise<ActionResult> {
+  const parsed = announcementSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the announcement." };
+  const starts = toIso(input.startsAt);
+  const ends = toIso(input.endsAt);
+  if (starts === "invalid" || ends === "invalid") return { error: "Enter valid dates." };
+  return run(false, async (db) =>
+    fail(
+      (
+        await db.rpc("admin_save_announcement", {
+          p_id: input.id,
+          p_severity: parsed.data.severity,
+          p_text_id: parsed.data.textId,
+          p_text_en: parsed.data.textEn,
+          p_starts: starts,
+          p_ends: ends,
+          p_dismissible: input.dismissible,
+          p_reason: reason,
+        })
+      ).error,
+    ),
+  );
+}
+
+export async function endAnnouncement(id: string, reason: string): Promise<ActionResult> {
+  return run(false, async (db) => fail((await db.rpc("admin_end_announcement", { p_id: id, p_reason: reason })).error));
+}
+
+/** A new policy version makes everyone accept it again. It is a platform-wide change, so it needs a recent password check. */
+export async function publishPolicy(kind: "terms" | "privacy", version: number, reason: string): Promise<ActionResult> {
+  if (!Number.isInteger(version) || version < 1) return { error: "Enter a whole version number." };
+  return run(true, async (db) =>
+    fail((await db.rpc("admin_publish_policy", { p_kind: kind, p_version: version, p_reason: reason })).error),
+  );
+}
+
+// ---- Users: sessions and verification ---------------------------------------------------------
+
+export async function forceSignOut(userId: string, reason: string): Promise<ActionResult> {
+  return run(false, async (db) => {
+    const { data, error } = await db.rpc("admin_force_sign_out", { p_user: userId, p_reason: reason });
+    if (error) return { error: error.message };
+    return { data: { sessionsEnded: data as number } };
+  });
+}
+
+/** Sends the confirmation email again for an account that never confirmed it. Logged in the audit log. */
+export async function resendUserVerification(userId: string, reason: string): Promise<ActionResult> {
+  return run(false, async (db) => {
+    const problem = await sendConfirmationAgain(userId);
+    if (problem) return { error: problem };
+    return fail(
+      (
+        await db.rpc("admin_log_action", {
+          p_action: "user.resend_verification",
+          p_target_type: "user",
+          p_target_id: userId,
+          p_reason: reason,
+          p_before: null,
+          p_after: null,
+        })
+      ).error,
+    );
+  });
 }
 
 export async function suspendUser(userId: string, reason: string, until: string | null): Promise<ActionResult> {

@@ -5,7 +5,10 @@ import { DataTable, type Column } from "@/components/admin/DataTable";
 import { FilterBar } from "@/components/admin/FilterBar";
 import { ReasonAction } from "@/components/admin/ReasonDialog";
 import { KeyValueList, PageHeader, Panel, StatusPill, Time, toneFor } from "@/components/admin/ui";
-import { handleReport } from "@/app/[locale]/admin/actions";
+import { bulkDismissSpam, handleReport } from "@/app/[locale]/admin/actions";
+import { NoteForm } from "@/components/admin/NoteForm";
+import { getSettings } from "@/lib/settings";
+import { slaFor } from "@/lib/admin/time";
 import { queryView } from "@/lib/admin/query";
 import { requireAdmin } from "@/lib/admin/guard";
 import type { SearchParams } from "@/lib/admin/table";
@@ -41,10 +44,42 @@ const REASONS = [
   "other",
 ];
 
+/** Ready-made reasons. The admin can edit the text before saving. */
+const TEMPLATES = {
+  dismiss: [
+    "The report does not describe a breach of the Community Guidelines.",
+    "The content was checked and matches what the owners are allowed to share.",
+    "Duplicate of a report that was already handled.",
+  ],
+  hold: [
+    "Several reporters raised the same serious concern. The project is held while the team checks the files.",
+    "The report names personal data in the project. It is held until the owners confirm it is removed.",
+  ],
+  hide: [
+    "The project breaks the Community Guidelines: the content must be fixed before it is shown again.",
+    "The owners could not show they have the right to share this work.",
+  ],
+  remove: [
+    "The project contains content that must not be shown publicly. Data is kept; the project is removed from public view.",
+  ],
+};
+
+function SlaCell({ status, createdAt, days }: { status: string; createdAt: string; days: number }) {
+  if (status === "resolved" || status === "dismissed") return <span className="text-text-2">closed</span>;
+  const s = slaFor(createdAt, days);
+  if (s.state === "overdue") return <StatusPill tone="danger">{`overdue ${Math.abs(s.days) || 1} d`}</StatusPill>;
+  return (
+    <StatusPill tone={s.state === "soon" ? "warn" : "neutral"}>
+      {s.state === "soon" ? "due today" : `due in ${s.days} d`}
+    </StatusPill>
+  );
+}
+
 export default async function AdminReportsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
   const me = await requireAdmin();
   const mine = sp.mine === "1";
+  const reviewDays = (await getSettings()).hold_review_days.value;
   const { rows, total, params } = await queryView<Row>("admin_reports_v", sp, {
     sortable: ["created_at", "project_title", "reason", "status"],
     defaultSort: "created_at",
@@ -130,6 +165,9 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
                   <Link href={`/admin/projects/${report.project_id}`}>Open the project page</Link>
                 </p>
               </Panel>
+              <Panel title="Internal note">
+                <NoteForm targetType="project" targetId={report.project_id} />
+              </Panel>
               <Panel title="Decision">
                 {closed ? (
                   <p className="m-0 text-sm text-text-2">This report is closed.</p>
@@ -138,6 +176,7 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
                     <ReasonAction
                       label="Dismiss"
                       reasonLabel="Resolution note (kept in the audit log)"
+                      templates={TEMPLATES.dismiss}
                       consequence={<>The report is closed as dismissed. The project is not changed.</>}
                       action={handleReport.bind(null, openId, "dismiss")}
                     />
@@ -152,6 +191,7 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
                     <ReasonAction
                       label="Hold project"
                       reasonLabel="Why you are holding it"
+                      templates={TEMPLATES.hold}
                       consequence={
                         <>
                           The project is held while you review it: it leaves public pages and the public sees a neutral
@@ -171,6 +211,7 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
                       }
                       action={handleReport.bind(null, openId, "hide")}
                       reasonLabel="Resolution note (shown to the creators)"
+                      templates={TEMPLATES.hide}
                     />
                     <ReasonAction
                       label="Remove project"
@@ -183,6 +224,7 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
                       }
                       action={handleReport.bind(null, openId, "remove")}
                       reasonLabel="Resolution note (shown to the creators)"
+                      templates={TEMPLATES.remove}
                     />
                   </div>
                 )}
@@ -209,8 +251,14 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
       sortable: true,
       render: (r) => <StatusPill tone={toneFor(r.status)}>{r.status.replace("_", " ")}</StatusPill>,
     },
+    {
+      key: "sla",
+      label: `Review target (${reviewDays} d)`,
+      render: (r) => <SlaCell status={r.status} createdAt={r.created_at} days={reviewDays} />,
+    },
     { key: "handler_name", label: "Handler", render: (r) => r.handler_name ?? "—" },
   ];
+  const openSpam = rows.filter((r) => r.reason === "spam" && (r.status === "open" || r.status === "in_review"));
 
   return (
     <>
@@ -219,6 +267,31 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
         intro="Content reports sent from public project pages. Every outcome needs a resolution note."
       />
       {panel}
+      {openSpam.length > 0 ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-surface p-4 text-sm">
+          <span>
+            <strong>{openSpam.length}</strong> open spam {openSpam.length === 1 ? "report is" : "reports are"} on this
+            page. Check them first, then dismiss them together.
+          </span>
+          <ReasonAction
+            small
+            label={`Dismiss ${openSpam.length} spam`}
+            consequence={
+              <>
+                Only reports with the reason &ldquo;spam&rdquo; that are listed on this page are dismissed. Each one is
+                audited on its own and no project is changed.
+              </>
+            }
+            reasonLabel="Resolution note (kept in the audit log)"
+            templates={TEMPLATES.dismiss}
+            action={bulkDismissSpam.bind(
+              null,
+              openSpam.slice(0, 50).map((r) => r.id),
+            )}
+            successMessage="Spam reports dismissed."
+          />
+        </div>
+      ) : null}
       <FilterBar
         searchLabel="Search project or details"
         toggles={[{ key: "mine", label: "Assigned to me" }]}

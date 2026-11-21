@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/guard";
 import { SuspendControl } from "@/components/admin/SuspendControl";
+import { ReasonAction } from "@/components/admin/ReasonDialog";
+import { emailConfirmed } from "@/lib/admin/auth-users";
+import { forceSignOut, resendUserVerification } from "@/app/[locale]/admin/actions";
 import { KeyValueList, PageHeader, Panel, StatusPill, Time, Timeline, toneFor } from "@/components/admin/ui";
 import { formatWita } from "@/lib/admin/time";
 
@@ -39,6 +42,16 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
   const d = data as Detail;
   const p = d.profile;
 
+  // Verification state comes from the sign-in service (the profile table does not hold it). Report counts: admins can read reports.
+  const verified = await emailConfirmed(id);
+  const projectIds = d.projects.map((x) => x.id);
+  const [made, received] = await Promise.all([
+    supabase.from("reports").select("id", { count: "exact", head: true }).eq("reporter_id", id),
+    projectIds.length
+      ? supabase.from("reports").select("id", { count: "exact", head: true }).in("project_id", projectIds)
+      : Promise.resolve({ count: 0 }),
+  ]);
+
   return (
     <>
       <PageHeader
@@ -62,6 +75,16 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
                 { label: "University", value: p.university },
                 { label: "Faculty", value: p.faculty || "—" },
                 { label: "Study program", value: p.study_program || "—" },
+                {
+                  label: "Email",
+                  value: verified ? (
+                    <StatusPill tone="ok">confirmed</StatusPill>
+                  ) : (
+                    <StatusPill tone="warn">not confirmed</StatusPill>
+                  ),
+                },
+                { label: "Reports made", value: made.count ?? 0 },
+                { label: "Reports on their projects", value: received.count ?? 0 },
                 { label: "Joined", value: formatWita(p.created_at) },
                 { label: "Last sign-in", value: p.last_sign_in_at ? formatWita(p.last_sign_in_at) : "never" },
                 ...(p.suspended
@@ -114,6 +137,33 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
         <div className="flex min-w-0 flex-col gap-4">
           <Panel title="Account actions">
             <SuspendControl userId={p.id} suspended={p.suspended} self={p.id === me.id} isAdmin={p.is_admin} />
+            {p.id === me.id ? null : (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <ReasonAction
+                  small
+                  label="Force sign out"
+                  consequence={
+                    <>
+                      Every session of this person ends and they must sign in again. A page that is already open can
+                      keep working for up to an hour, until its access token expires.
+                    </>
+                  }
+                  reasonLabel="Why you are signing them out (kept in the audit log)"
+                  action={forceSignOut.bind(null, p.id)}
+                  successMessage="Sessions ended."
+                />
+                {verified ? null : (
+                  <ReasonAction
+                    small
+                    label="Resend confirmation email"
+                    consequence={<>The person gets the confirmation link again at their email address.</>}
+                    reasonLabel="Why you are resending it (kept in the audit log)"
+                    action={resendUserVerification.bind(null, p.id)}
+                    successMessage="Confirmation email sent."
+                  />
+                )}
+              </div>
+            )}
           </Panel>
           <Panel title="Activity from the audit log">
             <Timeline

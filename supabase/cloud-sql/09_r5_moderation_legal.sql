@@ -1,4 +1,4 @@
--- ESTAFET database, step 09 of 9: r5_moderation_legal.
+-- ESTAFET database, step 09 of 10: r5_moderation_legal.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 08 succeeded.
 -- Generated from supabase/migrations/20261123000003_r5_moderation_legal.sql. Do not edit by hand.
 

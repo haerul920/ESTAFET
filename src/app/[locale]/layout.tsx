@@ -7,6 +7,8 @@ import { MotionRuntime } from "@/components/ui/MotionRuntime";
 import { UiProviders } from "@/components/ui/UiProviders";
 import { getSettings } from "@/lib/settings";
 import { isProduction } from "@/lib/admin/env";
+import { SystemBanners, type PublicAnnouncement } from "@/components/ui/SystemBanners";
+import { createClient } from "@/lib/supabase/server";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
 
@@ -46,6 +48,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
+async function loadAnnouncements(): Promise<PublicAnnouncement[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("active_announcements");
+    return error ? [] : ((data ?? []) as PublicAnnouncement[]);
+  } catch {
+    return [];
+  }
+}
+
 export default async function RootLayout({
   children,
   params,
@@ -59,6 +71,8 @@ export default async function RootLayout({
   const t = await getTranslations("layout");
   // The demo banner never shows in production: demo data and mock AI are refused there (CLAUDE.md 14.2).
   const showBanner = !isProduction() && (await getSettings()).show_demo_banner.value;
+  // Announcements from the admins. If the read fails (for example the R6 database step is not applied yet) there are none.
+  const announcements = await loadAnnouncements();
 
   return (
     <html lang={locale} className={`${instrument.variable} ${dmMono.variable} ${jetbrains.variable}`}>
@@ -75,6 +89,7 @@ export default async function RootLayout({
           </div>
         ) : null}
         <NextIntlClientProvider>
+          <SystemBanners items={announcements} />
           <MotionRuntime>
             <UiProviders>{children}</UiProviders>
           </MotionRuntime>

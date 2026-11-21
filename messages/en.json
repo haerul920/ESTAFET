@@ -6,7 +6,8 @@
   },
   "layout": {
     "skip": "Skip to content",
-    "demoBanner": "Demo environment: sample projects are simulated demo data."
+    "demoBanner": "Demo environment: sample projects are simulated demo data.",
+    "dismissAnnouncement": "Dismiss the announcement"
   },
   "nav": {
     "main": "Main",
@@ -229,7 +230,11 @@
       "details_short": "Tell us a little more (at least 10 characters).",
       "details_long": "The details are too long. At most 1000 characters.",
       "bad_link": "The link must start with http:// or https:// and be at most 500 characters.",
-      "version_not_higher": "The new version must be higher than the current one."
+      "version_not_higher": "The new version must be higher than the current one.",
+      "bad_range": "The end time must be after the start time.",
+      "too_many": "Select at most 50 reports at once.",
+      "not_spam": "Only spam reports can be dismissed in bulk.",
+      "self_action": "You cannot do this to your own account."
     },
     "generic": "Something went wrong. Try again, or contact the ESTAFET team if it keeps happening.",
     "suspended": "Your account is suspended.",

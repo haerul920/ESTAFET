@@ -72,7 +72,9 @@ export function toneFor(status: string): keyof typeof PILL {
   if (["open", "pending", "in_review", "running", "queued", "unpublished", "partial"].includes(status)) return "warn";
   if (["hidden", "removed", "failed", "declined", "not_found", "suspended", "expired"].includes(status))
     return "danger";
-  if (["live"].includes(status)) return "info";
+  if (["accepted"].includes(status)) return "ok";
+  if (["held"].includes(status)) return "warn";
+  if (["live", "scheduled"].includes(status)) return "info";
   return "neutral";
 }
 

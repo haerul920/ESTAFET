@@ -6,7 +6,8 @@
   },
   "layout": {
     "skip": "Lewati ke konten",
-    "demoBanner": "Lingkungan demo: proyek yang tampil adalah data contoh."
+    "demoBanner": "Lingkungan demo: proyek yang tampil adalah data contoh.",
+    "dismissAnnouncement": "Tutup pengumuman"
   },
   "nav": {
     "main": "Navigasi utama",
@@ -229,7 +230,11 @@
       "details_short": "Ceritakan sedikit lebih banyak (minimal 10 karakter).",
       "details_long": "Detailnya terlalu panjang. Maksimal 1000 karakter.",
       "bad_link": "Tautan harus diawali http:// atau https:// dan maksimal 500 karakter.",
-      "version_not_higher": "Versi baru harus lebih tinggi dari versi yang berlaku."
+      "version_not_higher": "Versi baru harus lebih tinggi dari versi yang berlaku.",
+      "bad_range": "Waktu berakhir harus setelah waktu mulai.",
+      "too_many": "Pilih paling banyak 50 laporan sekaligus.",
+      "not_spam": "Hanya laporan spam yang bisa ditolak sekaligus.",
+      "self_action": "Kamu tidak bisa melakukan ini pada akunmu sendiri."
     },
     "generic": "Terjadi kesalahan. Coba lagi, atau hubungi tim ESTAFET kalau berlanjut.",
     "suspended": "Akunmu ditangguhkan.",

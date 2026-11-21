@@ -71,7 +71,8 @@ test("axe: the dialogs and the public report form have no serious issues", async
 
   const guest = await (await browser.newContext()).newPage();
   await guest.goto("/en/projects/mangrove-cover-classifier");
-  await guest.getByRole("button", { name: "Report this project" }).click();
+  await guest.getByRole("button", { name: "Project menu" }).click();
+  await guest.getByRole("menuitem", { name: /Report/ }).click();
   await guest.waitForTimeout(1500); // let the fade-in animations finish: axe would read half-transparent text
   expect(await serious(guest)).toEqual([]);
 });

@@ -10,11 +10,20 @@ export const metadata: Metadata = { title: "Overview" };
 
 interface Overview {
   open_reports: number;
+  new_reports_24h: number;
+  held_projects: number;
+  overdue_holds: number;
   hidden_projects: number;
+  open_appeals: number;
   failed_runs_24h: number;
   stale_requests: number;
+  median_days_to_publish: number | null;
   projects_by_status: Record<string, number>;
+  projects_by_moderation: Record<string, number>;
+  access_by_mode: Record<string, number>;
   requests_by_status: Record<string, number>;
+  reports_by_reason: Record<string, number>;
+  reports_by_outcome: Record<string, number>;
   users_total: number;
   users_suspended: number;
   demo_projects: number;
@@ -26,6 +35,21 @@ interface AuditRow {
   target_type: string;
   reason: string | null;
   created_at: string;
+}
+
+function Counts({ map, empty }: { map: Record<string, number>; empty: string }) {
+  const entries = Object.entries(map);
+  if (entries.length === 0) return <p className="m-0 text-sm text-text-2">{empty}</p>;
+  return (
+    <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-sm">
+      {entries.map(([k, n]) => (
+        <li key={k} className="flex items-center justify-between">
+          <StatusPill tone={toneFor(k)}>{k.replaceAll("_", " ")}</StatusPill>
+          <strong>{n}</strong>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export default async function AdminOverviewPage({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
@@ -63,14 +87,28 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
         <StatCard
           label="Open reports"
           value={o.open_reports}
+          hint={o.new_reports_24h ? `${o.new_reports_24h} new in 24 h` : undefined}
           href="/admin/reports?status=open"
           tone={o.open_reports ? "warn" : "grey"}
+        />
+        <StatCard
+          label="Held projects"
+          value={o.held_projects}
+          hint={o.overdue_holds ? `${o.overdue_holds} past the review target` : undefined}
+          href="/admin/projects?moderation=held"
+          tone={o.overdue_holds ? "danger" : o.held_projects ? "warn" : "grey"}
+        />
+        <StatCard
+          label="Open appeals"
+          value={o.open_appeals}
+          href="/admin/appeals?status=open"
+          tone={o.open_appeals ? "warn" : "grey"}
         />
         <StatCard
           label="Hidden or removed"
           value={o.hidden_projects}
           href="/admin/projects?moderation=hidden"
-          tone={o.hidden_projects ? "warn" : "grey"}
+          tone="grey"
         />
         <StatCard
           label="Failed runs, 24 h"
@@ -86,7 +124,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
         />
       </div>
 
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
+      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Panel title={`Projects by status (${sum(o.projects_by_status)})`}>
           {Object.keys(o.projects_by_status).length === 0 ? (
             <p className="m-0 text-sm text-text-2">No projects.</p>
@@ -115,6 +153,18 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
             </ul>
           )}
         </Panel>
+        <Panel title="Moderation state of projects">
+          <Counts map={o.projects_by_moderation} empty="No projects." />
+        </Panel>
+        <Panel title="Access mode of published projects">
+          <Counts map={o.access_by_mode} empty="No published projects." />
+        </Panel>
+        <Panel title={`Reports by reason (${sum(o.reports_by_reason)})`}>
+          <Counts map={o.reports_by_reason} empty="No reports." />
+        </Panel>
+        <Panel title={`Reports by outcome (${sum(o.reports_by_outcome)})`}>
+          <Counts map={o.reports_by_outcome} empty="No reports." />
+        </Panel>
         <Panel title="People and platform">
           <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-sm">
             <li className="flex justify-between">
@@ -124,6 +174,10 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
             <li className="flex justify-between">
               <span>Suspended users</span>
               <strong>{o.users_suspended}</strong>
+            </li>
+            <li className="flex justify-between">
+              <span>Median days from start to published</span>
+              <strong>{o.median_days_to_publish ?? "no data"}</strong>
             </li>
             <li className="flex justify-between">
               <span>Environment</span>

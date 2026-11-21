@@ -23,7 +23,14 @@ const GROUPS: { label: string; items: { href: string; label: string; exact?: boo
       { href: "/admin/appeals", label: "Appeals" },
     ],
   },
-  { label: "People", items: [{ href: "/admin/users", label: "Users" }] },
+  {
+    label: "People",
+    items: [
+      { href: "/admin/users", label: "Users" },
+      { href: "/admin/policies", label: "Policies" },
+      { href: "/admin/announcements", label: "Announcements" },
+    ],
+  },
   {
     label: "Operations",
     items: [

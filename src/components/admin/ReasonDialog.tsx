@@ -38,6 +38,8 @@ interface Props {
   disabled?: boolean;
   /** Optional extra fields rendered above the reason (their state is the caller's). */
   children?: React.ReactNode;
+  /** Ready-made reasons: choosing one fills the reason field, and it can still be edited. */
+  templates?: string[];
 }
 
 const BTN: Record<NonNullable<Props["tone"]>, string> = {
@@ -63,6 +65,7 @@ export function ReasonAction({
   small,
   disabled,
   children,
+  templates,
 }: Props) {
   const router = useRouter();
   const toast = useToast();
@@ -151,6 +154,20 @@ export function ReasonAction({
           <label htmlFor={`${id}-r`} className="text-sm font-semibold">
             {reasonLabel}
           </label>
+          {templates?.length ? (
+            <div role="group" aria-label="Suggested wording" className="flex flex-wrap gap-1.5">
+              {templates.map((tpl) => (
+                <button
+                  key={tpl}
+                  type="button"
+                  onClick={() => setReason(tpl)}
+                  className="cursor-pointer rounded-full border border-line-strong bg-white px-3 py-1 text-[13px] hover:bg-surface"
+                >
+                  {tpl.length > 38 ? `${tpl.slice(0, 36)}…` : tpl}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <textarea
             id={`${id}-r`}
             rows={3}
