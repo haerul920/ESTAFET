@@ -11,10 +11,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 export default async function ShareNewPage() {
-  await requireUser("/share");
+  await requireUser("/bagikan");
   const t = await getTranslations("wizard");
   return (
-    <WizardFrame projectId={null} current="basics">
+    <WizardFrame projectId={null} current="info">
       <StepHeader
         title={t("basicsTitle")}
         intro={t("newIntro")}

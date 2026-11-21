@@ -101,7 +101,7 @@ export function describeNotification(n: NotificationRow, t: TFn): { text: string
       return {
         text: t(p.decision === "approved" ? "n.advisor.approved" : p.decision === "withdrawn" ? "n.advisor.withdrawn" : "n.advisor.declined", { title }),
         detail: p.comment ? t("n.advisor.detailComment", { comment: p.comment }) : p.decision === "approved" ? t("n.advisor.detailApproved") : t("n.advisor.detailDeclined"),
-        href: `/share/${p.project_id}/consent`,
+        href: `/bagikan/${p.project_id}/tim`,
       };
     case "moderation":
       return {
@@ -117,8 +117,30 @@ export function describeNotification(n: NotificationRow, t: TFn): { text: string
       };
     case "team_invite":
       return { text: t("n.invite.text", { title }), detail: t("n.invite.detail"), href: "/dasbor#undangan" };
+    case "watch_open":
+      return { text: t("n.watch.text", { title }), detail: t(p.reason === "quota" ? "n.watch.detailQuota" : "n.watch.detailMode"), href: `/projects/${p.slug ?? ""}` };
+    case "request_reply":
+      return { text: t("n.reply.text", { team: p.team ?? t("n.teamDefault"), title }), detail: t("n.reply.detail", { message: p.message ?? "" }), href: `/requests/${p.request_id}` };
+    case "item_progress":
+      return {
+        text: t("n.progress.text", {
+          task: p.task ?? "",
+          title,
+          status: t(p.status === "done" ? "n.progress.done" : p.status === "in_progress" ? "n.progress.inProgress" : "n.progress.none"),
+        }),
+        detail: t("n.progress.detail"),
+        href: `/projects/${p.slug ?? ""}/workspace`,
+      };
+    case "request_expiring":
+      return { text: t("n.expiring.text", { team: p.team ?? t("n.teamDefault"), title }), detail: t("n.expiring.detail", { date: (p.expires_at ?? "").slice(0, 10) }), href: `/requests/${p.request_id}` };
+    case "ownership_offer":
+      return { text: t("n.ownerOffer.text", { title }), detail: t("n.ownerOffer.detail"), href: `/proyek/${p.slug ?? ""}/pengaturan` };
+    case "ownership_accepted":
+      return { text: t("n.ownerAccepted.text", { title }), detail: t("n.ownerAccepted.detail"), href: "/dasbor" };
+    case "ownership_declined":
+      return { text: t("n.ownerDeclined.text", { title }), detail: t("n.ownerDeclined.detail"), href: "/dasbor" };
     case "co_owner_joined":
-      return { text: t("n.joined.text", { title }), detail: t("n.joined.detail"), href: `/share/${p.project_id}/consent` };
+      return { text: t("n.joined.text", { title }), detail: t("n.joined.detail"), href: `/bagikan/${p.project_id}/tim` };
     default:
       return { text: t("n.default"), detail: "", href: "/dasbor" };
   }
@@ -239,7 +261,7 @@ export async function loadDashboard(userId: string, email: string, ctx: { t: TFn
         ...base,
         meta: t("p.liveMeta", { status: statusLabel, when, mode: L.accessMode[p.access_mode] }),
         cta: p.status === "unpublished" ? t("p.republishCta") : holders > 0 ? t("p.workspaceCta") : t("p.teaserCta"),
-        href: p.status === "unpublished" ? `/share/${p.id}/publish` : holders > 0 ? `/projects/${p.slug}/workspace` : `/projects/${p.slug}`,
+        href: p.status === "unpublished" ? `/bagikan/${p.id}/terbit` : holders > 0 ? `/projects/${p.slug}/workspace` : `/projects/${p.slug}`,
         ctaTone: "outline" as const,
         note:
           p.status === "unpublished"
@@ -263,7 +285,7 @@ export async function loadDashboard(userId: string, email: string, ctx: { t: TFn
     return {
       ...base,
       meta: t("p.draftMeta", { when: timeAgo(p.updated_at, locale) }),
-      cta: t("p.draftCta"), href: `/share/${p.id}/${joinedLate ? "consent" : step}`, ctaTone: "blue" as const,
+      cta: t("p.draftCta"), href: `/bagikan/${p.id}/${joinedLate ? "tim" : step}`, ctaTone: "blue" as const,
       note, noteTone: "blue" as const,
     };
   });

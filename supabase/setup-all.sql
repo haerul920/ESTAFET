@@ -2744,7 +2744,7 @@ alter type public.lineage_type add value if not exists 'ownership_transferred';
 alter table public.projects add column fill_mode text check (fill_mode in ('ai', 'manual'));
 comment on column public.projects.fill_mode is 'null = not chosen yet. manual = the owners write the items by hand, nothing goes to an AI provider.';
 
-create function public.set_fill_mode(p_project_id uuid, p_mode text) returns void
+create or replace function public.set_fill_mode(p_project_id uuid, p_mode text) returns void
 language plpgsql security definer set search_path = public as $$
 begin
   perform public.assert_verified();
@@ -2771,7 +2771,7 @@ alter table public.project_watchers enable row level security;
 create policy project_watchers_select on public.project_watchers for select using (profile_id = auth.uid());
 -- No insert, update or delete policy: people use watch_project() and unwatch_project().
 
-create function public.watch_project(p_project_id uuid) returns void
+create or replace function public.watch_project(p_project_id uuid) returns void
 language plpgsql security definer set search_path = public as $$
 begin
   perform public.assert_verified();
@@ -2784,13 +2784,13 @@ begin
   insert into public.project_watchers (project_id, profile_id) values (p_project_id, auth.uid()) on conflict do nothing;
 end $$;
 
-create function public.unwatch_project(p_project_id uuid) returns void
+create or replace function public.unwatch_project(p_project_id uuid) returns void
 language sql security definer set search_path = public as $$
   delete from public.project_watchers where project_id = p_project_id and profile_id = auth.uid()
 $$;
 
 -- Internal. Tells everyone who asked to be notified, then clears the list (one notification per wish).
-create function public.notify_watchers(p_project_id uuid, p_reason text) returns integer
+create or replace function public.notify_watchers(p_project_id uuid, p_reason text) returns integer
 language plpgsql security definer set search_path = public as $$
 declare v_title text; v_slug text; n int := 0; w record;
 begin
@@ -2877,7 +2877,7 @@ alter table public.request_messages enable row level security;
 create policy request_messages_select on public.request_messages for select using (public.can_see_request(request_id));
 -- Writes go through post_request_message().
 
-create function public.post_request_message(p_request_id uuid, p_body text) returns void
+create or replace function public.post_request_message(p_request_id uuid, p_body text) returns void
 language plpgsql security definer set search_path = public as $$
 declare q public.continuation_requests%rowtype; v_title text; v_owner boolean; v_body text := trim(coalesce(p_body, ''));
 begin
@@ -2907,7 +2907,7 @@ begin
       jsonb_build_object('project_id', q.project_id, 'request_id', q.id, 'title', v_title, 'message', v_body));
   else
     perform public.notify(m.profile_id, 'request_reply',
-      jsonb_build_object('project_id', q.project_id, 'request_id', q.id, 'title', v_title, 'message', v_body))
+      jsonb_build_object('project_id', q.project_id, 'request_id', q.id, 'title', v_title, 'team', q.adopter_team_name, 'message', v_body))
       from public.project_members m where m.project_id = q.project_id and m.status = 'active';
   end if;
 end $$;
@@ -2940,7 +2940,7 @@ alter table public.backlog_progress enable row level security;
 create policy backlog_progress_select on public.backlog_progress for select using (public.can_read_private(project_id));
 -- Writes go through set_item_progress().
 
-create function public.set_item_progress(p_item uuid, p_status text) returns void
+create or replace function public.set_item_progress(p_item uuid, p_status text) returns void
 language plpgsql security definer set search_path = public as $$
 declare it public.draft_items%rowtype; v_owner boolean;
 begin
@@ -2969,13 +2969,13 @@ begin
   if not v_owner then
     perform public.notify(m.profile_id, 'item_progress',
       jsonb_build_object('project_id', it.project_id, 'title', (select title from public.projects where id = it.project_id),
-                         'task', it.title, 'status', p_status))
+                         'slug', (select slug from public.projects where id = it.project_id), 'task', it.title, 'status', p_status))
       from public.project_members m where m.project_id = it.project_id and m.status = 'active';
   end if;
 end $$;
 
 -- ---------------------------------------------------------------- 5. expiry reminders
-create function public.remind_expiring_requests(p_days integer default 3) returns integer
+create or replace function public.remind_expiring_requests(p_days integer default 3) returns integer
 language plpgsql security definer set search_path = public as $$
 declare r record; n int := 0; v_title text;
 begin
@@ -3046,9 +3046,9 @@ alter table public.ownership_transfers enable row level security;
 create policy ownership_transfers_select on public.ownership_transfers for select
   using (from_profile = auth.uid() or to_profile = auth.uid() or public.is_project_owner(project_id));
 
-create function public.propose_ownership_transfer(p_project_id uuid, p_to uuid) returns void
+create or replace function public.propose_ownership_transfer(p_project_id uuid, p_to uuid) returns void
 language plpgsql security definer set search_path = public as $$
-declare v_title text;
+declare v_title text; v_slug text;
 begin
   perform public.assert_verified();
   if not exists (select 1 from public.project_members where project_id = p_project_id and profile_id = auth.uid() and role = 'owner' and status = 'active') then
@@ -3061,11 +3061,11 @@ begin
     raise exception 'A transfer is already waiting for an answer' using errcode = 'P0001', hint = 'transfer_pending';
   end if;
   insert into public.ownership_transfers (project_id, from_profile, to_profile) values (p_project_id, auth.uid(), p_to);
-  select title into v_title from public.projects where id = p_project_id;
-  perform public.notify(p_to, 'ownership_offer', jsonb_build_object('project_id', p_project_id, 'title', v_title));
+  select title, slug into v_title, v_slug from public.projects where id = p_project_id;
+  perform public.notify(p_to, 'ownership_offer', jsonb_build_object('project_id', p_project_id, 'title', v_title, 'slug', v_slug));
 end $$;
 
-create function public.respond_ownership_transfer(p_project_id uuid, p_accept boolean) returns void
+create or replace function public.respond_ownership_transfer(p_project_id uuid, p_accept boolean) returns void
 language plpgsql security definer set search_path = public as $$
 declare t public.ownership_transfers%rowtype; v_title text;
 begin
@@ -3087,7 +3087,7 @@ begin
     jsonb_build_object('project_id', p_project_id, 'title', v_title));
 end $$;
 
-create function public.cancel_ownership_transfer(p_project_id uuid) returns void
+create or replace function public.cancel_ownership_transfer(p_project_id uuid) returns void
 language sql security definer set search_path = public as $$
   update public.ownership_transfers set status = 'cancelled', decided_at = now()
   where project_id = p_project_id and status = 'pending' and from_profile = auth.uid()

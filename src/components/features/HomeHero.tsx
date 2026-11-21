@@ -46,7 +46,7 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
             <ButtonLink href="/explore" variant="dark" size="lg" glow>
               {t("explore")}
             </ButtonLink>
-            <ButtonLink href="/share" size="lg" arrow glow>
+            <ButtonLink href="/bagikan" size="lg" arrow glow>
               {t("share")}
             </ButtonLink>
           </div>

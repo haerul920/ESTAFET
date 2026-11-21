@@ -196,7 +196,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
             {t("mineTitle")}
           </h2>
           {data.mine.length > 0 ? (
-            <ButtonLink href="/share" variant="outline" size="md">
+            <ButtonLink href="/bagikan" variant="outline" size="md">
               {t("shareAnother")}
             </ButtonLink>
           ) : null}
@@ -207,7 +207,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
             title={t("mineEmptyTitle")}
             text={t("mineEmptyText")}
             action={
-              <ButtonLink href="/share" arrow>
+              <ButtonLink href="/bagikan" arrow>
                 {t("shareCta")}
               </ButtonLink>
             }

@@ -19,6 +19,13 @@ const nextConfig: NextConfig = {
     return [
       { source: "/dashboard", destination: "/dasbor", permanent: false },
       { source: "/en/dashboard", destination: "/en/dasbor", permanent: false },
+      // R4: the share wizard moved to /bagikan with new step names. Old links and bookmarks keep working.
+      { source: "/share", destination: "/bagikan", permanent: true },
+      { source: "/en/share", destination: "/en/bagikan", permanent: true },
+      ...[["basics", "info"], ["files", "berkas"], ["verify", "tinjau"], ["consent", "tim"], ["publish", "terbit"]].flatMap(([from, to]) => [
+        { source: `/share/:id/${from}`, destination: `/bagikan/:id/${to}`, permanent: true },
+        { source: `/en/share/:id/${from}`, destination: `/en/bagikan/:id/${to}`, permanent: true },
+      ]),
     ];
   },
   serverExternalPackages: ["pdfjs-dist", "@react-pdf/renderer", "jszip"],

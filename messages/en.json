@@ -164,7 +164,9 @@
       "unpublished": "Teaser unpublished by the owners",
       "republished": "Teaser published again",
       "archived": "Project archived by the owners",
-      "access_settings_changed": "Access settings changed by the owners"
+      "access_settings_changed": "Access settings changed by the owners",
+      "item_progress": "Task progress updated",
+      "ownership_transferred": "Ownership handed over"
     }
   },
   "errors": {
@@ -206,7 +208,18 @@
       "not_approved": "The agreement opens after the owners approve the request.",
       "not_in_request": "You are not part of this request.",
       "already_revoked": "This access was already revoked.",
-      "reason_short": "A reason of at least 15 characters is required."
+      "reason_short": "A reason of at least 15 characters is required.",
+      "bad_mode": "That choice is not known.",
+      "message_empty": "Write your message first.",
+      "message_long": "A message can have at most 500 characters.",
+      "thread_full": "This conversation is full. Decide the request or start a new one.",
+      "no_access": "You do not have access to this project.",
+      "not_a_task": "Only a verified next task can be given a status.",
+      "bad_status": "That status is not known.",
+      "not_primary_owner": "Only the owner can hand over ownership.",
+      "not_co_owner": "Ownership can only go to an active co-owner.",
+      "transfer_pending": "A transfer is already waiting for an answer.",
+      "no_transfer": "There is no transfer waiting for you."
     },
     "generic": "Something went wrong. Try again, or contact the ESTAFET team if it keeps happening.",
     "suspended": "Your account is suspended.",
@@ -267,7 +280,7 @@
     "draftFailed": "We could not create your draft. Please try again.",
     "inviteSent": "Invitation sent. They become a co-owner when they accept it on their dashboard.",
     "notOwnerConsent": "Only the owners of a project can request approval.",
-    "advisorFirst": "Add your advisor's name and email in step 1 first, or declare that there is no advisor.",
+    "advisorFirst": "Add your advisor's name and email on the Basics step first, or declare that there is no advisor.",
     "filesLocked": "Published projects cannot lose files.",
     "fileNotFound": "File not found.",
     "summaryTooShort": "The drafted summary is too short to use.",
@@ -447,7 +460,9 @@
     "lineage": "Project lineage",
     "notFoundTitle": "Project not found",
     "demoFooter": "Prototype built for STACK 2026 by team Beban Server. This project is simulated demo data.",
-    "explore": "Explore"
+    "explore": "Explore",
+    "previewBanner": "Preview as a visitor. This is how the page looks to someone who is not signed in.",
+    "previewExit": "Leave the preview"
   },
   "cta": {
     "ownerTitle": "This is your project",
@@ -482,7 +497,13 @@
     "readAgreement": "Read the agreement (version {version})",
     "accept": "I accept these terms for myself, and I will credit the original team.",
     "saving": "Saving…",
-    "continue": "Continue this project"
+    "continue": "Continue this project",
+    "openSettings": "Open project settings",
+    "watch": "Notify me",
+    "unwatch": "Stop notifying me",
+    "watching": "You will get one notification when access opens again or a slot frees up.",
+    "watchHint": "Get one notification when access opens again or a slot frees up.",
+    "signInToWatch": "Sign in to be notified"
   },
   "verify": {
     "title": "Verify your email address.",
@@ -623,7 +644,39 @@
         "text": "A new co-owner joined {title}.",
         "detail": "They need to confirm sharing before you can publish."
       },
-      "default": "You have a new notification."
+      "default": "You have a new notification.",
+      "watch": {
+        "text": "{title} is open for continuation again.",
+        "detailMode": "The owners opened access again.",
+        "detailQuota": "A team slot is free."
+      },
+      "reply": {
+        "text": "{team} replied about {title}.",
+        "detail": "“{message}”"
+      },
+      "progress": {
+        "text": "The task “{task}” in {title} is now {status}.",
+        "inProgress": "in progress",
+        "done": "done",
+        "none": "without a status",
+        "detail": "Visible in the project lineage."
+      },
+      "expiring": {
+        "text": "The request from {team} for {title} is about to expire.",
+        "detail": "Decide or ask for more information before {date}."
+      },
+      "ownerOffer": {
+        "text": "You were offered ownership of {title}.",
+        "detail": "Accept or decline in the project settings."
+      },
+      "ownerAccepted": {
+        "text": "The recipient accepted ownership of {title}.",
+        "detail": "You are now a co-owner."
+      },
+      "ownerDeclined": {
+        "text": "The recipient declined ownership of {title}.",
+        "detail": "You remain the owner."
+      }
     },
     "p": {
       "moderatedMeta": "{status} · {state} by moderation",
@@ -965,22 +1018,20 @@
   "wizard": {
     "frameLabel": "Share a project: progress",
     "stepBasics": "Basics",
-    "stepConsent": "Consent",
+    "stepConsent": "Team and access",
     "stepFiles": "Files",
-    "stepVerify": "Verify",
-    "stepPublish": "Publish",
+    "stepVerify": "Review the AI draft",
+    "stepPublish": "Preview and publish",
     "loadingDashboard": "Loading dashboard",
     "shareMeta": "Share a project",
     "basicsTitle": "Tell us about your project",
     "newIntro": "Start with the basics. ESTAFET saves a private draft when you continue, and you can come back from your dashboard at any time.",
     "editIntro": "Change anything here. Saving moves you on to the consent step.",
-    "consentTitle": "Get consent before anything is read",
-    "consentIntro": "Your teammates confirm they are happy to share the project, and your advisor approves through a private link. ESTAFET reads your files only after every team member agreed. The advisor's approval only holds back publishing.",
     "advisorSees": "What the advisor sees",
     "advisorSeesText": "The title and summary, what becomes public, and what stays private. They can approve, say “Not now”, and add a comment.",
     "filesTitle": "Add your project files",
     "filesIntro": "ESTAFET reads these files to draft a summary and the unfinished tasks. You review every item before anything is published. Files stay private.",
-    "filesBlock": "Every team member must confirm on the Consent step before ESTAFET reads your files.",
+    "filesBlock": "Every team member must confirm first (in the consent card above or on the Team and access step) before ESTAFET reads your files.",
     "publicTitle": "What becomes public",
     "publicText": "Only the title, summary, objectives, verified next tasks and lessons you approve. Your files, code and notes stay private and open only to people who hold access.",
     "lastFailed": "The last draft failed.",
@@ -994,12 +1045,27 @@
     "preview": "Preview",
     "previewNote": "Visitors cannot see this until you publish.",
     "reasonTeam": "Every team member must confirm first.",
-    "reasonAdvisor": "Your advisor has not approved yet. You can also declare that there is no advisor on the Consent step.",
+    "reasonAdvisor": "Your advisor has not approved yet. You can also declare that there is no advisor on the Team and access step.",
     "reasonReview": "Review every drafted item and keep at least one.",
     "ctaTitle": "Want to continue this project?",
     "ctaOpen": "Visitors will see a \"Continue this project\" button. They accept the attribution agreement and get access right away.",
     "ctaPaused": "New access is paused, so visitors can read the teaser only.",
-    "ctaRequest": "Visitors will see an \"Ask to continue\" button. You decide on each request."
+    "ctaRequest": "Visitors will see an \"Ask to continue\" button. You decide on each request.",
+    "teamTitle": "Set up your team and access",
+    "teamIntro": "Invite co-owners, ask your advisor to approve (or declare that there is none), then choose how a continuing team gets access. You can change all of this later in the project settings.",
+    "savedAuto": "Saved automatically",
+    "savingAuto": "Saving…",
+    "autoFailed": "Not saved yet. Check the highlighted fields.",
+    "saveDraft": "Save as draft",
+    "effectsTitle": "What happens when you publish",
+    "effectOpen": "The teaser appears on Explore. Anyone who is signed in with a verified email can take access right away after accepting the attribution agreement, without your approval. You are told each time someone takes access, and you can revoke it with a reason.",
+    "effectRequest": "The teaser appears on Explore. Interested teams send a short plan and you decide on each request. Private files open only after you approve and they accept the attribution agreement.",
+    "effectPaused": "The teaser appears on Explore, but no new access or requests can come in until you open it again in the settings.",
+    "effectLimit": "Limit on continuing teams: {limit}.",
+    "limit1": "1 team at a time",
+    "limit3": "3 teams at a time",
+    "limitNone": "no limit",
+    "effectPrivate": "Your files, code and notes stay private."
   },
   "copyLink": {
     "label": "Copy consent link",
@@ -1007,7 +1073,7 @@
     "copied": "Copied",
     "couldNot": "Could not create the link.",
     "copiedMsg": "Link copied. Any earlier link no longer works.",
-    "createdMsg": "Link created. Copy it from the box on the Consent step."
+    "createdMsg": "Link created. Copy it from the box on the Team and access step."
   },
   "basics": {
     "title": "Project title",
@@ -1067,15 +1133,15 @@
     "linkCouldNot": "Could not create the link.",
     "shownOnce": "Shown once. Anyone with this link can approve for 14 days, so send it only to your advisor.",
     "back": "Back",
-    "next": "Continue to files",
-    "nextLater": "Continue to files (you can finish consent later)"
+    "next": "Continue to the preview",
+    "nextLater": "Continue to the preview (you can finish consent later)"
   },
   "checklist": {
-    "title": "Before you can publish",
+    "title": "Requirements to publish",
     "teamDone": "Team agreed",
     "teamPending": "Team agreement pending",
     "teamCount": "{confirmed} of {total} members confirmed",
-    "goConsent": "Go to Consent",
+    "goConsent": "Go to Team and access",
     "notNeeded": "No advisor declared",
     "approved": "Advisor approved",
     "declined": "Advisor said not now",
@@ -1118,8 +1184,6 @@
     "footNone": "There are no drafted items yet. Add one by hand or go back and draft from your files.",
     "footKeepOne": "Keep at least one item before publishing.",
     "footRemaining": "Review the remaining {count, plural, one {# item} other {# items}} to unlock publishing.",
-    "footAdvisor": "All items are reviewed. Publishing stays locked until your advisor approves, or you declare that there is no advisor.",
-    "footTeam": "Every team member must confirm before you can publish.",
     "mockBold": "Simulated AI output (mock mode).",
     "mockText": "These items were drafted by deterministic rules, not by a real AI model. One item is unsupported on purpose so you can see how missing evidence looks.",
     "title": "Review the AI draft",
@@ -1156,12 +1220,7 @@
     "aiClaimed": "The AI claimed: “{quote}”",
     "ownNoSource": "You wrote this item, so it has no source file.",
     "selectItem": "Select an item to see where it came from.",
-    "advisorApproved": "Advisor approved",
-    "advisorNotNeeded": "No advisor declared",
-    "advisorPending": "Advisor approval pending",
-    "teamPending": " · team confirmation pending",
     "back": "Back",
-    "continuePublish": "Continue to publish",
     "addTitle": "Add your own item",
     "type": "Type",
     "effort": "Effort",
@@ -1171,7 +1230,8 @@
     "ownNote": "Items you write have no source file. They are marked “Written by you” and count as reviewed.",
     "saving": "Saving…",
     "addItem": "Add item",
-    "addFailed": "Your item could not be saved. Please try again."
+    "addFailed": "Your item could not be saved. Please try again.",
+    "continueTeam": "Continue to team and access"
   },
   "files": {
     "noticeTitle": "How your files are used",
@@ -1208,7 +1268,7 @@
   "synth": {
     "notFound": "Project not found.",
     "published": "This project is already published.",
-    "needConsent": "ESTAFET reads your files only after every team member has confirmed. Finish the Consent step first.",
+    "needConsent": "ESTAFET reads your files only after every team member has confirmed. Finish the team consent first.",
     "dailyLimit": "The daily limit of {cap} runs was reached. Try again tomorrow.",
     "hourlyLimit": "This project already ran several times in the last hour. Wait a little, then try again.",
     "noFiles": "Upload at least one readable file first.",
@@ -1220,6 +1280,153 @@
     "undo": "Undo",
     "undone": "Undone.",
     "dismiss": "Dismiss",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "whatWillHappen": "What will happen",
+    "cancel": "Cancel",
+    "working": "Working…",
+    "reasonCount": "{count} of at least {min} characters"
+  },
+  "access": {
+    "title": "How continuing teams get access",
+    "mode": "How access is given",
+    "open": "Open with an agreement",
+    "openText": "Anyone signed in with a verified email can take access after accepting the attribution agreement. No approval from you.",
+    "byRequest": "By request",
+    "byRequestText": "Teams send a short plan and you decide on each request.",
+    "paused": "Paused",
+    "pausedText": "The teaser stays visible, but no new access or requests. Existing access continues.",
+    "max": "How many continuing teams at once",
+    "max1": "1 team",
+    "max3": "3 teams (recommended)",
+    "maxNone": "No limit",
+    "maxHint": "When full, visitors see “Team quota is full” and can choose “Notify me”.",
+    "save": "Save access rules",
+    "saving": "Saving…",
+    "saved": "Access rules saved.",
+    "effectTitle": "What will change",
+    "fromTo": "From “{from}” to “{to}”.",
+    "limitChange": "Team limit: {from} to {to}.",
+    "noChange": "Nothing has changed yet.",
+    "watchersNote": "People who chose “Notify me” are told when access opens again or a slot frees up."
+  },
+  "fill": {
+    "aiTitle": "Draft with AI",
+    "aiText": "AI reads your files and drafts a summary, objectives, completed work, next tasks and lessons. Each item carries evidence that ESTAFET checks. You review everything.",
+    "consentTitle": "Consent before your files are read",
+    "consentText": "Your files are sent to the AI provider only after every active team member agrees. You can choose not to use AI at all.",
+    "consentBtn": "My team and I agree that AI reads the files",
+    "consentDone": "Your consent is recorded.",
+    "consentOthers": "Some team members have not confirmed yet. Ask them to confirm on the Team and access step, or choose to fill in by hand.",
+    "manualTitle": "Fill in by hand, no AI",
+    "manualText": "Write the summary, objectives, tasks and lessons yourself. Nothing goes to an AI provider and there are no evidence checks. Items are marked “Filled in by hand”.",
+    "manualBtn": "Fill in by hand",
+    "manualBadge": "Filled in by hand",
+    "manualBanner": "You chose to fill in by hand. Nothing is sent to AI and there are no evidence checks. Add the items below, then review them all.",
+    "switchBtn": "Back to the Files step"
+  },
+  "settings": {
+    "metaTitle": "Project settings",
+    "title": "Project settings",
+    "lead": "Everything you can change for this project is here. Each change is explained first and is recorded in the lineage.",
+    "breadcrumbDashboard": "Dashboard",
+    "previewVisitor": "Preview as a visitor",
+    "viewPublic": "View public page",
+    "continueWizard": "Continue in the wizard",
+    "pub": {
+      "title": "Publication",
+      "draft": "Draft",
+      "published": "Published",
+      "unpublished": "Unpublished",
+      "archived": "Archived",
+      "draftText": "This project is not published yet. Finish the steps in the wizard to publish it.",
+      "publishedText": "The teaser is on Explore. Files stay private.",
+      "unpublishedText": "The teaser is hidden from public pages. Your data and existing access stay as they are.",
+      "archivedText": "This project is read-only. People who already have access keep it. To open it again, contact the ESTAFET team.",
+      "moderated": "The ESTAFET team is holding or hiding this project, so it is not on public pages. The reason is in your notifications.",
+      "unpublish": "Unpublish",
+      "unpublishTitle": "Unpublish the teaser?",
+      "unpublishEffect": "The teaser disappears from Explore and public pages. Teams that already have access keep it. No data is deleted, and you can publish again at any time.",
+      "republish": "Publish again",
+      "republishTitle": "Publish again?",
+      "republishEffect": "The teaser appears on Explore again. The same requirements apply as the first time: team consent, advisor approval or the no-advisor declaration, every item reviewed, and the terms accepted.",
+      "archive": "Archive",
+      "archiveTitle": "Archive this project?",
+      "archiveEffect": "The project becomes read-only and leaves public pages. People who already have access keep it. You cannot change it any more, and it cannot be deleted while access or an agreement exists."
+    },
+    "confirm": "Yes, continue",
+    "confirmArchive": "Yes, archive",
+    "team": {
+      "title": "Project owners",
+      "text": "Owners can change all of these settings. A new co-owner has to accept the invitation first.",
+      "roleOwner": "Owner",
+      "roleCo": "Co-owner",
+      "invited": "Invitation waiting",
+      "you": "(you)",
+      "invite": "Invite a co-owner",
+      "inviteLabel": "ESTAFET account email",
+      "inviteBtn": "Send invitation",
+      "remove": "Remove",
+      "removeTitle": "Remove {name}?",
+      "removeEffect": "{name} can no longer change this project. Their account and credit are not deleted.",
+      "transferTitle": "Hand over ownership",
+      "transferText": "The recipient has to accept it first. Until then nothing changes.",
+      "transferPick": "Choose a co-owner",
+      "transferBtn": "Offer ownership",
+      "transferConfirmTitle": "Offer ownership to {name}?",
+      "transferEffect": "{name} gets a notification and has to accept. If they accept, {name} becomes the owner and you become a co-owner. You can cancel the offer before it is answered.",
+      "transferWaitingMine": "Waiting for {name} to answer the ownership offer.",
+      "transferCancel": "Cancel the offer",
+      "transferOfferedToMe": "{name} offers you ownership of this project.",
+      "transferAccept": "Accept",
+      "transferDecline": "Decline",
+      "noCoOwners": "There is no active co-owner yet who could receive ownership."
+    },
+    "advisor": {
+      "title": "Advisor",
+      "approved": "The advisor approved.",
+      "pending": "Waiting for the advisor to approve. The private link is valid for 14 days.",
+      "declined": "The advisor said not now.",
+      "withdrawn": "The approval was withdrawn or the link replaced.",
+      "none": "Advisor approval has not been requested yet.",
+      "declared": "You declared that this project has no advisor.",
+      "manage": "Resend or create a new link",
+      "note": "ESTAFET does not send email yet. Create a new link on the Team and access step and send it to your advisor yourself."
+    },
+    "req": {
+      "title": "Incoming requests",
+      "filterLabel": "Filter requests",
+      "all": "All",
+      "pending": "Waiting",
+      "approved": "Approved",
+      "declined": "Declined",
+      "closed": "Withdrawn or expired",
+      "empty": "No requests with this filter yet. New requests show up here and on your dashboard.",
+      "emptyOpen": "This project is open with an agreement, so teams take access directly without a request.",
+      "open": "Open",
+      "sent": "Sent {date}",
+      "expires": "expires {date}"
+    },
+    "holders": {
+      "title": "Teams and people with access",
+      "empty": "Nobody holds access to the private files yet.",
+      "since": "Access since {date} · {source}",
+      "sourceOpen": "taken directly",
+      "sourceRequest": "approved request",
+      "revoke": "Revoke access",
+      "revokeTitle": "Revoke access for {name}?",
+      "revokeEffect": "{name} loses access to the private files right away and will read your reason. The duty to credit the original team for what they already used still applies.",
+      "reason": "Reason (they will read it)",
+      "confirm": "Yes, revoke access",
+      "count": "{count, plural, one {# person} other {# people}} from {teams, plural, one {# team} other {# teams}} hold access."
+    },
+    "notes": {
+      "title": "Notifications for this project",
+      "empty": "No notifications for this project yet."
+    },
+    "history": {
+      "title": "Change history",
+      "text": "Every settings change is recorded in the lineage and cannot be edited.",
+      "empty": "No history yet."
+    }
   }
 }

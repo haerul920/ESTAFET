@@ -36,7 +36,9 @@ export type LineageType =
   | "unpublished"
   | "republished"
   | "archived"
-  | "access_settings_changed";
+  | "access_settings_changed"
+  | "item_progress"
+  | "ownership_transferred";
 
 export interface Profile {
   id: string;
@@ -122,6 +124,8 @@ export interface Project {
   max_active_adopters: number | null;
   advisor_mode: AdvisorMode;
   no_advisor_declared_at: string | null;
+  /** null = not chosen yet. manual = the owners write the items by hand and nothing goes to AI. */
+  fill_mode?: "ai" | "manual" | null;
   created_at: string;
   updated_at: string;
 }

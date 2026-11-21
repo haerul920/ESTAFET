@@ -20,7 +20,7 @@ export default async function StartPage() {
   await requireUser("/mulai");
   const t = await getTranslations("welcome");
   const cards = [
-    { href: "/share", icon: <Share2 size={28} aria-hidden="true" />, title: t("shareTitle"), text: t("shareText") },
+    { href: "/bagikan", icon: <Share2 size={28} aria-hidden="true" />, title: t("shareTitle"), text: t("shareText") },
     { href: "/explore", icon: <Compass size={28} aria-hidden="true" />, title: t("exploreTitle"), text: t("exploreText") },
   ];
   return (

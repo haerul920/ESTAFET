@@ -9,7 +9,8 @@ import { Card } from "@/components/ui/Card";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { FormMessage } from "@/components/ui/Field";
-import { deleteFile } from "@/app/actions/projects";
+import { confirmTeamConsent, deleteFile } from "@/app/actions/projects";
+import { setFillMode } from "@/app/actions/owner";
 import { cn } from "@/lib/cn";
 import type { ProjectFile } from "@/lib/db/types";
 
@@ -53,6 +54,9 @@ export function FilesStep({
   canSynthesize,
   blockReason,
   mockMode,
+  selfConsented,
+  othersPending,
+  fillMode,
 }: {
   projectId: string;
   files: ProjectFile[];
@@ -60,6 +64,11 @@ export function FilesStep({
   canSynthesize: boolean;
   blockReason: string;
   mockMode: boolean;
+  /** The signed-in owner already confirmed that the team agrees to share (and to AI reading the files). */
+  selfConsented: boolean;
+  /** Active team members other than the signed-in owner who have not confirmed yet. */
+  othersPending: number;
+  fillMode: "ai" | "manual" | null;
 }) {
   const t = useTranslations("files");
   const L = useLabels();
@@ -110,7 +119,7 @@ export function FilesStep({
         setDrafting(false);
         return;
       }
-      router.push(`/share/${projectId}/verify`);
+      router.push(`/bagikan/${projectId}/tinjau`);
     } catch {
       setError(t("draftFailedRetry"));
       setDrafting(false);
@@ -122,6 +131,15 @@ export function FilesStep({
   return (
     <div className="flex flex-col gap-6">
       <DataNotice />
+
+      <FillChoice
+        projectId={projectId}
+        selfConsented={selfConsented}
+        othersPending={othersPending}
+        fillMode={fillMode}
+        hasItems={itemCount > 0}
+        onError={setError}
+      />
 
       <div
         onDragOver={(e) => {
@@ -250,11 +268,11 @@ export function FilesStep({
       ) : null}
 
       <div className="flex flex-wrap justify-between gap-3">
-        <ButtonLink href={`/share/${projectId}/consent`} variant="outline">
+        <ButtonLink href={`/bagikan/${projectId}/info`} variant="outline">
           {t("back")}
         </ButtonLink>
         {itemCount > 0 ? (
-          <ButtonLink href={`/share/${projectId}/verify`} arrow size="lg">
+          <ButtonLink href={`/bagikan/${projectId}/tinjau`} arrow size="lg">
             {t("toVerify")}
           </ButtonLink>
         ) : (
@@ -269,6 +287,90 @@ export function FilesStep({
           {t("draftingText")}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * The two ways to fill the project. Nothing is read by an AI provider before the team agreed (CLAUDE.md 14.5):
+ * the AI path needs the owner's own consent here and every other active member to have confirmed. Manual needs no one.
+ */
+function FillChoice({
+  projectId,
+  selfConsented,
+  othersPending,
+  fillMode,
+  hasItems,
+  onError,
+}: {
+  projectId: string;
+  selfConsented: boolean;
+  othersPending: number;
+  fillMode: "ai" | "manual" | null;
+  hasItems: boolean;
+  onError: (message: string) => void;
+}) {
+  const t = useTranslations("fill");
+  const router = useRouter();
+  const [pending, start] = useTransition();
+
+  function consent() {
+    start(async () => {
+      onError("");
+      const r = await confirmTeamConsent(projectId);
+      if (r.error) onError(r.error);
+      else await setFillMode(projectId, "ai");
+      router.refresh();
+    });
+  }
+
+  function manual() {
+    start(async () => {
+      onError("");
+      const r = await setFillMode(projectId, "manual");
+      if (r.error) {
+        onError(r.error);
+        return;
+      }
+      router.push(`/bagikan/${projectId}/tinjau`);
+    });
+  }
+
+  return (
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
+      <Card tone={fillMode === "manual" ? "white" : "lime"} className="flex flex-col gap-3">
+        <h2 className="m-0 flex items-center gap-2 text-lg">
+          <ShieldCheck size={18} aria-hidden="true" /> {t("aiTitle")}
+        </h2>
+        <p className="m-0 text-[15px] text-text-3">{t("aiText")}</p>
+        <div className="rounded-[14px] bg-surface p-3.5 text-sm">
+          <strong className="mb-1 block">{t("consentTitle")}</strong>
+          {t("consentText")}
+          {selfConsented ? (
+            <p className="mb-0 mt-2 font-semibold text-ok">{t("consentDone")}</p>
+          ) : (
+            <div className="mt-3">
+              <Button variant="outlineBlue" size="md" onClick={consent} disabled={pending}>
+                {t("consentBtn")}
+              </Button>
+            </div>
+          )}
+          {selfConsented && othersPending > 0 ? <p className="mb-0 mt-2 text-warn-ink">{t("consentOthers")}</p> : null}
+        </div>
+      </Card>
+      <Card tone={fillMode === "manual" ? "lime" : "white"} className="flex flex-col gap-3">
+        <h2 className="m-0 flex items-center gap-2 text-lg">
+          <FileText size={18} aria-hidden="true" /> {t("manualTitle")}
+        </h2>
+        <p className="m-0 text-[15px] text-text-3">{t("manualText")}</p>
+        <div className="mt-auto">
+          {hasItems && fillMode !== "manual" ? null : (
+            <Button variant="outline" size="md" onClick={manual} disabled={pending}>
+              {t("manualBtn")}
+            </Button>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }
