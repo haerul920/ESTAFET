@@ -54,7 +54,9 @@ export function VerifyBoard({
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [items, setItems] = useState(initialItems);
-  const [selected, setSelected] = useState<string | null>(initialItems.find((i) => i.review_status === "pending")?.id ?? initialItems[0]?.id ?? null);
+  const [selected, setSelected] = useState<string | null>(
+    initialItems.find((i) => i.review_status === "pending")?.id ?? initialItems[0]?.id ?? null,
+  );
   const [filter, setFilter] = useState("all");
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState({ title: "", description: "" });
@@ -135,15 +137,11 @@ export function VerifyBoard({
       <div className="mb-6 flex flex-wrap items-end justify-between gap-6">
         <div className="min-w-[280px] flex-[1_1_440px]">
           <h1 className="mb-2 mt-0 text-4xl font-medium max-sm:text-[28px]">{t("title")}</h1>
-          <p className="m-0 text-text-2">
-            {t("intro")}
-          </p>
+          <p className="m-0 text-text-2">{t("intro")}</p>
         </div>
         <div className="flex-[0_1_280px]">
           <div className="mb-1.5 text-sm" aria-live="polite">
-            <strong>
-              {t("reviewedCount", { reviewed, total })}
-            </strong>
+            <strong>{t("reviewedCount", { reviewed, total })}</strong>
           </div>
           <AnimatedBar pct={total ? (reviewed / total) * 100 : 0} track="#DDE1E5" label={t("barLabel")} />
         </div>
@@ -176,234 +174,243 @@ export function VerifyBoard({
         </Card>
       ) : null}
 
-      <div className="mb-4">
-        <SegmentedTabs
-          label={t("filterLabel")}
-          value={filter}
-          onChange={setFilter}
-          tabs={FILTERS.map((f) => ({ id: f.id, label: t(f.key), count: undefined }))}
-        />
-      </div>
+      <SegmentedTabs
+        label={t("filterLabel")}
+        value={filter}
+        onChange={setFilter}
+        tabs={FILTERS.map((f) => ({ id: f.id, label: t(f.key), count: undefined }))}
+      >
+        {error ? (
+          <div className="mb-4">
+            <FormMessage tone="error">{error}</FormMessage>
+          </div>
+        ) : null}
 
-      {error ? (
-        <div className="mb-4">
-          <FormMessage tone="error">{error}</FormMessage>
-        </div>
-      ) : null}
-
-      <div className="flex flex-wrap items-start gap-6">
-        <section aria-label={t("itemsLabel")} className="flex min-w-0 flex-[1_1_560px] flex-col gap-3">
-          {visible.length === 0 ? (
-            <Card tone="dashed" className="text-center text-text-2">
-              {total === 0 ? t("none") : t("noneGroup")}
-            </Card>
-          ) : null}
-          <AnimatePresence initial={false}>
-            {visible.map((it) => {
-              const st = STATUS[it.review_status];
-              const isSel = selected === it.id;
-              const src = sources[it.id];
-              const evDetail = src && src.file ? `${src.file}, ${src.pageLabel}` : undefined;
-              return (
-                <motion.div
-                  key={it.id}
-                  layout
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: it.review_status === "removed" ? 0.6 : 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.97 }}
-                  transition={{ duration: 0.3 }}
-                  className={cn(
-                    "flex flex-col gap-2.5 rounded-3xl bg-white p-4",
-                    isSel ? "border-2 border-blue" : "border border-line",
-                  )}
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <span className="text-[13px] font-semibold text-blue-dark">
-                      {L.itemKind[it.kind as ItemKind]}
-                      {it.kind === "lesson" && it.lesson_type ? ` · ${L.lesson[it.lesson_type]}` : ""}
-                      {it.origin === "creator" ? t("addedByYou") : ""}
-                    </span>
-                    <AnimatePresence mode="wait" initial={false}>
-                      <motion.span
-                        key={it.review_status}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <Badge tone={st.tone}>{t(st.key)}</Badge>
-                      </motion.span>
-                    </AnimatePresence>
-                  </div>
-
-                  {editing === it.id ? (
-                    <div className="flex flex-col gap-3">
-                      <TextField label={t("fieldTitle")} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-                      {it.kind !== "lesson" ? (
-                        <TextArea
-                          label={t("fieldDescription")}
-                          rows={2}
-                          value={draft.description}
-                          onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-                        />
-                      ) : null}
-                      <div className="flex gap-2">
-                        <Button size="md" onClick={() => saveEdit(it)}>
-                          {t("save")}
-                        </Button>
-                        <Button size="md" variant="outline" onClick={() => setEditing(null)}>
-                          {t("cancel")}
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setSelected(it.id)}
-                        aria-label={t("showSource", { title: it.title })}
-                        className={cn(
-                          "cursor-pointer bg-transparent p-0 text-left text-[17px] font-semibold text-ink",
-                          it.review_status === "removed" && "line-through",
-                        )}
-                      >
-                        {it.title}
-                      </button>
-                      {it.description ? <span className="text-[15px] text-text-2">{it.description}</span> : null}
-                      {it.origin === "creator" ? (
-                        <Badge tone="info" className="self-start">
-                          {t("writtenByYou")}
-                        </Badge>
-                      ) : (
-                        <EvidenceChip status={it.evidence_status} detail={evDetail} />
-                      )}
-                    </>
-                  )}
-
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      aria-pressed={it.review_status === "kept"}
-                      onClick={() => setReview(it, "kept")}
-                      className={cn(
-                        "inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-blue px-[18px] py-2 text-[15px] font-semibold transition-colors",
-                        it.review_status === "kept" ? "bg-blue text-white" : "bg-white text-blue hover:bg-blue-tint",
-                      )}
-                    >
-                      <Check size={16} aria-hidden="true" /> {t("keep")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => startEdit(it)}
-                      className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-line-strong bg-white px-[18px] py-2 text-[15px] font-semibold text-ink hover:bg-surface"
-                    >
-                      <Pencil size={16} aria-hidden="true" /> {t("edit")}
-                    </button>
-                    <button
-                      type="button"
-                      aria-pressed={it.review_status === "removed"}
-                      onClick={() => setReview(it, "removed")}
-                      className={cn(
-                        "inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-danger px-[18px] py-2 text-[15px] font-semibold transition-colors",
-                        it.review_status === "removed" ? "bg-danger text-white" : "bg-white text-danger hover:bg-[#fdecea]",
-                      )}
-                    >
-                      {it.review_status === "removed" ? <Undo2 size={16} aria-hidden="true" /> : <Trash2 size={16} aria-hidden="true" />}
-                      {it.review_status === "removed" ? t("removed") : t("remove")}
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-
-          {adding ? (
-            <AddItemForm
-              projectId={projectId}
-              nextPosition={Math.max(0, ...items.map((i) => i.position)) + 1}
-              onCancel={() => setAdding(false)}
-              onAdded={(row) => {
-                setItems((cur) => [...cur, row]);
-                setSelected(row.id);
-                setAdding(false);
-                startTransition(() => router.refresh());
-              }}
-              onError={setError}
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setAdding(true)}
-              className="flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-line-strong bg-white font-semibold text-blue hover:bg-blue-tint"
-            >
-              <Plus size={18} aria-hidden="true" /> {t("add")}
-            </button>
-          )}
-        </section>
-
-        <aside aria-label={t("sourceViewer")} className="sticky top-4 flex min-w-[280px] flex-[0_1_400px] flex-col gap-3 max-lg:static">
-          <Card className="flex flex-col gap-3 !rounded-3xl !p-5">
-            <h2 className="m-0 text-base">{t("sourceTitle")}</h2>
-            {sel && source ? (
-              <>
-                <div className="font-code text-[13px] text-text-2">
-                  {source.file}
-                  {source.pageLabel ? ` · ${source.pageLabel}` : ""}
-                </div>
-                <AnimatePresence mode="wait">
+        <div className="flex flex-wrap items-start gap-6">
+          <section aria-label={t("itemsLabel")} className="flex min-w-0 flex-[1_1_560px] flex-col gap-3">
+            {visible.length === 0 ? (
+              <Card tone="dashed" className="text-center text-text-2">
+                {total === 0 ? t("none") : t("noneGroup")}
+              </Card>
+            ) : null}
+            <AnimatePresence initial={false}>
+              {visible.map((it) => {
+                const st = STATUS[it.review_status];
+                const isSel = selected === it.id;
+                const src = sources[it.id];
+                const evDetail = src && src.file ? `${src.file}, ${src.pageLabel}` : undefined;
+                return (
                   <motion.div
-                    key={sel.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex flex-col gap-3"
+                    key={it.id}
+                    layout
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: it.review_status === "removed" ? 0.6 : 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{ duration: 0.3 }}
+                    className={cn(
+                      "flex flex-col gap-2.5 rounded-3xl bg-white p-4",
+                      isSel ? "border-2 border-blue" : "border border-line",
+                    )}
                   >
-                    <div className="rounded-[14px] border border-line-soft bg-white p-4 text-sm leading-[1.7] text-text-3">
-                      {source.fileMissing ? (
-                        <p className="m-0 italic text-text-2">{t("fileMissing")}</p>
-                      ) : source.found ? (
-                        <>
-                          {source.before ? <p className="mb-3 mt-0">{source.before}</p> : null}
-                          {source.quote ? (
-                            <p className="mb-3 mt-0">
-                              <mark className="rounded bg-[#F7D58A] px-1 py-0.5 text-ink">{source.quote}</mark>
-                            </p>
-                          ) : null}
-                          {source.after ? <p className="m-0">{source.after}</p> : null}
-                        </>
-                      ) : (
-                        <>
-                          <p className="mb-3 mt-0 italic text-text-2">{t("noMatch")}</p>
-                          {source.context ? <p className="m-0">{source.context}</p> : null}
-                        </>
-                      )}
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="text-[13px] font-semibold text-blue-dark">
+                        {L.itemKind[it.kind as ItemKind]}
+                        {it.kind === "lesson" && it.lesson_type ? ` · ${L.lesson[it.lesson_type]}` : ""}
+                        {it.origin === "creator" ? t("addedByYou") : ""}
+                      </span>
+                      <AnimatePresence mode="wait" initial={false}>
+                        <motion.span
+                          key={it.review_status}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          <Badge tone={st.tone}>{t(st.key)}</Badge>
+                        </motion.span>
+                      </AnimatePresence>
                     </div>
-                    {source.fileMissing ? null : source.found ? (
-                      <div className="rounded-[14px] bg-ok-bg p-3 text-sm text-ok">
-                        <strong>{t("matchedBold")}</strong> {t("matchedText")}
+
+                    {editing === it.id ? (
+                      <div className="flex flex-col gap-3">
+                        <TextField
+                          label={t("fieldTitle")}
+                          value={draft.title}
+                          onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                        />
+                        {it.kind !== "lesson" ? (
+                          <TextArea
+                            label={t("fieldDescription")}
+                            rows={2}
+                            value={draft.description}
+                            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                          />
+                        ) : null}
+                        <div className="flex gap-2">
+                          <Button size="md" onClick={() => saveEdit(it)}>
+                            {t("save")}
+                          </Button>
+                          <Button size="md" variant="outline" onClick={() => setEditing(null)}>
+                            {t("cancel")}
+                          </Button>
+                        </div>
                       </div>
                     ) : (
-                      <div className="rounded-[14px] bg-warn-bg p-3 text-sm text-warn-ink">
-                        <strong>{t("notFoundBold")}</strong> {t("notFoundText")}
-                        {source.quote ? (
-                          <span className="mt-2 block text-[13px]">
-                            {t("aiClaimed", { quote: source.quote })}
-                          </span>
-                        ) : null}
-                      </div>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setSelected(it.id)}
+                          aria-label={t("showSource", { title: it.title })}
+                          className={cn(
+                            "cursor-pointer bg-transparent p-0 text-left text-[17px] font-semibold text-ink",
+                            it.review_status === "removed" && "line-through",
+                          )}
+                        >
+                          {it.title}
+                        </button>
+                        {it.description ? <span className="text-[15px] text-text-2">{it.description}</span> : null}
+                        {it.origin === "creator" ? (
+                          <Badge tone="info" className="self-start">
+                            {t("writtenByYou")}
+                          </Badge>
+                        ) : (
+                          <EvidenceChip status={it.evidence_status} detail={evDetail} />
+                        )}
+                      </>
                     )}
+
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        aria-pressed={it.review_status === "kept"}
+                        onClick={() => setReview(it, "kept")}
+                        className={cn(
+                          "inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-blue px-[18px] py-2 text-[15px] font-semibold transition-colors",
+                          it.review_status === "kept" ? "bg-blue text-white" : "bg-white text-blue hover:bg-blue-tint",
+                        )}
+                      >
+                        <Check size={16} aria-hidden="true" /> {t("keep")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(it)}
+                        className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-line-strong bg-white px-[18px] py-2 text-[15px] font-semibold text-ink hover:bg-surface"
+                      >
+                        <Pencil size={16} aria-hidden="true" /> {t("edit")}
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={it.review_status === "removed"}
+                        onClick={() => setReview(it, "removed")}
+                        className={cn(
+                          "inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-danger px-[18px] py-2 text-[15px] font-semibold transition-colors",
+                          it.review_status === "removed"
+                            ? "bg-danger text-white"
+                            : "bg-white text-danger hover:bg-[#fdecea]",
+                        )}
+                      >
+                        {it.review_status === "removed" ? (
+                          <Undo2 size={16} aria-hidden="true" />
+                        ) : (
+                          <Trash2 size={16} aria-hidden="true" />
+                        )}
+                        {it.review_status === "removed" ? t("removed") : t("remove")}
+                      </button>
+                    </div>
                   </motion.div>
-                </AnimatePresence>
-              </>
+                );
+              })}
+            </AnimatePresence>
+
+            {adding ? (
+              <AddItemForm
+                projectId={projectId}
+                nextPosition={Math.max(0, ...items.map((i) => i.position)) + 1}
+                onCancel={() => setAdding(false)}
+                onAdded={(row) => {
+                  setItems((cur) => [...cur, row]);
+                  setSelected(row.id);
+                  setAdding(false);
+                  startTransition(() => router.refresh());
+                }}
+                onError={setError}
+              />
             ) : (
-              <p className="m-0 text-sm text-text-2">
-                {sel?.origin === "creator" ? t("ownNoSource") : t("selectItem")}
-              </p>
+              <button
+                type="button"
+                onClick={() => setAdding(true)}
+                className="flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-line-strong bg-white font-semibold text-blue hover:bg-blue-tint"
+              >
+                <Plus size={18} aria-hidden="true" /> {t("add")}
+              </button>
             )}
-          </Card>
-        </aside>
-      </div>
+          </section>
+
+          <aside
+            aria-label={t("sourceViewer")}
+            className="sticky top-4 flex min-w-[280px] flex-[0_1_400px] flex-col gap-3 max-lg:static"
+          >
+            <Card className="flex flex-col gap-3 !rounded-3xl !p-5">
+              <h2 className="m-0 text-base">{t("sourceTitle")}</h2>
+              {sel && source ? (
+                <>
+                  <div className="font-code text-[13px] text-text-2">
+                    {source.file}
+                    {source.pageLabel ? ` · ${source.pageLabel}` : ""}
+                  </div>
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={sel.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col gap-3"
+                    >
+                      <div className="rounded-[14px] border border-line-soft bg-white p-4 text-sm leading-[1.7] text-text-3">
+                        {source.fileMissing ? (
+                          <p className="m-0 italic text-text-2">{t("fileMissing")}</p>
+                        ) : source.found ? (
+                          <>
+                            {source.before ? <p className="mb-3 mt-0">{source.before}</p> : null}
+                            {source.quote ? (
+                              <p className="mb-3 mt-0">
+                                <mark className="rounded bg-[#F7D58A] px-1 py-0.5 text-ink">{source.quote}</mark>
+                              </p>
+                            ) : null}
+                            {source.after ? <p className="m-0">{source.after}</p> : null}
+                          </>
+                        ) : (
+                          <>
+                            <p className="mb-3 mt-0 italic text-text-2">{t("noMatch")}</p>
+                            {source.context ? <p className="m-0">{source.context}</p> : null}
+                          </>
+                        )}
+                      </div>
+                      {source.fileMissing ? null : source.found ? (
+                        <div className="rounded-[14px] bg-ok-bg p-3 text-sm text-ok">
+                          <strong>{t("matchedBold")}</strong> {t("matchedText")}
+                        </div>
+                      ) : (
+                        <div className="rounded-[14px] bg-warn-bg p-3 text-sm text-warn-ink">
+                          <strong>{t("notFoundBold")}</strong> {t("notFoundText")}
+                          {source.quote ? (
+                            <span className="mt-2 block text-[13px]">{t("aiClaimed", { quote: source.quote })}</span>
+                          ) : null}
+                        </div>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </>
+              ) : (
+                <p className="m-0 text-sm text-text-2">
+                  {sel?.origin === "creator" ? t("ownNoSource") : t("selectItem")}
+                </p>
+              )}
+            </Card>
+          </aside>
+        </div>
+      </SegmentedTabs>
 
       <Card className="mt-8 flex flex-wrap items-center justify-between gap-4 !rounded-3xl !p-5">
         <div className="flex flex-col gap-1.5">
@@ -411,7 +418,11 @@ export function VerifyBoard({
             {footnote}
           </span>
           <span className={cn("text-[13px] font-semibold", checklist.advisor.done ? "text-ok" : "text-warn")}>
-            {advisorOk ? (checklist.advisor.status === "not_needed" ? t("advisorNotNeeded") : t("advisorApproved")) : t("advisorPending")}
+            {advisorOk
+              ? checklist.advisor.status === "not_needed"
+                ? t("advisorNotNeeded")
+                : t("advisorApproved")
+              : t("advisorPending")}
             {checklist.team.done ? "" : t("teamPending")}
           </span>
         </div>
@@ -454,7 +465,9 @@ function AddItemForm({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [effort, setEffort] = useState<"small" | "medium" | "large">("medium");
-  const [lessonType, setLessonType] = useState<"methodology" | "evaluation_feedback" | "funding_feedback" | "blocker">("methodology");
+  const [lessonType, setLessonType] = useState<"methodology" | "evaluation_feedback" | "funding_feedback" | "blocker">(
+    "methodology",
+  );
   const [saving, setSaving] = useState(false);
   const [fieldError, setFieldError] = useState("");
 
@@ -506,7 +519,11 @@ function AddItemForm({
           </SelectField>
         ) : null}
         {kind === "lesson" ? (
-          <SelectField label={t("lessonType")} value={lessonType} onChange={(e) => setLessonType(e.target.value as typeof lessonType)}>
+          <SelectField
+            label={t("lessonType")}
+            value={lessonType}
+            onChange={(e) => setLessonType(e.target.value as typeof lessonType)}
+          >
             {Object.entries(L.lesson).map(([k, l]) => (
               <option key={k} value={k}>
                 {l}
@@ -517,7 +534,12 @@ function AddItemForm({
       </div>
       <TextField label={t("fieldTitle")} value={title} onChange={(e) => setTitle(e.target.value)} error={fieldError} />
       {kind !== "lesson" ? (
-        <TextArea label={t("descOptional")} rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+        <TextArea
+          label={t("descOptional")}
+          rows={2}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
       ) : null}
       <p className="m-0 text-[13px] text-text-2">{t("ownNote")}</p>
       <div className="flex gap-2">

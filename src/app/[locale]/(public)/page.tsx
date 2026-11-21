@@ -68,7 +68,7 @@ export default function HomePage() {
               className="relative flex min-h-[360px] flex-col justify-between overflow-hidden rounded-[32px] p-5"
               style={{ background: "linear-gradient(180deg,#2C86EE 0%,#7BBAF7 70%,#CDE4FB 100%)" }}
             >
-              <Cloud className="-right-[60px] bottom-[100px] h-20 w-[260px] opacity-60 blur-[22px]" drift={14} />
+              <Cloud className="-right-[60px] bottom-[100px] h-20 w-[260px] opacity-60 blur-[22px]" />
               <span className="mono-label relative text-xs text-white">{t("stats.surveyLabel")}</span>
               <div className="relative rounded-3xl bg-white p-5">
                 <div className="text-[60px] font-medium leading-none tracking-[-0.05em]">
@@ -146,7 +146,7 @@ export default function HomePage() {
             className="relative flex min-h-[380px] flex-col justify-between overflow-hidden rounded-[36px] p-9 text-white max-sm:p-6"
             style={{ background: "linear-gradient(180deg,#1E7BE8 0%,#6BB1F6 100%)" }}
           >
-            <Cloud className="-bottom-10 -right-20 h-[140px] w-[380px] opacity-55 blur-[28px]" drift={20} />
+            <Cloud className="-bottom-10 -right-20 h-[140px] w-[380px] opacity-55 blur-[28px]" />
             <span className="mono-label relative text-xs">{t("audience.owner.label")}</span>
             <div className="relative">
               <h3 className="mb-3 text-4xl font-medium leading-[1.1] tracking-[-0.035em] max-sm:text-[28px]">
@@ -184,8 +184,8 @@ export default function HomePage() {
           className="relative overflow-hidden rounded-[36px] px-8 py-14 max-sm:px-5"
           style={{ background: "linear-gradient(180deg,#2D86EE 0%,#8CC4F8 100%)" }}
         >
-          <Cloud className="-left-20 top-10 h-[100px] w-[340px] opacity-50 blur-[26px]" drift={24} />
-          <Cloud className="-right-[60px] bottom-[30px] h-[110px] w-[380px] opacity-55 blur-[26px]" drift={-24} />
+          <Cloud className="-left-20 top-10 h-[100px] w-[340px] opacity-50 blur-[26px]" />
+          <Cloud className="-right-[60px] bottom-[30px] h-[110px] w-[380px] opacity-55 blur-[26px]" />
           <div className="relative mx-auto max-w-[1060px]">
             <Reveal>
               <div className="mono-label mb-3 text-white">{t("close.label")}</div>

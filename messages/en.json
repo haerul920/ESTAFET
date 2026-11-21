@@ -22,7 +22,8 @@
     "menuClose": "Close menu",
     "account": "Account menu for {name}",
     "accountUnread": ", {count} unread notifications",
-    "breadcrumb": "Breadcrumb"
+    "breadcrumb": "Breadcrumb",
+    "menuTitle": "Menu"
   },
   "footer": {
     "note": "Prototype built for STACK 2026 by team Beban Server. Sample projects are simulated demo data.",
@@ -1213,5 +1214,12 @@
     "noFiles": "Upload at least one readable file first.",
     "unreadable": "The uploaded files could not be read. Upload them again.",
     "startFailed": "Could not start the run."
+  },
+  "ui": {
+    "close": "Close",
+    "undo": "Undo",
+    "undone": "Undone.",
+    "dismiss": "Dismiss",
+    "notifications": "Notifications"
   }
 }

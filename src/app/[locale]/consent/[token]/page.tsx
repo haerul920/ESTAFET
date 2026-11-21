@@ -18,7 +18,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto min-h-screen max-w-[560px] bg-white">
       <header className="relative overflow-hidden px-4 pb-14 pt-4" style={{ background: "linear-gradient(180deg,#2F8CF0 0%,#7DBBF7 60%,#FFFFFF 100%)" }}>
-        <Cloud className="-left-10 top-10 h-[70px] w-[200px] opacity-55 blur-[20px]" drift={16} />
+        <Cloud className="-left-10 top-10 h-[70px] w-[200px] opacity-55 blur-[20px]" />
         <div className="glass glass-strong relative flex items-center gap-2.5 rounded-full px-[18px] py-2.5">
           <Logo size={28} />
         </div>

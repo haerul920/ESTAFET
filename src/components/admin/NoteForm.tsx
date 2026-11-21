@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { addNote } from "@/app/[locale]/admin/actions";
-import { useToast } from "./Toast";
+import { useToast } from "@/components/ui/Toast";
 
 /** Admin-only note. It is stored as an audit entry, so it cannot be edited or deleted. */
 export function NoteForm({ targetType, targetId }: { targetType: "request" | "project" | "user"; targetId: string }) {

@@ -13,7 +13,7 @@ export function BreakGlassBanner({ expiresAt }: { expiresAt: string }) {
   const mm = String(Math.floor(left / 60)).padStart(1, "0");
   const ss = String(left % 60).padStart(2, "0");
   return (
-    <div role="alert" className="fixed inset-x-0 top-0 z-[70] flex flex-wrap items-center justify-center gap-3 bg-danger px-4 py-2.5 text-sm font-semibold text-white">
+    <div role="alert" className="z-system-banner relative -mx-4 -mt-6 mb-6 flex flex-wrap items-center justify-center gap-3 bg-danger px-4 py-2.5 text-sm font-semibold text-white">
       <ShieldAlert size={18} aria-hidden="true" />
       <span>EMERGENCY ACCESS to private files. This view is logged and the creators were told.</span>
       <span className="font-code" aria-live="off">{left > 0 ? `Expires in ${mm}:${ss}` : "Expired"}</span>

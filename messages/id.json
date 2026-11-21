@@ -22,7 +22,8 @@
     "menuClose": "Tutup menu",
     "account": "Menu akun {name}",
     "accountUnread": ", {count} notifikasi belum dibaca",
-    "breadcrumb": "Jalur navigasi"
+    "breadcrumb": "Jalur navigasi",
+    "menuTitle": "Menu"
   },
   "footer": {
     "note": "Prototipe untuk STACK 2026 oleh tim Beban Server. Proyek yang tampil adalah data contoh.",
@@ -1213,5 +1214,12 @@
     "noFiles": "Unggah setidaknya satu berkas yang bisa dibaca dulu.",
     "unreadable": "Berkas yang diunggah tidak bisa dibaca. Unggah ulang.",
     "startFailed": "Proses tidak bisa dimulai."
+  },
+  "ui": {
+    "close": "Tutup",
+    "undo": "Urungkan",
+    "undone": "Dibatalkan.",
+    "dismiss": "Tutup pemberitahuan",
+    "notifications": "Pemberitahuan"
   }
 }
