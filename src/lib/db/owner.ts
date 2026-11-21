@@ -1,13 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type {
-  DraftItem,
-  Project,
-  ProjectFile,
-  ProjectMember,
-  SynthesisRun,
-} from "./types";
+import type { DraftItem, Project, ProjectFile, ProjectMember, SynthesisRun } from "./types";
 import type { ExtractedDoc } from "@/lib/ingest/types";
 import { locateQuote } from "@/lib/evidence/match";
 
@@ -79,7 +73,9 @@ export async function getItems(projectId: string): Promise<DraftItem[]> {
   return (data ?? []) as DraftItem[];
 }
 
-export async function getLatestRun(projectId: string): Promise<(SynthesisRun & { summary_draft: string | null }) | null> {
+export async function getLatestRun(
+  projectId: string,
+): Promise<(SynthesisRun & { summary_draft: string | null }) | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("synthesis_runs")
@@ -135,7 +131,16 @@ export async function buildSourceViews(items: DraftItem[], files: ProjectFile[])
   for (const item of items) {
     const ev = item.evidence[0];
     if (!ev) {
-      out[item.id] = { file: "No source", pageLabel: "", found: false, before: "", quote: "", after: "", context: "", fileMissing: true };
+      out[item.id] = {
+        file: "No source",
+        pageLabel: "",
+        found: false,
+        before: "",
+        quote: "",
+        after: "",
+        context: "",
+        fileMissing: true,
+      };
       continue;
     }
     const file = fileById.get(ev.file_id);
@@ -143,12 +148,30 @@ export async function buildSourceViews(items: DraftItem[], files: ProjectFile[])
     const page = doc?.pages.find((p) => p.page === ev.page);
     const pageLabel = file?.kind === "markdown" ? `section ${ev.page}` : `page ${ev.page}`;
     if (!file || !doc || !page) {
-      out[item.id] = { file: file?.original_name ?? "Removed file", pageLabel, found: false, before: "", quote: ev.quote, after: "", context: "", fileMissing: true };
+      out[item.id] = {
+        file: file?.original_name ?? "Removed file",
+        pageLabel,
+        found: false,
+        before: "",
+        quote: ev.quote,
+        after: "",
+        context: "",
+        fileMissing: true,
+      };
       continue;
     }
     const loc = ev.quote ? locateQuote(ev.quote, page.text) : null;
     out[item.id] = loc
-      ? { file: file.original_name, pageLabel, found: true, before: loc.before, quote: loc.match, after: loc.after, context: "", fileMissing: false }
+      ? {
+          file: file.original_name,
+          pageLabel,
+          found: true,
+          before: loc.before,
+          quote: loc.match,
+          after: loc.after,
+          context: "",
+          fileMissing: false,
+        }
       : {
           file: file.original_name,
           pageLabel,

@@ -50,8 +50,8 @@ export function TeaserContent({
         </div>
         <h1 className="mb-3 mt-0 text-[44px] font-medium leading-[1.1] max-sm:text-[32px]">{project.title}</h1>
         <p className="m-0 text-text-2">
-          {L.kind[project.kind]} · {project.year} · {L.faculty(project.field)} · {t("byTeam", { count: project.team_size })} ·{" "}
-          {t("readTime", { minutes })}
+          {L.kind[project.kind]} · {project.year} · {L.faculty(project.field)} ·{" "}
+          {t("byTeam", { count: project.team_size })} · {t("readTime", { minutes })}
         </p>
       </header>
 
@@ -78,7 +78,10 @@ export function TeaserContent({
               ) : (
                 <ul className="m-0 flex list-none flex-col gap-3 p-0">
                   {objectives.map((o) => (
-                    <li key={o.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-3">
+                    <li
+                      key={o.id}
+                      className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-3"
+                    >
                       <span>{o.title}</span>
                       <Badge tone={OBJ_TONE[o.objective_status ?? "not_started"]}>
                         {L.objective[o.objective_status ?? "not_started"]}
@@ -111,21 +114,27 @@ export function TeaserContent({
           <Reveal>
             <Card as="section">
               <h2 className="mb-1 mt-0 text-[22px]">{t("nextTasks")}</h2>
-              <p className="mb-4 mt-0 text-sm text-text-2">
-                {t("nextTasksIntro")}
-              </p>
+              <p className="mb-4 mt-0 text-sm text-text-2">{t("nextTasksIntro")}</p>
               {tasks.length === 0 ? (
                 <p className="m-0 text-text-2">{t("noTasks")}</p>
               ) : (
                 <Stagger as="ol" gap={0.08} className="m-0 flex list-none flex-col gap-3 p-0">
                   {tasks.map((task) => (
-                    <StaggerItem as="li" key={task.id} className="flex flex-col gap-2 rounded-[18px] border border-line-soft bg-white p-4">
+                    <StaggerItem
+                      as="li"
+                      key={task.id}
+                      className="flex flex-col gap-2 rounded-[18px] border border-line-soft bg-white p-4"
+                    >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <strong>{task.title}</strong>
                         {task.effort ? <Chip className="font-semibold">{L.effort[task.effort]}</Chip> : null}
                       </div>
                       {task.description ? <span className="text-[15px] text-text-2">{task.description}</span> : null}
-                      {task.source_label ? <span className="text-[13px] font-semibold text-blue-dark">{t("source", { label: task.source_label })}</span> : null}
+                      {task.source_label ? (
+                        <span className="text-[13px] font-semibold text-blue-dark">
+                          {t("source", { label: task.source_label })}
+                        </span>
+                      ) : null}
                     </StaggerItem>
                   ))}
                 </Stagger>
@@ -140,7 +149,9 @@ export function TeaserContent({
                 <ul className="m-0 flex list-none flex-col gap-4 p-0">
                   {lessons.map((l) => (
                     <li key={l.id} className="flex flex-col gap-1.5">
-                      <span className="text-[13px] font-semibold text-blue-dark">{l.lesson_type ? L.lesson[l.lesson_type] : t("lessonDefault")}</span>
+                      <span className="text-[13px] font-semibold text-blue-dark">
+                        {l.lesson_type ? L.lesson[l.lesson_type] : t("lessonDefault")}
+                      </span>
                       <span>{l.title}</span>
                     </li>
                   ))}
@@ -165,7 +176,11 @@ export function TeaserContent({
                 ) : (
                   <p className="m-0 text-text-2">
                     {t("lockedBase")}{" "}
-                    {project.access_mode === "open" ? t("lockedOpen") : project.access_mode === "paused" ? t("lockedPaused") : t("lockedRequest")}
+                    {project.access_mode === "open"
+                      ? t("lockedOpen")
+                      : project.access_mode === "paused"
+                        ? t("lockedPaused")
+                        : t("lockedRequest")}
                   </p>
                 )}
               </div>

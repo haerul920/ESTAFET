@@ -19,7 +19,9 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   const t = await tr();
   const locale = await getLocale();
   const values = formValues(formData);
-  const parsed = z.object({ email: emailSchema(t.v), password: z.string().min(1, t.v("passwordRequired")) }).safeParse(values);
+  const parsed = z
+    .object({ email: emailSchema(t.v), password: z.string().min(1, t.v("passwordRequired")) })
+    .safeParse(values);
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error), values };
 
   const supabase = await createClient();
@@ -61,7 +63,10 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
   const settings = await getSettings();
   if (!settings.registrations_open.value) return { error: t.a("registrationsClosed"), values };
   if (!isEmailAllowedBy(parsed.data.email, settings.allowed_email_domains.value)) {
-    return { fieldErrors: { email: t.v("domainNotAllowed", { domains: settings.allowed_email_domains.value.join(", ") }) }, values };
+    return {
+      fieldErrors: { email: t.v("domainNotAllowed", { domains: settings.allowed_email_domains.value.join(", ") }) },
+      values,
+    };
   }
 
   const supabase = await createClient();
@@ -78,11 +83,18 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
   // so the server writes it with the service role for the account that was just created.
   if (data.user && data.user.identities && data.user.identities.length > 0) {
     const admin = createAdminClient();
-    const { data: versions } = await admin.from("policies").select("kind, version, effective_at").lte("effective_at", new Date().toISOString());
+    const { data: versions } = await admin
+      .from("policies")
+      .select("kind, version, effective_at")
+      .lte("effective_at", new Date().toISOString());
     const latest = new Map<string, number>();
-    for (const v of (versions ?? []) as { kind: string; version: number }[]) latest.set(v.kind, Math.max(latest.get(v.kind) ?? 0, v.version));
+    for (const v of (versions ?? []) as { kind: string; version: number }[])
+      latest.set(v.kind, Math.max(latest.get(v.kind) ?? 0, v.version));
     const rows = [...latest.entries()].map(([kind, version]) => ({ profile_id: data.user!.id, kind, version }));
-    if (rows.length) await admin.from("policy_acceptances").upsert(rows, { onConflict: "profile_id,kind,version", ignoreDuplicates: true });
+    if (rows.length)
+      await admin
+        .from("policy_acceptances")
+        .upsert(rows, { onConflict: "profile_id,kind,version", ignoreDuplicates: true });
   }
   if (!data.session) return { ok: true, message: t.a("signupDone") };
   redirect({ href: safeNext(values.next), locale });

@@ -68,7 +68,12 @@ export function EvidenceChip({ status, detail }: { status: "matched" | "not_foun
     <Badge tone={ok ? "ok" : "warn"} className="max-w-full self-start whitespace-normal [overflow-wrap:anywhere]">
       <FileSearch size={14} aria-hidden="true" className="flex-none" />
       {ok ? t("evidenceMatched") : partial ? t("evidencePartial") : t("evidenceNotFound")}
-      {detail ? <span className="font-normal">{ok || partial ? " · " : t("evidenceIn")}{detail}</span> : null}
+      {detail ? (
+        <span className="font-normal">
+          {ok || partial ? " · " : t("evidenceIn")}
+          {detail}
+        </span>
+      ) : null}
     </Badge>
   );
 }

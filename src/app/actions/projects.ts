@@ -14,7 +14,11 @@ import { getOwnedProject } from "@/lib/db/owner";
 
 /** Translators for the namespaces the actions use. */
 async function tr() {
-  const [v, a, e] = await Promise.all([getTranslations("validation"), getTranslations("actions"), getTranslations("errors")]);
+  const [v, a, e] = await Promise.all([
+    getTranslations("validation"),
+    getTranslations("actions"),
+    getTranslations("errors"),
+  ]);
   return { v: v as unknown as TFn, a: a as unknown as TFn, e: e as unknown as TFn };
 }
 
@@ -24,8 +28,14 @@ function basicsSchema(v: TFn) {
     summary: z.string().trim().min(30, v("summaryMin")).max(700, v("summaryMax")),
     kind: z.enum(["student_program", "hackathon", "research"], { message: v("kind") }),
     field: z.string().trim().min(2, v("field")),
-    year: z.coerce.number().int().min(2015, v("yearMin")).max(new Date().getFullYear() + 1, v("yearMax")),
-    stop_reason: z.enum(["funding_not_granted", "team_graduated", "time_or_people", "other"], { message: v("stopReason") }),
+    year: z.coerce
+      .number()
+      .int()
+      .min(2015, v("yearMin"))
+      .max(new Date().getFullYear() + 1, v("yearMax")),
+    stop_reason: z.enum(["funding_not_granted", "team_graduated", "time_or_people", "other"], {
+      message: v("stopReason"),
+    }),
     stopped_note: z.string().trim().max(400, v("stoppedNoteMax")).optional(),
   });
 }
@@ -129,7 +139,12 @@ export async function deleteFile(projectId: string, fileId: string): Promise<{ e
   if (!["draft", "unpublished"].includes(project.status)) return { error: t.a("filesLocked") };
 
   const supabase = await createClient();
-  const { data: file } = await supabase.from("project_files").select("*").eq("id", fileId).eq("project_id", projectId).maybeSingle();
+  const { data: file } = await supabase
+    .from("project_files")
+    .select("*")
+    .eq("id", fileId)
+    .eq("project_id", projectId)
+    .maybeSingle();
   if (!file) return { error: t.a("fileNotFound") };
 
   const admin = createAdminClient();

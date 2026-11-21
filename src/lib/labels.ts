@@ -40,13 +40,29 @@ const FACULTY_KEY: Record<string, string> = {
 };
 
 const KINDS = ["student_program", "hackathon", "research"] as const satisfies readonly ProjectKind[];
-const REASONS = ["funding_not_granted", "team_graduated", "time_or_people", "other"] as const satisfies readonly StopReason[];
+const REASONS = [
+  "funding_not_granted",
+  "team_graduated",
+  "time_or_people",
+  "other",
+] as const satisfies readonly StopReason[];
 const EFFORTS = ["small", "medium", "large"] as const satisfies readonly Effort[];
-const LESSONS = ["methodology", "evaluation_feedback", "funding_feedback", "blocker"] as const satisfies readonly LessonType[];
+const LESSONS = [
+  "methodology",
+  "evaluation_feedback",
+  "funding_feedback",
+  "blocker",
+] as const satisfies readonly LessonType[];
 const ITEM_KINDS = ["objective", "completed", "next_task", "lesson"] as const satisfies readonly ItemKind[];
 const OBJECTIVES = ["done", "in_progress", "not_started"] as const satisfies readonly ObjectiveStatus[];
 const PURPOSES = ["competition", "research", "course", "other"] as const satisfies readonly RequestPurpose[];
-const REQUEST_STATUSES = ["pending", "approved", "declined", "withdrawn", "expired"] as const satisfies readonly RequestStatus[];
+const REQUEST_STATUSES = [
+  "pending",
+  "approved",
+  "declined",
+  "withdrawn",
+  "expired",
+] as const satisfies readonly RequestStatus[];
 const PROJECT_STATUSES = ["draft", "published", "unpublished", "archived"] as const satisfies readonly ProjectStatus[];
 const ACCESS_MODES = ["open", "by_request", "paused"] as const satisfies readonly AccessMode[];
 const FILE_KINDS = ["pdf", "markdown", "code_tree"] as const;

@@ -45,7 +45,11 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
   const textColor = hero ? "text-white" : "text-ink";
   const base = LINKS.map((l) => ({ href: l.href as string, label: t(l.key) }));
   const links = hero ? [base[0], { href: "/#how", label: t("how") }, base[1]] : base;
-  const drawerLinks = [...links, { href: "/bagikan", label: t("share") }, ...(user ? [] : [{ href: "/login", label: t("signIn") }])];
+  const drawerLinks = [
+    ...links,
+    { href: "/bagikan", label: t("share") },
+    ...(user ? [] : [{ href: "/login", label: t("signIn") }]),
+  ];
 
   return (
     <motion.nav
@@ -125,7 +129,9 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
               <MenuItem asChild>
                 <Link href="/dasbor#notifikasi">
                   <Bell size={18} aria-hidden="true" /> {t("notifications")}
-                  {user.unread > 0 ? <span className="ml-auto rounded-full bg-lime px-2 text-xs font-semibold">{user.unread}</span> : null}
+                  {user.unread > 0 ? (
+                    <span className="ml-auto rounded-full bg-lime px-2 text-xs font-semibold">{user.unread}</span>
+                  ) : null}
                 </Link>
               </MenuItem>
               <form action={signOut}>
@@ -151,7 +157,10 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
             <button
               type="button"
               aria-label={t("menuOpen")}
-              className={cn("icon-btn flex h-11 w-11 cursor-pointer items-center justify-center rounded-full min-[1100px]:hidden", textColor)}
+              className={cn(
+                "icon-btn flex h-11 w-11 cursor-pointer items-center justify-center rounded-full min-[1100px]:hidden",
+                textColor,
+              )}
             >
               <MenuIcon size={22} aria-hidden="true" />
             </button>
@@ -161,7 +170,10 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
               {drawerLinks.map((l) => (
                 <li key={l.href}>
                   <DialogClose asChild>
-                    <Link href={l.href} className="mono-label flex min-h-[48px] items-center rounded-2xl px-4 text-ink no-underline hover:bg-surface">
+                    <Link
+                      href={l.href}
+                      className="mono-label flex min-h-[48px] items-center rounded-2xl px-4 text-ink no-underline hover:bg-surface"
+                    >
                       {l.label}
                     </Link>
                   </DialogClose>

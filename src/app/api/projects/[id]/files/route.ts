@@ -52,7 +52,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const files = form.getAll("files").filter((f): f is File => f instanceof File);
   if (files.length === 0) return NextResponse.json({ error: api("uploadNone") }, { status: 400 });
 
-  const { count } = await supabase.from("project_files").select("id", { count: "exact", head: true }).eq("project_id", projectId);
+  const { count } = await supabase
+    .from("project_files")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", projectId);
   if ((count ?? 0) + files.length > LIMITS.maxFilesPerProject) {
     return NextResponse.json({ error: api("uploadTooMany", { max: LIMITS.maxFilesPerProject }) }, { status: 400 });
   }
@@ -62,7 +65,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   for (const file of files) {
     if (file.size > maxBytes) {
-      outcomes.push({ name: file.name, ok: false, note: api("uploadTooBig", { mb: Math.round(maxBytes / 1024 / 1024) }) });
+      outcomes.push({
+        name: file.name,
+        ok: false,
+        note: api("uploadTooBig", { mb: Math.round(maxBytes / 1024 / 1024) }),
+      });
       continue;
     }
     try {
@@ -76,7 +83,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         storagePath = `${projectId}/${fileId}-${safeName(result.storeName)}`;
         textPath = `${projectId}/${fileId}.json`;
         const up = await admin.storage.from("project-files").upload(storagePath, result.storeBytes, {
-          contentType: result.kind === "pdf" ? "application/pdf" : result.kind === "markdown" ? "text/markdown" : "application/json",
+          contentType:
+            result.kind === "pdf"
+              ? "application/pdf"
+              : result.kind === "markdown"
+                ? "text/markdown"
+                : "application/json",
           upsert: false,
         });
         if (up.error) throw new Error("storage");

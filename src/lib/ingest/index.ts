@@ -25,7 +25,11 @@ export interface IngestResult {
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /** Validates (magic bytes, size) and parses one uploaded file. Never executes anything. */
-export async function ingestUpload(name: string, data: Uint8Array, opts: { maxBytes?: number } = {}): Promise<IngestResult> {
+export async function ingestUpload(
+  name: string,
+  data: Uint8Array,
+  opts: { maxBytes?: number } = {},
+): Promise<IngestResult> {
   const limit = opts.maxBytes ?? maxUploadBytes();
   if (data.length > limit) {
     throw new UploadRejected(`This file is larger than ${Math.round(limit / 1024 / 1024)} MB.`);
@@ -92,7 +96,9 @@ export async function ingestUpload(name: string, data: Uint8Array, opts: { maxBy
 
   const tree = await readZipTree(data);
   const pages = zipTreeToPages(tree);
-  const sanitized = new TextEncoder().encode(JSON.stringify({ tree: tree.tree, readme: tree.readme, manifests: tree.manifests }));
+  const sanitized = new TextEncoder().encode(
+    JSON.stringify({ tree: tree.tree, readme: tree.readme, manifests: tree.manifests }),
+  );
   const skippedNames = tree.skipped.map((s) => s.name.split("/").pop());
   const noteParts = [`Mapped ${plural(tree.fileCount, "file", "files")}.`];
   if (tree.skipped.length > 0) {

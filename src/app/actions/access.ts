@@ -21,7 +21,10 @@ export async function takeAccess(projectId: string, slug: string): Promise<{ err
   const locale = await getLocale();
   await requireUser(`/projects/${slug}`);
   const supabase = await createClient();
-  const { error } = await supabase.rpc("take_access", { p_project_id: projectId, p_agreement_version: AGREEMENT_VERSION });
+  const { error } = await supabase.rpc("take_access", {
+    p_project_id: projectId,
+    p_agreement_version: AGREEMENT_VERSION,
+  });
   if (error) return { error: dbErrorMessage(await errors(), error) };
   revalidatePath(`/projects/${slug}`);
   revalidatePath("/dasbor");

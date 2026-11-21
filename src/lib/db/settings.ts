@@ -31,7 +31,13 @@ export interface SettingsData {
   requests: SettingsRequest[];
   holders: SettingsHolder[];
   watchers: number;
-  notifications: { id: string; type: string; payload: Record<string, unknown>; created_at: string; read_at: string | null }[];
+  notifications: {
+    id: string;
+    type: string;
+    payload: Record<string, unknown>;
+    created_at: string;
+    read_at: string | null;
+  }[];
   events: LineageEvent[];
 }
 
@@ -60,7 +66,12 @@ export async function loadSettings(slug: string, userId: string): Promise<Settin
       .eq("project_id", project.id)
       .eq("status", "active")
       .order("accepted_at", { ascending: false }),
-    supabase.from("ownership_transfers").select("from_profile, to_profile").eq("project_id", project.id).eq("status", "pending").maybeSingle(),
+    supabase
+      .from("ownership_transfers")
+      .select("from_profile, to_profile")
+      .eq("project_id", project.id)
+      .eq("status", "pending")
+      .maybeSingle(),
     admin.from("project_watchers").select("profile_id", { count: "exact", head: true }).eq("project_id", project.id),
     supabase
       .from("notifications")
@@ -69,13 +80,22 @@ export async function loadSettings(slug: string, userId: string): Promise<Settin
       .eq("payload->>project_id", project.id)
       .order("created_at", { ascending: false })
       .limit(8),
-    supabase.from("lineage_events").select("*").eq("project_id", project.id).order("created_at", { ascending: false }).limit(10),
+    supabase
+      .from("lineage_events")
+      .select("*")
+      .eq("project_id", project.id)
+      .order("created_at", { ascending: false })
+      .limit(10),
   ]);
 
   const holderIds = (access.data ?? []).map((a) => a.profile_id as string);
-  const transferIds = transfers.data ? [transfers.data.from_profile as string, transfers.data.to_profile as string] : [];
+  const transferIds = transfers.data
+    ? [transfers.data.from_profile as string, transfers.data.to_profile as string]
+    : [];
   const nameIds = [...new Set([...holderIds, ...transferIds])];
-  const { data: names } = nameIds.length ? await admin.from("profiles").select("id, full_name").in("id", nameIds) : { data: [] };
+  const { data: names } = nameIds.length
+    ? await admin.from("profiles").select("id, full_name").in("id", nameIds)
+    : { data: [] };
   const nameOf = new Map((names ?? []).map((n: { id: string; full_name: string }) => [n.id, n.full_name]));
 
   return {

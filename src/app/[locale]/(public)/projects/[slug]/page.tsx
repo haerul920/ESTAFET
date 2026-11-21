@@ -16,7 +16,11 @@ import type { TeaserProject } from "@/lib/db/types";
 
 type Params = { params: Promise<{ slug: string }> };
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string; locale: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; locale: string }>;
+}): Promise<Metadata> {
   const { slug, locale } = await params;
   const tm = await getTranslations({ locale, namespace: "teaser" });
   const project = await getTeaserBySlug(slug).catch(() => null);
@@ -55,7 +59,14 @@ async function ctaStateFor(project: TeaserProject, asVisitor: boolean): Promise<
 
   const watching =
     project.access_mode === "paused" || full
-      ? !!(await supabase.from("project_watchers").select("project_id").eq("project_id", project.id).eq("profile_id", user.id).maybeSingle()).data
+      ? !!(
+          await supabase
+            .from("project_watchers")
+            .select("project_id")
+            .eq("project_id", project.id)
+            .eq("profile_id", user.id)
+            .maybeSingle()
+        ).data
       : false;
   if (project.access_mode === "paused") return { kind: "paused", watching };
   if (full) return { kind: "quota_full", watching };
@@ -64,7 +75,10 @@ async function ctaStateFor(project: TeaserProject, asVisitor: boolean): Promise<
     : { kind: "by_request", verified: user.verified, email: user.email };
 }
 
-export default async function ProjectTeaserPage({ params, searchParams }: Params & { searchParams: Promise<{ as?: string }> }) {
+export default async function ProjectTeaserPage({
+  params,
+  searchParams,
+}: Params & { searchParams: Promise<{ as?: string }> }) {
   const { slug } = await params;
   const { as } = await searchParams;
   const project = await getTeaserBySlug(slug);
@@ -73,7 +87,11 @@ export default async function ProjectTeaserPage({ params, searchParams }: Params
 
   // Only an owner can ask for the visitor preview. For everyone else the parameter is ignored.
   const asVisitor = as === "visitor" && (await isProjectOwner(project.id));
-  const [items, lineageEvents, state] = await Promise.all([getTeaserItems(project.id), getTeaserLineage(project.id), ctaStateFor(project, asVisitor)]);
+  const [items, lineageEvents, state] = await Promise.all([
+    getTeaserItems(project.id),
+    getTeaserLineage(project.id),
+    ctaStateFor(project, asVisitor),
+  ]);
   const unlocked = state.kind === "owner" || state.kind === "holder";
   const workspace = `/projects/${project.slug}/workspace`;
 
@@ -87,7 +105,10 @@ export default async function ProjectTeaserPage({ params, searchParams }: Params
   return (
     <PageShell footerNote={project.is_demo ? t("demoFooter") : undefined}>
       {asVisitor ? (
-        <div role="status" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[18px] bg-blue-tint p-4 text-blue-dark">
+        <div
+          role="status"
+          className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[18px] bg-blue-tint p-4 text-blue-dark"
+        >
           <span>{t("previewBanner")}</span>
           <ButtonLink href={`/proyek/${project.slug}/pengaturan`} variant="outlineBlue" size="md">
             {t("previewExit")}

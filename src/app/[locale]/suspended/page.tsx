@@ -15,7 +15,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 export default async function SuspendedPage() {
-  const [user, settings, locale, t] = await Promise.all([getCurrentUser(), getSettings(), getLocale(), getTranslations("suspended")]);
+  const [user, settings, locale, t] = await Promise.all([
+    getCurrentUser(),
+    getSettings(),
+    getLocale(),
+    getTranslations("suspended"),
+  ]);
   const contact = settings.contact_email.value;
   const until = user?.profile?.suspended_until;
   return (
@@ -27,7 +32,9 @@ export default async function SuspendedPage() {
           {until ? t("until", { date: formatDate(until, locale) }) : ""}
           {t("text")}
         </p>
-        {user?.profile?.suspended_reason ? <p className="m-0 text-sm text-warn-ink">{t("reason", { reason: user.profile.suspended_reason })}</p> : null}
+        {user?.profile?.suspended_reason ? (
+          <p className="m-0 text-sm text-warn-ink">{t("reason", { reason: user.profile.suspended_reason })}</p>
+        ) : null}
         <p className="m-0 text-warn-ink">
           {contact ? (
             <>

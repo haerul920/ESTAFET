@@ -110,7 +110,9 @@ export function AccessSettings({
         {changed ? (
           <ul className="m-0 list-disc pl-5">
             {mode !== initialMode ? <li>{t("fromTo", { from: label(initialMode), to: label(mode) })}</li> : null}
-            {maxValue !== initialMax ? <li>{t("limitChange", { from: limitLabel(initialMax), to: limitLabel(maxValue) })}</li> : null}
+            {maxValue !== initialMax ? (
+              <li>{t("limitChange", { from: limitLabel(initialMax), to: limitLabel(maxValue) })}</li>
+            ) : null}
           </ul>
         ) : (
           t("noChange")

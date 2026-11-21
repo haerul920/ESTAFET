@@ -87,9 +87,7 @@ export function PublishBar({
           {pending ? t("publishing") : t("publish")}
         </Button>
       </div>
-      <p className="m-0 text-[13px] text-text-2">
-        {t("note")}
-      </p>
+      <p className="m-0 text-[13px] text-text-2">{t("note")}</p>
     </Card>
   );
 }

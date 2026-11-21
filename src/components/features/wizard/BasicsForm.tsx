@@ -21,7 +21,8 @@ export function BasicsForm({ project }: { project: Project | null }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveBasics, {});
   const [dirty, setDirty] = useState(false);
   const fe = state.fieldErrors ?? {};
-  const v = (k: string, fallback: string | number | undefined) => state.values?.[k] ?? (fallback === undefined ? "" : String(fallback));
+  const v = (k: string, fallback: string | number | undefined) =>
+    state.values?.[k] ?? (fallback === undefined ? "" : String(fallback));
 
   // Warn before leaving with unsaved changes (the wizard saves a draft at the end of each step).
   useEffect(() => {
@@ -42,7 +43,9 @@ export function BasicsForm({ project }: { project: Project | null }) {
     timer.current = setTimeout(async () => {
       const form = formRef.current;
       if (!form) return;
-      const values = Object.fromEntries([...new FormData(form).entries()].filter(([, val]) => typeof val === "string")) as Record<string, string>;
+      const values = Object.fromEntries(
+        [...new FormData(form).entries()].filter(([, val]) => typeof val === "string"),
+      ) as Record<string, string>;
       setAuto("saving");
       const r = await autosaveBasics(project.id, values);
       setAuto(r.saved ? "saved" : "invalid");
@@ -64,7 +67,14 @@ export function BasicsForm({ project }: { project: Project | null }) {
       {project ? <input type="hidden" name="id" value={project.id} /> : null}
       {state.error ? <FormMessage tone="error">{state.error}</FormMessage> : null}
 
-      <TextField label={t("title")} name="title" defaultValue={v("title", project?.title)} error={fe.title} required maxLength={120} />
+      <TextField
+        label={t("title")}
+        name="title"
+        defaultValue={v("title", project?.title)}
+        error={fe.title}
+        required
+        maxLength={120}
+      />
       <TextArea
         label={t("summary")}
         name="summary"
@@ -75,7 +85,13 @@ export function BasicsForm({ project }: { project: Project | null }) {
         required
       />
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-4">
-        <SelectField label={t("kind")} name="kind" defaultValue={v("kind", project?.kind ?? "")} error={fe.kind} required>
+        <SelectField
+          label={t("kind")}
+          name="kind"
+          defaultValue={v("kind", project?.kind ?? "")}
+          error={fe.kind}
+          required
+        >
           <option value="" disabled>
             {t("choose")}
           </option>
@@ -85,7 +101,13 @@ export function BasicsForm({ project }: { project: Project | null }) {
             </option>
           ))}
         </SelectField>
-        <SelectField label={t("field")} name="field" defaultValue={v("field", project?.field ?? "")} error={fe.field} required>
+        <SelectField
+          label={t("field")}
+          name="field"
+          defaultValue={v("field", project?.field ?? "")}
+          error={fe.field}
+          required
+        >
           <option value="" disabled>
             {t("choose")}
           </option>
@@ -105,7 +127,13 @@ export function BasicsForm({ project }: { project: Project | null }) {
           required
         />
       </div>
-      <SelectField label={t("stop")} name="stop_reason" defaultValue={v("stop_reason", project?.stop_reason ?? "")} error={fe.stop_reason} required>
+      <SelectField
+        label={t("stop")}
+        name="stop_reason"
+        defaultValue={v("stop_reason", project?.stop_reason ?? "")}
+        error={fe.stop_reason}
+        required
+      >
         <option value="" disabled>
           {t("choose")}
         </option>
@@ -128,8 +156,18 @@ export function BasicsForm({ project }: { project: Project | null }) {
           {pending ? t("saving") : t("save")}
         </Button>
         {project ? (
-          <span role="status" aria-live="polite" className={auto === "invalid" ? "text-sm font-semibold text-warn" : "text-sm text-text-2"}>
-            {auto === "saving" ? tw("savingAuto") : auto === "saved" ? tw("savedAuto") : auto === "invalid" ? tw("autoFailed") : ""}
+          <span
+            role="status"
+            aria-live="polite"
+            className={auto === "invalid" ? "text-sm font-semibold text-warn" : "text-sm text-text-2"}
+          >
+            {auto === "saving"
+              ? tw("savingAuto")
+              : auto === "saved"
+                ? tw("savedAuto")
+                : auto === "invalid"
+                  ? tw("autoFailed")
+                  : ""}
           </span>
         ) : null}
       </div>

@@ -15,14 +15,26 @@ export const SETTING_KEYS = [
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
 export const SETTING_SCHEMAS = {
-  allowed_email_domains: z.array(z.string().trim().toLowerCase().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/, "Use domains like student.unhas.ac.id.")).max(20),
+  allowed_email_domains: z
+    .array(
+      z
+        .string()
+        .trim()
+        .toLowerCase()
+        .regex(/^[a-z0-9.-]+\.[a-z]{2,}$/, "Use domains like student.unhas.ac.id."),
+    )
+    .max(20),
   max_upload_mb: z.number().int("Use a whole number.").min(1, "At least 1 MB.").max(200, "At most 200 MB."),
   synthesis_daily_cap: z.number().int("Use a whole number.").min(1, "At least 1 run.").max(1000, "At most 1000 runs."),
   show_demo_banner: z.boolean(),
   registrations_open: z.boolean(),
   contact_email: z.union([z.literal(""), z.string().trim().email("Enter a valid email address.")]),
   request_expiry_days: z.number().int("Use a whole number.").min(1, "At least 1 day.").max(180, "At most 180 days."),
-  reapply_cooldown_days: z.number().int("Use a whole number.").min(0, "Zero turns the cooldown off.").max(90, "At most 90 days."),
+  reapply_cooldown_days: z
+    .number()
+    .int("Use a whole number.")
+    .min(0, "Zero turns the cooldown off.")
+    .max(90, "At most 90 days."),
 } satisfies Record<SettingKey, z.ZodType>;
 
 export interface SettingValues {
@@ -50,8 +62,13 @@ function num(v: string | undefined, fallback: number): number {
 }
 
 /** The value from env (or the built-in default) for each key. */
-function envDefaults(env: Record<string, string | undefined>): { [K in SettingKey]: { value: SettingValues[K]; fromEnv: boolean } } {
-  const domains = (env.ALLOWED_EMAIL_DOMAINS ?? "").split(",").map((d) => d.trim().toLowerCase()).filter(Boolean);
+function envDefaults(env: Record<string, string | undefined>): {
+  [K in SettingKey]: { value: SettingValues[K]; fromEnv: boolean };
+} {
+  const domains = (env.ALLOWED_EMAIL_DOMAINS ?? "")
+    .split(",")
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
   return {
     allowed_email_domains: { value: domains, fromEnv: domains.length > 0 },
     max_upload_mb: { value: num(env.MAX_UPLOAD_MB, 25), fromEnv: Boolean(env.MAX_UPLOAD_MB) },
@@ -60,12 +77,23 @@ function envDefaults(env: Record<string, string | undefined>): { [K in SettingKe
     registrations_open: { value: true, fromEnv: false },
     contact_email: { value: env.CONTACT_EMAIL ?? "", fromEnv: Boolean(env.CONTACT_EMAIL) },
     request_expiry_days: { value: num(env.REQUEST_EXPIRY_DAYS, 30), fromEnv: Boolean(env.REQUEST_EXPIRY_DAYS) },
-    reapply_cooldown_days: { value: env.REAPPLY_COOLDOWN_DAYS !== undefined && env.REAPPLY_COOLDOWN_DAYS !== "" && Number.isFinite(Number(env.REAPPLY_COOLDOWN_DAYS)) ? Number(env.REAPPLY_COOLDOWN_DAYS) : 7, fromEnv: Boolean(env.REAPPLY_COOLDOWN_DAYS) },
+    reapply_cooldown_days: {
+      value:
+        env.REAPPLY_COOLDOWN_DAYS !== undefined &&
+        env.REAPPLY_COOLDOWN_DAYS !== "" &&
+        Number.isFinite(Number(env.REAPPLY_COOLDOWN_DAYS))
+          ? Number(env.REAPPLY_COOLDOWN_DAYS)
+          : 7,
+      fromEnv: Boolean(env.REAPPLY_COOLDOWN_DAYS),
+    },
   };
 }
 
 /** Merges stored rows over env defaults. Invalid stored values are ignored (the default wins). */
-export function resolveSettings(rows: { key: string; value: unknown }[], env: Record<string, string | undefined>): EffectiveSettings {
+export function resolveSettings(
+  rows: { key: string; value: unknown }[],
+  env: Record<string, string | undefined>,
+): EffectiveSettings {
   const defaults = envDefaults(env);
   const out = {} as Record<string, EffectiveSetting<unknown>>;
   for (const key of SETTING_KEYS) {

@@ -23,7 +23,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function RequestReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireUser(`/requests/${id}`);
-  const [locale, t, ag, L] = await Promise.all([getLocale(), getTranslations("review"), getTranslations("agreement"), getLabels()]);
+  const [locale, t, ag, L] = await Promise.all([
+    getLocale(),
+    getTranslations("review"),
+    getTranslations("agreement"),
+    getLabels(),
+  ]);
   const d = await getRequestDetail(id, user.id);
   if (!d || (!d.isOwner && !d.isTeam)) notFound();
   const messages = await getRequestMessages(id, d.project.id);
@@ -46,7 +51,10 @@ export default async function RequestReviewPage({ params }: { params: Promise<{ 
     decidedAt: r.decided_at,
     expiresAt: r.status === "pending" ? r.expires_at : null,
     workspaceHref: `/projects/${project.slug}/workspace`,
-    creditLine: creditLine({ title: project.title, creators: d.ownerNames, lineageId: r.id.slice(0, 8) }, ag as unknown as TFn),
+    creditLine: creditLine(
+      { title: project.title, creators: d.ownerNames, lineageId: r.id.slice(0, 8) },
+      ag as unknown as TFn,
+    ),
   };
 
   const statusBadge =
@@ -60,15 +68,18 @@ export default async function RequestReviewPage({ params }: { params: Promise<{ 
 
   return (
     <PageShell>
-      <Breadcrumb items={[{ label: t("breadcrumbDashboard"), href: "/dasbor" }, { label: t("breadcrumb", { title: project.title }) }]} />
+      <Breadcrumb
+        items={[
+          { label: t("breadcrumbDashboard"), href: "/dasbor" },
+          { label: t("breadcrumb", { title: project.title }) },
+        ]}
+      />
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="mb-2 mt-0 text-4xl font-medium max-sm:text-[28px]">
             {d.isOwner ? t("titleOwner") : t("titleTeam")}
           </h1>
-          <p className="m-0 text-text-2">
-            {d.isOwner ? t("leadOwner") : t("leadTeam", { title: project.title })}
-          </p>
+          <p className="m-0 text-text-2">{d.isOwner ? t("leadOwner") : t("leadTeam", { title: project.title })}</p>
         </div>
         {statusBadge}
       </div>

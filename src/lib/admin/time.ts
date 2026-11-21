@@ -3,14 +3,16 @@ const TZ = "Asia/Makassar";
 
 export function formatWita(iso: string | null | undefined): string {
   if (!iso) return "";
-  return new Date(iso).toLocaleString("en-GB", {
-    timeZone: TZ,
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }) + " WITA";
+  return (
+    new Date(iso).toLocaleString("en-GB", {
+      timeZone: TZ,
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }) + " WITA"
+  );
 }
 
 export function relativeTime(iso: string | null | undefined, now: number = Date.now()): string {

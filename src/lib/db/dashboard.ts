@@ -4,7 +4,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resumeStep } from "@/lib/db/owner";
 import { formatDate, formatMonthYear, timeAgo } from "@/lib/format";
 import type { Labels, TFn } from "@/lib/labels";
-import type { ContinuationRequest, NotificationRow, Project, ProjectAccess, ProjectStatus, RequestStatus } from "./types";
+import type {
+  ContinuationRequest,
+  NotificationRow,
+  Project,
+  ProjectAccess,
+  ProjectStatus,
+  RequestStatus,
+} from "./types";
 
 export interface DashboardProject {
   id: string;
@@ -78,28 +85,68 @@ export function describeNotification(n: NotificationRow, t: TFn): { text: string
   const title = p.title ?? t("n.titleDefault");
   switch (n.type) {
     case "new_request":
-      return { text: t("n.newRequest.text", { team: p.team ?? t("n.teamDefault"), title }), detail: t("n.newRequest.detail"), href: `/requests/${p.request_id}` };
+      return {
+        text: t("n.newRequest.text", { team: p.team ?? t("n.teamDefault"), title }),
+        detail: t("n.newRequest.detail"),
+        href: `/requests/${p.request_id}`,
+      };
     case "request_decision":
       return {
         text: t(p.decision === "approved" ? "n.decision.approved" : "n.decision.declined", { title }),
-        detail: p.decision === "approved" ? t("n.decision.detailApproved") : p.note ? t("n.decision.detailNote", { note: p.note }) : t("n.decision.detailDeclined"),
+        detail:
+          p.decision === "approved"
+            ? t("n.decision.detailApproved")
+            : p.note
+              ? t("n.decision.detailNote", { note: p.note })
+              : t("n.decision.detailDeclined"),
         href: `/requests/${p.request_id}`,
       };
     case "request_question":
-      return { text: t("n.question.text", { title }), detail: t("n.question.detail", { message: p.message ?? "" }), href: `/requests/${p.request_id}` };
+      return {
+        text: t("n.question.text", { title }),
+        detail: t("n.question.detail", { message: p.message ?? "" }),
+        href: `/requests/${p.request_id}`,
+      };
     case "request_expired":
-      return { text: t("n.expired.text", { team: p.team ?? t("n.teamDefault"), title }), detail: t("n.expired.detail"), href: `/requests/${p.request_id}` };
+      return {
+        text: t("n.expired.text", { team: p.team ?? t("n.teamDefault"), title }),
+        detail: t("n.expired.detail"),
+        href: `/requests/${p.request_id}`,
+      };
     case "agreement_accepted":
-      return { text: t("n.agreement.text", { name: p.name ?? t("n.nameDefault"), title }), detail: t("n.agreement.detail"), href: `/requests/${p.request_id}` };
+      return {
+        text: t("n.agreement.text", { name: p.name ?? t("n.nameDefault"), title }),
+        detail: t("n.agreement.detail"),
+        href: `/requests/${p.request_id}`,
+      };
     case "access_taken":
-      return { text: t("n.accessTaken.text", { name: p.name ?? t("n.nameDefault"), title }), detail: t("n.accessTaken.detail"), href: "/dasbor" };
+      return {
+        text: t("n.accessTaken.text", { name: p.name ?? t("n.nameDefault"), title }),
+        detail: t("n.accessTaken.detail"),
+        href: "/dasbor",
+      };
     case "access_revoked":
-      return { text: t("n.accessRevoked.text", { title }), detail: t("n.accessRevoked.detail", { reason: p.reason ?? "" }), href: "/dasbor" };
+      return {
+        text: t("n.accessRevoked.text", { title }),
+        detail: t("n.accessRevoked.detail", { reason: p.reason ?? "" }),
+        href: "/dasbor",
+      };
     case "files_unlocked":
-      return { text: t("n.filesUnlocked.text", { title }), detail: t("n.filesUnlocked.detail"), href: `/requests/${p.request_id}` };
+      return {
+        text: t("n.filesUnlocked.text", { title }),
+        detail: t("n.filesUnlocked.detail"),
+        href: `/requests/${p.request_id}`,
+      };
     case "moderation":
       return {
-        text: t(p.action === "restored" ? "n.moderation.restored" : p.action === "removed" ? "n.moderation.removed" : "n.moderation.hidden", { title }),
+        text: t(
+          p.action === "restored"
+            ? "n.moderation.restored"
+            : p.action === "removed"
+              ? "n.moderation.removed"
+              : "n.moderation.hidden",
+          { title },
+        ),
         detail: t("n.moderation.detail", { reason: p.reason ?? "" }),
         href: "/dasbor",
       };
@@ -112,36 +159,66 @@ export function describeNotification(n: NotificationRow, t: TFn): { text: string
     case "team_invite":
       return { text: t("n.invite.text", { title }), detail: t("n.invite.detail"), href: "/dasbor#undangan" };
     case "watch_open":
-      return { text: t("n.watch.text", { title }), detail: t(p.reason === "quota" ? "n.watch.detailQuota" : "n.watch.detailMode"), href: `/projects/${p.slug ?? ""}` };
+      return {
+        text: t("n.watch.text", { title }),
+        detail: t(p.reason === "quota" ? "n.watch.detailQuota" : "n.watch.detailMode"),
+        href: `/projects/${p.slug ?? ""}`,
+      };
     case "request_reply":
-      return { text: t("n.reply.text", { team: p.team ?? t("n.teamDefault"), title }), detail: t("n.reply.detail", { message: p.message ?? "" }), href: `/requests/${p.request_id}` };
+      return {
+        text: t("n.reply.text", { team: p.team ?? t("n.teamDefault"), title }),
+        detail: t("n.reply.detail", { message: p.message ?? "" }),
+        href: `/requests/${p.request_id}`,
+      };
     case "item_progress":
       return {
         text: t("n.progress.text", {
           task: p.task ?? "",
           title,
-          status: t(p.status === "done" ? "n.progress.done" : p.status === "in_progress" ? "n.progress.inProgress" : "n.progress.none"),
+          status: t(
+            p.status === "done"
+              ? "n.progress.done"
+              : p.status === "in_progress"
+                ? "n.progress.inProgress"
+                : "n.progress.none",
+          ),
         }),
         detail: t("n.progress.detail"),
         href: `/projects/${p.slug ?? ""}/workspace`,
       };
     case "request_expiring":
-      return { text: t("n.expiring.text", { team: p.team ?? t("n.teamDefault"), title }), detail: t("n.expiring.detail", { date: (p.expires_at ?? "").slice(0, 10) }), href: `/requests/${p.request_id}` };
+      return {
+        text: t("n.expiring.text", { team: p.team ?? t("n.teamDefault"), title }),
+        detail: t("n.expiring.detail", { date: (p.expires_at ?? "").slice(0, 10) }),
+        href: `/requests/${p.request_id}`,
+      };
     case "ownership_offer":
-      return { text: t("n.ownerOffer.text", { title }), detail: t("n.ownerOffer.detail"), href: `/proyek/${p.slug ?? ""}/pengaturan` };
+      return {
+        text: t("n.ownerOffer.text", { title }),
+        detail: t("n.ownerOffer.detail"),
+        href: `/proyek/${p.slug ?? ""}/pengaturan`,
+      };
     case "ownership_accepted":
       return { text: t("n.ownerAccepted.text", { title }), detail: t("n.ownerAccepted.detail"), href: "/dasbor" };
     case "ownership_declined":
       return { text: t("n.ownerDeclined.text", { title }), detail: t("n.ownerDeclined.detail"), href: "/dasbor" };
     case "co_owner_joined":
-      return { text: t("n.joined.text", { title }), detail: t("n.joined.detail"), href: `/bagikan/${p.project_id}/tim` };
+      return {
+        text: t("n.joined.text", { title }),
+        detail: t("n.joined.detail"),
+        href: `/bagikan/${p.project_id}/tim`,
+      };
     default:
       return { text: t("n.default"), detail: "", href: "/dasbor" };
   }
 }
 
 /** `ctx.t` is the `dashboard` translator and `ctx.L` the enum labels, both in the active language. */
-export async function loadDashboard(userId: string, email: string, ctx: { t: TFn; L: Labels; locale: string }): Promise<DashboardData> {
+export async function loadDashboard(
+  userId: string,
+  email: string,
+  ctx: { t: TFn; L: Labels; locale: string },
+): Promise<DashboardData> {
   const { t, L, locale } = ctx;
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -156,22 +233,41 @@ export async function loadDashboard(userId: string, email: string, ctx: { t: TFn
   const invitedIds = members.filter((m) => m.status === "invited").map((m) => m.project_id);
   const consentedByMe = new Map(members.map((m) => [m.project_id, m.consented_at]));
 
-  const [{ data: projectRows }, { data: itemRows }, { data: filesRows }, { data: reqRows }, { data: accessRows }, { data: notifRows }, { data: invitedProjects }] =
-    await Promise.all([
-      projectIds.length ? supabase.from("projects").select("*").in("id", projectIds).order("updated_at", { ascending: false }) : Promise.resolve({ data: [] }),
-      projectIds.length ? supabase.from("draft_items").select("project_id, review_status").in("project_id", projectIds) : Promise.resolve({ data: [] }),
-      projectIds.length ? supabase.from("project_files").select("project_id").in("project_id", projectIds) : Promise.resolve({ data: [] }),
-      supabase.from("continuation_requests").select("*").order("created_at", { ascending: false }),
-      supabase.from("project_access").select("*").eq("profile_id", userId).order("accepted_at", { ascending: false }),
-      supabase.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(50),
-      // An invitee is not a member yet, so RLS hides the project. The server reads only the title, after the membership row proved the invitation.
-      invitedIds.length ? admin.from("projects").select("id, title").in("id", invitedIds) : Promise.resolve({ data: [] }),
-    ]);
+  const [
+    { data: projectRows },
+    { data: itemRows },
+    { data: filesRows },
+    { data: reqRows },
+    { data: accessRows },
+    { data: notifRows },
+    { data: invitedProjects },
+  ] = await Promise.all([
+    projectIds.length
+      ? supabase.from("projects").select("*").in("id", projectIds).order("updated_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase.from("draft_items").select("project_id, review_status").in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase.from("project_files").select("project_id").in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
+    supabase.from("continuation_requests").select("*").order("created_at", { ascending: false }),
+    supabase.from("project_access").select("*").eq("profile_id", userId).order("accepted_at", { ascending: false }),
+    supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    // An invitee is not a member yet, so RLS hides the project. The server reads only the title, after the membership row proved the invitation.
+    invitedIds.length ? admin.from("projects").select("id, title").in("id", invitedIds) : Promise.resolve({ data: [] }),
+  ]);
 
   const projects = (projectRows ?? []) as Project[];
   const items = (itemRows ?? []) as { project_id: string; review_status: string }[];
   const fileCount = new Map<string, number>();
-  for (const f of (filesRows ?? []) as { project_id: string }[]) fileCount.set(f.project_id, (fileCount.get(f.project_id) ?? 0) + 1);
+  for (const f of (filesRows ?? []) as { project_id: string }[])
+    fileCount.set(f.project_id, (fileCount.get(f.project_id) ?? 0) + 1);
   const requests = (reqRows ?? []) as ContinuationRequest[];
   const myAccess = (accessRows ?? []) as ProjectAccess[];
   const activeAccessByRequest = new Map<string, number>();
@@ -179,22 +275,35 @@ export async function loadDashboard(userId: string, email: string, ctx: { t: TFn
 
   // Titles for requests and access: the service role reads only title and slug, after RLS returned the rows.
   const titleIds = [...new Set([...requests.map((r) => r.project_id), ...myAccess.map((a) => a.project_id)])];
-  const { data: titleRows } = titleIds.length ? await admin.from("projects").select("id, title, slug").in("id", titleIds) : { data: [] };
+  const { data: titleRows } = titleIds.length
+    ? await admin.from("projects").select("id, title, slug").in("id", titleIds)
+    : { data: [] };
   const titleById = new Map((titleRows ?? []).map((t: { id: string; title: string; slug: string }) => [t.id, t]));
 
   // Which requests already produced access (for any person), and how many active access rows each of my projects has.
   const reqIds = requests.map((r) => r.id);
   if (reqIds.length) {
-    const { data: forRequests } = await admin.from("project_access").select("request_id").in("request_id", reqIds).eq("status", "active");
+    const { data: forRequests } = await admin
+      .from("project_access")
+      .select("request_id")
+      .in("request_id", reqIds)
+      .eq("status", "active");
     for (const a of (forRequests ?? []) as { request_id: string | null }[]) {
       if (a.request_id) activeAccessByRequest.set(a.request_id, (activeAccessByRequest.get(a.request_id) ?? 0) + 1);
     }
   }
   if (projectIds.length) {
-    const { data: onMine } = await supabase.from("project_access").select("project_id").in("project_id", projectIds).eq("status", "active");
-    for (const a of (onMine ?? []) as { project_id: string }[]) accessByProject.set(a.project_id, (accessByProject.get(a.project_id) ?? 0) + 1);
+    const { data: onMine } = await supabase
+      .from("project_access")
+      .select("project_id")
+      .in("project_id", projectIds)
+      .eq("status", "active");
+    for (const a of (onMine ?? []) as { project_id: string }[])
+      accessByProject.set(a.project_id, (accessByProject.get(a.project_id) ?? 0) + 1);
   }
-  const myAcceptedRequests = new Set(myAccess.filter((a) => a.status === "active" && a.request_id).map((a) => a.request_id as string));
+  const myAcceptedRequests = new Set(
+    myAccess.filter((a) => a.status === "active" && a.request_id).map((a) => a.request_id as string),
+  );
 
   const unsignedByProject = new Map<string, ContinuationRequest[]>();
   for (const r of requests) {
@@ -218,9 +327,17 @@ export async function loadDashboard(userId: string, email: string, ctx: { t: TFn
     if (p.moderation_status && p.moderation_status !== "ok") {
       return {
         ...base,
-        meta: t("p.moderatedMeta", { status: statusLabel, state: p.moderation_status === "removed" ? t("p.stateRemoved") : t("p.stateHidden") }),
-        cta: t("p.moderatedCta"), href: "/dasbor#notifikasi", ctaTone: "outline" as const,
-        note: t("p.moderatedNote", { action: p.moderation_status === "removed" ? t("p.actionRemoved") : t("p.actionHidden"), reason: p.moderation_reason ?? t("p.reasonDefault") }),
+        meta: t("p.moderatedMeta", {
+          status: statusLabel,
+          state: p.moderation_status === "removed" ? t("p.stateRemoved") : t("p.stateHidden"),
+        }),
+        cta: t("p.moderatedCta"),
+        href: "/dasbor#notifikasi",
+        ctaTone: "outline" as const,
+        note: t("p.moderatedNote", {
+          action: p.moderation_status === "removed" ? t("p.actionRemoved") : t("p.actionHidden"),
+          reason: p.moderation_reason ?? t("p.reasonDefault"),
+        }),
         noteTone: "warn" as const,
       };
     }
@@ -228,24 +345,33 @@ export async function loadDashboard(userId: string, email: string, ctx: { t: TFn
       return {
         ...base,
         meta: t("p.archivedMeta", { count: accessByProject.get(p.id) ?? 0 }),
-        cta: t("p.archivedCta"), href: `/projects/${p.slug}`, ctaTone: "outline" as const,
-        note: t("p.archivedNote"), noteTone: "grey" as const,
+        cta: t("p.archivedCta"),
+        href: `/projects/${p.slug}`,
+        ctaTone: "outline" as const,
+        note: t("p.archivedNote"),
+        noteTone: "grey" as const,
       };
     }
     if (pendingReq.length > 0) {
       return {
         ...base,
         meta: t("p.pendingMeta", { status: statusLabel, when, count: pendingReq.length }),
-        cta: t("p.pendingCta"), href: `/requests/${pendingReq[0].id}`, ctaTone: "lime" as const,
-        note: t("p.pendingNote"), noteTone: "warn" as const,
+        cta: t("p.pendingCta"),
+        href: `/requests/${pendingReq[0].id}`,
+        ctaTone: "lime" as const,
+        note: t("p.pendingNote"),
+        noteTone: "warn" as const,
       };
     }
     if (approvedReq.length > 0) {
       return {
         ...base,
         meta: t("p.approvedMeta", { when }),
-        cta: t("p.approvedCta"), href: `/requests/${approvedReq[0].id}`, ctaTone: "outline" as const,
-        note: t("p.approvedNote"), noteTone: "blue" as const,
+        cta: t("p.approvedCta"),
+        href: `/requests/${approvedReq[0].id}`,
+        ctaTone: "outline" as const,
+        note: t("p.approvedNote"),
+        noteTone: "blue" as const,
       };
     }
     if (p.status === "published" || p.status === "unpublished") {
@@ -255,7 +381,12 @@ export async function loadDashboard(userId: string, email: string, ctx: { t: TFn
         ...base,
         meta: t("p.liveMeta", { status: statusLabel, when, mode: L.accessMode[p.access_mode] }),
         cta: p.status === "unpublished" ? t("p.republishCta") : holders > 0 ? t("p.workspaceCta") : t("p.teaserCta"),
-        href: p.status === "unpublished" ? `/bagikan/${p.id}/terbit` : holders > 0 ? `/projects/${p.slug}/workspace` : `/projects/${p.slug}`,
+        href:
+          p.status === "unpublished"
+            ? `/bagikan/${p.id}/terbit`
+            : holders > 0
+              ? `/projects/${p.slug}/workspace`
+              : `/projects/${p.slug}`,
         ctaTone: "outline" as const,
         note:
           p.status === "unpublished"
@@ -279,8 +410,11 @@ export async function loadDashboard(userId: string, email: string, ctx: { t: TFn
     return {
       ...base,
       meta: t("p.draftMeta", { when: timeAgo(p.updated_at, locale) }),
-      cta: t("p.draftCta"), href: `/bagikan/${p.id}/${joinedLate ? "tim" : step}`, ctaTone: "blue" as const,
-      note, noteTone: "blue" as const,
+      cta: t("p.draftCta"),
+      href: `/bagikan/${p.id}/${joinedLate ? "tim" : step}`,
+      ctaTone: "blue" as const,
+      note,
+      noteTone: "blue" as const,
     };
   });
 
@@ -298,7 +432,9 @@ export async function loadDashboard(userId: string, email: string, ctx: { t: TFn
     };
   };
   const lower = email.toLowerCase();
-  const sent = requests.filter((r) => r.created_by === userId || r.members.some((m) => m.email.toLowerCase() === lower)).map(toReq);
+  const sent = requests
+    .filter((r) => r.created_by === userId || r.members.some((m) => m.email.toLowerCase() === lower))
+    .map(toReq);
   const incoming = requests.filter((r) => projectIds.includes(r.project_id)).map(toReq);
 
   const access: DashboardAccess[] = myAccess.map((a) => {
@@ -307,7 +443,13 @@ export async function loadDashboard(userId: string, email: string, ctx: { t: TFn
       id: a.id,
       projectTitle: ti?.title ?? t("r.projectDefault"),
       projectSlug: ti?.slug ?? "",
-      meta: a.status === "active" ? t("a.since", { date: formatDate(a.accepted_at, locale), source: a.source === "open" ? t("a.sourceOpen") : t("a.sourceRequest") }) : t("a.revoked", { date: formatDate(a.revoked_at, locale) }),
+      meta:
+        a.status === "active"
+          ? t("a.since", {
+              date: formatDate(a.accepted_at, locale),
+              source: a.source === "open" ? t("a.sourceOpen") : t("a.sourceRequest"),
+            })
+          : t("a.revoked", { date: formatDate(a.revoked_at, locale) }),
       active: a.status === "active",
       revokedReason: a.revoked_reason,
     };
@@ -323,7 +465,10 @@ export async function loadDashboard(userId: string, email: string, ctx: { t: TFn
   return {
     mine,
     incoming,
-    invitations: ((invitedProjects ?? []) as { id: string; title: string }[]).map((p) => ({ projectId: p.id, title: p.title })),
+    invitations: ((invitedProjects ?? []) as { id: string; title: string }[]).map((p) => ({
+      projectId: p.id,
+      title: p.title,
+    })),
     access,
     sent,
     notifications,

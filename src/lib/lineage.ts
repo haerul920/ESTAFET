@@ -12,7 +12,9 @@ export function buildPublicLineage(
 ): LineageStep[] {
   const published = events.find((e) => e.type === "published");
   const continued = events.filter((e) => e.type === "continued");
-  const steps: LineageStep[] = [{ id: "origin", title: t("origin"), sub: t("originSub", { year: project.year }), state: "done" }];
+  const steps: LineageStep[] = [
+    { id: "origin", title: t("origin"), sub: t("originSub", { year: project.year }), state: "done" },
+  ];
   if (published) {
     steps.push({
       id: "published",
@@ -29,14 +31,20 @@ export function buildPublicLineage(
       state: "done",
     });
   }
-  steps.push({ id: "next", title: t("next"), sub: continued.length ? t("nextAfter") : t("nextWaiting"), state: "next" });
+  steps.push({
+    id: "next",
+    title: t("next"),
+    sub: continued.length ? t("nextAfter") : t("nextWaiting"),
+    state: "next",
+  });
   return steps;
 }
 
 /** Full lineage for owners and people with access (private workspace). */
 /** Events of the retired advisor flow (before R5) stay in the database but are not shown. */
 const RETIRED = new Set<string>(["advisor_approved", "advisor_withdrawn"]);
-export const visibleEvents = <T extends { type: string }>(events: T[]): T[] => events.filter((e) => !RETIRED.has(e.type));
+export const visibleEvents = <T extends { type: string }>(events: T[]): T[] =>
+  events.filter((e) => !RETIRED.has(e.type));
 
 export function buildFullLineage(events: LineageEvent[], t: TFn, locale: string): LineageStep[] {
   return visibleEvents(events).map((e) => ({

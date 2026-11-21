@@ -40,7 +40,8 @@ function DataNotice() {
           <strong>{t("privateLabel")}</strong> {t("privateText")}
         </li>
         <li>
-          <strong>{t("skippedLabel")}</strong> {t.rich("skippedText", { env: () => <code className="font-code">.env</code> })}
+          <strong>{t("skippedLabel")}</strong>{" "}
+          {t.rich("skippedText", { env: () => <code className="font-code">.env</code> })}
         </li>
       </ul>
     </Card>
@@ -94,7 +95,10 @@ export function FilesStep({
         const fd = new FormData();
         for (const f of arr) fd.append("files", f);
         const res = await fetch(`/api/projects/${projectId}/files?lang=${locale}`, { method: "POST", body: fd });
-        const json = (await res.json().catch(() => ({}))) as { error?: string; outcomes?: { name: string; ok: boolean; note: string }[] };
+        const json = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          outcomes?: { name: string; ok: boolean; note: string }[];
+        };
         if (!res.ok) setError(json.error ?? t("uploadFailed"));
         else setMessages((json.outcomes ?? []).filter((o) => !o.ok));
         router.refresh();
@@ -157,7 +161,10 @@ export function FilesStep({
           dragging ? "border-blue bg-blue-tint" : "border-line-strong",
         )}
       >
-        <motion.div animate={dragging ? { y: -6, scale: 1.1 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }}>
+        <motion.div
+          animate={dragging ? { y: -6, scale: 1.1 } : { y: 0, scale: 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 18 }}
+        >
           {uploading ? (
             <Loader2 size={36} className="animate-spin text-blue" aria-hidden="true" />
           ) : (
@@ -177,9 +184,7 @@ export function FilesStep({
         <Button variant="outlineBlue" onClick={() => inputRef.current?.click()} disabled={uploading}>
           {t("choose")}
         </Button>
-        <p className="m-0 text-sm text-text-2">
-          {t("accepted")}
-        </p>
+        <p className="m-0 text-sm text-text-2">{t("accepted")}</p>
       </div>
 
       <div aria-live="polite" className="flex flex-col gap-2">
@@ -235,7 +240,11 @@ export function FilesStep({
                             >
                               {t("removeFile")}
                             </Button>
-                            <button type="button" className="cursor-pointer text-sm font-semibold text-blue" onClick={() => setConfirmDelete(null)}>
+                            <button
+                              type="button"
+                              className="cursor-pointer text-sm font-semibold text-blue"
+                              onClick={() => setConfirmDelete(null)}
+                            >
                               {t("keep")}
                             </button>
                           </span>
@@ -252,7 +261,9 @@ export function FilesStep({
                       </span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Badge tone={f.ingest_status === "ready" ? "ok" : "warn"}>{f.ingest_status === "ready" ? t("ready") : t("check")}</Badge>
+                      <Badge tone={f.ingest_status === "ready" ? "ok" : "warn"}>
+                        {f.ingest_status === "ready" ? t("ready") : t("check")}
+                      </Badge>
                       <span className="text-sm text-text-3">{f.ingest_note}</span>
                     </div>
                   </motion.li>
@@ -263,9 +274,7 @@ export function FilesStep({
         )}
       </Card>
 
-      {!canSynthesize && readable > 0 ? (
-        <FormMessage tone="error">{blockReason}</FormMessage>
-      ) : null}
+      {!canSynthesize && readable > 0 ? <FormMessage tone="error">{blockReason}</FormMessage> : null}
 
       <div className="flex flex-wrap justify-between gap-3">
         <ButtonLink href={`/bagikan/${projectId}/info`} variant="outline">

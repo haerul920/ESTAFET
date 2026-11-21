@@ -26,18 +26,29 @@ describe("matchQuote", () => {
   });
 
   it("returns partial for a near miss (one word differs)", () => {
-    const quote = "The choice of the two coastal sites is not justified against the wider area. We recommend resubmitting with a sampling plan";
+    const quote =
+      "The choice of the two coastal sites is not justified against the wider area. We recommend resubmitting with a sampling plan";
     const r = matchQuote(quote, PAGE);
     expect(r.status).toBe("partial");
     expect(r.score).toBeGreaterThanOrEqual(0.9);
   });
 
   it("returns not_found for a fabricated quote", () => {
-    expect(matchQuote("The service will be deployed on the university cloud next semester.", PAGE).status).toBe("not_found");
+    expect(matchQuote("The service will be deployed on the university cloud next semester.", PAGE).status).toBe(
+      "not_found",
+    );
   });
 
   it("returns not_found when the quote is cited on the wrong page", () => {
-    const pages = new Map([["f1", new Map([[1, "Intro page about drones."], [2, PAGE]])]]);
+    const pages = new Map([
+      [
+        "f1",
+        new Map([
+          [1, "Intro page about drones."],
+          [2, PAGE],
+        ]),
+      ],
+    ]);
     const quote = "We recommend resubmitting with a sampling plan.";
     expect(checkItemEvidence([{ file_id: "f1", page: 1, quote }], pages)).toBe("not_found");
     expect(checkItemEvidence([{ file_id: "f1", page: 2, quote }], pages)).toBe("matched");

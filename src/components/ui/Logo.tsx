@@ -7,4 +7,3 @@ export function LogoMark({ size = 30, onSky = false }: { size?: number; onSky?: 
     </svg>
   );
 }
-

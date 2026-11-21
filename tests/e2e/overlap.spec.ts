@@ -72,8 +72,23 @@ const SIGNED_IN: RouteCase[] = [
   { name: "visitor preview", path: "/projects/mangrove-cover-classifier?as=visitor", role: "creator" },
 ];
 
-const ADMIN_PAGES = ["/admin", "/admin/projects", "/admin/reports", "/admin/users", "/admin/pipeline", "/admin/consents", "/admin/requests", "/admin/trials", "/admin/audit", "/admin/settings"];
-const ADMIN: RouteCase[] = ADMIN_PAGES.map((p) => ({ name: `admin ${p.replace("/admin", "") || "overview"}`, path: `${p}${p === "/admin" || p.includes("trials") || p.includes("projects") ? "?demo=1" : ""}`, role: "admin" as Role }));
+const ADMIN_PAGES = [
+  "/admin",
+  "/admin/projects",
+  "/admin/reports",
+  "/admin/users",
+  "/admin/pipeline",
+  "/admin/consents",
+  "/admin/requests",
+  "/admin/trials",
+  "/admin/audit",
+  "/admin/settings",
+];
+const ADMIN: RouteCase[] = ADMIN_PAGES.map((p) => ({
+  name: `admin ${p.replace("/admin", "") || "overview"}`,
+  path: `${p}${p === "/admin" || p.includes("trials") || p.includes("projects") ? "?demo=1" : ""}`,
+  role: "admin" as Role,
+}));
 
 // ---------------------------------------------------------------- sessions
 
@@ -141,12 +156,19 @@ async function audit(page: Page): Promise<Issue[]> {
 
     // (b) horizontal overflow
     if (document.documentElement.scrollWidth > vw + 1) {
-      issues.push({ kind: "overflow-x", detail: `page is ${document.documentElement.scrollWidth}px wide in a ${vw}px viewport` });
+      issues.push({
+        kind: "overflow-x",
+        detail: `page is ${document.documentElement.scrollWidth}px wide in a ${vw}px viewport`,
+      });
       // name the widest offenders to make it fixable
       const wide = [...document.querySelectorAll("body *")]
         .filter((el) => visible(el) && !decorative(el) && el.getBoundingClientRect().right > vw + 1)
         .slice(0, 4);
-      for (const el of wide) issues.push({ kind: "overflow-x-element", detail: `${label(el)} ends at ${Math.round(el.getBoundingClientRect().right)}px` });
+      for (const el of wide)
+        issues.push({
+          kind: "overflow-x-element",
+          detail: `${label(el)} ends at ${Math.round(el.getBoundingClientRect().right)}px`,
+        });
     }
 
     // (a) every visible interactive element can be hit at its centre
@@ -169,8 +191,11 @@ async function audit(page: Page): Promise<Issue[]> {
       const hit = document.elementFromPoint(cx, Math.min(Math.max(cy, 1), window.innerHeight - 1));
       // The Next.js development indicator is tooling, not part of the product.
       if (hit && hit.tagName === "NEXTJS-PORTAL") continue;
-      const labelled = (el as HTMLInputElement).labels ? [...(el as HTMLInputElement).labels!].some((l) => hit && l.contains(hit)) : false;
-      const ok = hit && (hit === el || el.contains(hit) || hit.contains(el) || labelled || el.closest("label")?.contains(hit));
+      const labelled = (el as HTMLInputElement).labels
+        ? [...(el as HTMLInputElement).labels!].some((l) => hit && l.contains(hit))
+        : false;
+      const ok =
+        hit && (hit === el || el.contains(hit) || hit.contains(el) || labelled || el.closest("label")?.contains(hit));
       if (!ok) issues.push({ kind: "covered", detail: `${label(el)} is covered by ${hit ? label(hit) : "nothing"}` });
     }
     window.scrollTo(0, 0);
@@ -190,11 +215,15 @@ async function audit(page: Page): Promise<Issue[]> {
       const clamp = (cs as unknown as { webkitLineClamp?: string }).webkitLineClamp;
       const intentional = cs.textOverflow === "ellipsis" || (clamp && clamp !== "none");
       if (clips(cs) && !intentional && (el.scrollWidth > el.clientWidth + 2 || el.scrollHeight > el.clientHeight + 2)) {
-        issues.push({ kind: "clipped-text", detail: `${label(el)} (content ${el.scrollWidth}x${el.scrollHeight} in ${el.clientWidth}x${el.clientHeight})` });
+        issues.push({
+          kind: "clipped-text",
+          detail: `${label(el)} (content ${el.scrollWidth}x${el.scrollHeight} in ${el.clientWidth}x${el.clientHeight})`,
+        });
         continue;
       }
       let a = el.parentElement;
-      while (a && a !== document.body && !(clips(getComputedStyle(a)) && getComputedStyle(a).display !== "contents")) a = a.parentElement;
+      while (a && a !== document.body && !(clips(getComputedStyle(a)) && getComputedStyle(a).display !== "contents"))
+        a = a.parentElement;
       if (a && a !== document.body && a !== document.documentElement) {
         const range = document.createRange();
         range.selectNodeContents(el);
@@ -244,7 +273,9 @@ for (const group of [
   }
 }
 
-test("overlap audit: Home hero floating cards never touch the headline, the lead or the calls to action", async ({ browser }) => {
+test("overlap audit: Home hero floating cards never touch the headline, the lead or the calls to action", async ({
+  browser,
+}) => {
   test.setTimeout(240_000);
   // Motion stays ON here: the cards are moving while we measure.
   const ctx = await browser.newContext({ locale: "id-ID" });
@@ -259,7 +290,11 @@ test("overlap audit: Home hero floating cards never touch the headline, the lead
       const hits = await page.evaluate(() => {
         const hero = document.querySelector("h1")?.closest("section");
         if (!hero) return ["hero not found"];
-        const guarded = [hero.querySelector("h1"), hero.querySelector("p.fade-up"), ...hero.querySelectorAll("a.btn")].filter(Boolean) as Element[];
+        const guarded = [
+          hero.querySelector("h1"),
+          hero.querySelector("p.fade-up"),
+          ...hero.querySelectorAll("a.btn"),
+        ].filter(Boolean) as Element[];
         const floats = [...hero.querySelectorAll(".floating")].filter((f) => getComputedStyle(f).display !== "none");
         const out: string[] = [];
         if (floats.length === 0) out.push("no floating cards");
@@ -268,7 +303,10 @@ test("overlap audit: Home hero floating cards never touch the headline, the lead
           for (const g of guarded) {
             const gr = g.getBoundingClientRect();
             const overlap = fr.left < gr.right && fr.right > gr.left && fr.top < gr.bottom && fr.bottom > gr.top;
-            if (overlap) out.push(`${(g as HTMLElement).tagName.toLowerCase()} "${(g.textContent ?? "").trim().slice(0, 24)}" overlaps a floating card`);
+            if (overlap)
+              out.push(
+                `${(g as HTMLElement).tagName.toLowerCase()} "${(g.textContent ?? "").trim().slice(0, 24)}" overlaps a floating card`,
+              );
           }
         }
         return out;
@@ -277,8 +315,11 @@ test("overlap audit: Home hero floating cards never touch the headline, the lead
       await page.waitForTimeout(1400);
     }
     if (vp.width <= 390) {
-      const visibleCards = await page.evaluate(() => [...document.querySelectorAll(".floating")].filter((f) => getComputedStyle(f).display !== "none").length);
-      if (visibleCards !== 3) problems.push(`home @ ${vp.width}: phones must show 3 floating cards, found ${visibleCards}`);
+      const visibleCards = await page.evaluate(
+        () => [...document.querySelectorAll(".floating")].filter((f) => getComputedStyle(f).display !== "none").length,
+      );
+      if (visibleCards !== 3)
+        problems.push(`home @ ${vp.width}: phones must show 3 floating cards, found ${visibleCards}`);
     }
   }
   await ctx.close();
@@ -298,7 +339,8 @@ test("overlap audit: the phone drawer and the account menu are never covered", a
         const r = el.getBoundingClientRect();
         if (r.width < 2) continue;
         const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-        if (!(hit && (hit === el || el.contains(hit) || hit.contains(el)))) out.push((el.textContent ?? "").trim().slice(0, 30) || el.tagName);
+        if (!(hit && (hit === el || el.contains(hit) || hit.contains(el))))
+          out.push((el.textContent ?? "").trim().slice(0, 30) || el.tagName);
       }
       return out;
     }, selector);
@@ -330,7 +372,8 @@ test("overlap audit: the phone drawer and the account menu are never covered", a
     await page.waitForTimeout(300);
     await hitCheck(`account menu @ ${vp.width}`, '[role="menu"] [role="menuitem"]');
     const r = await page.getByRole("menu").boundingBox();
-    if (r && (r.x < 0 || r.x + r.width > vp.width + 1)) problems.push(`account menu @ ${vp.width}: leaves the viewport`);
+    if (r && (r.x < 0 || r.x + r.width > vp.width + 1))
+      problems.push(`account menu @ ${vp.width}: leaves the viewport`);
     await page.keyboard.press("Escape");
   }
   await ctx.close();

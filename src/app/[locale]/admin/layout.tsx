@@ -3,7 +3,10 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { requireAdmin } from "@/lib/admin/guard";
 import { environmentName } from "@/lib/admin/env";
 
-export const metadata: Metadata = { title: { default: "Admin", template: "%s · Admin · ESTAFET" }, robots: { index: false, follow: false } };
+export const metadata: Metadata = {
+  title: { default: "Admin", template: "%s · Admin · ESTAFET" },
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAdmin();

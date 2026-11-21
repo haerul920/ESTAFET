@@ -86,9 +86,7 @@ export default function HomePage() {
                   <CountUp to={90} suffix="%" />
                 </div>
                 <SurveyDots filled={9} total={10} />
-                <p className="mt-3 text-[15px] text-text-2">
-                  {t("stats.filesText")}
-                </p>
+                <p className="mt-3 text-[15px] text-text-2">{t("stats.filesText")}</p>
               </div>
             </div>
           </StaggerItem>
@@ -107,13 +105,13 @@ export default function HomePage() {
                 <span className="mono-label text-xs text-[#B8C0C8]">{t("stats.targetLabel")}</span>
                 <div className="mt-1 text-[15px] text-[#DDE2E6]">{t("stats.targetText")}</div>
               </div>
-              <div className="whitespace-nowrap text-[40px] font-medium tracking-[-0.04em]">{t("stats.targetValue")}</div>
+              <div className="whitespace-nowrap text-[40px] font-medium tracking-[-0.04em]">
+                {t("stats.targetValue")}
+              </div>
             </div>
           </StaggerItem>
         </Stagger>
-        <p className="mx-1 mt-4 text-[13px] text-muted">
-          {t("stats.source")}
-        </p>
+        <p className="mx-1 mt-4 text-[13px] text-muted">{t("stats.source")}</p>
       </section>
 
       <section id="how" className="mx-auto max-w-[1120px] scroll-mt-8 px-8 pb-6 pt-[72px] max-sm:px-4">
@@ -125,7 +123,10 @@ export default function HomePage() {
         </Reveal>
         <Stagger gap={0.1} className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-4">
           {STEPS.map((s) => (
-            <StaggerItem key={s.n} className="flex min-h-[230px] flex-col justify-between rounded-[28px] bg-surface-soft p-6">
+            <StaggerItem
+              key={s.n}
+              className="flex min-h-[230px] flex-col justify-between rounded-[28px] bg-surface-soft p-6"
+            >
               <div
                 className={`flex h-10 w-10 items-center justify-center rounded-full font-semibold ${s.lime ? "bg-lime text-black" : "bg-black text-white"}`}
               >
@@ -152,9 +153,7 @@ export default function HomePage() {
               <h3 className="mb-3 text-4xl font-medium leading-[1.1] tracking-[-0.035em] max-sm:text-[28px]">
                 {t("audience.owner.title")}
               </h3>
-              <p className="mb-6 max-w-[420px] text-white/95">
-                {t("audience.owner.text")}
-              </p>
+              <p className="mb-6 max-w-[420px] text-white/95">{t("audience.owner.text")}</p>
               <ButtonLink href="/bagikan" size="lg" arrow>
                 {t("audience.owner.cta")}
               </ButtonLink>
@@ -168,9 +167,7 @@ export default function HomePage() {
               <h3 className="mb-3 text-4xl font-medium leading-[1.1] tracking-[-0.035em] max-sm:text-[28px]">
                 {t("audience.next.title")}
               </h3>
-              <p className="mb-6 max-w-[420px]">
-                {t("audience.next.text")}
-              </p>
+              <p className="mb-6 max-w-[420px]">{t("audience.next.text")}</p>
               <ButtonLink href="/explore" variant="darkSolid" size="lg" arrow>
                 {t("audience.next.cta")}
               </ButtonLink>
@@ -195,10 +192,7 @@ export default function HomePage() {
             </Reveal>
             <Stagger gap={0.12} className="grid grid-cols-[repeat(auto-fit,minmax(min(280px,100%),1fr))] gap-4">
               {GUARDS.map((g) => (
-                <StaggerItem
-                  key={g}
-                  className="glass rounded-[28px] p-6 text-[#08234D]"
-                >
+                <StaggerItem key={g} className="glass rounded-[28px] p-6 text-[#08234D]">
                   <h3 className="mb-2 text-xl font-semibold tracking-normal">{t(`guards.${g}.title`)}</h3>
                   <p className="m-0 text-base">{t(`guards.${g}.text`)}</p>
                 </StaggerItem>

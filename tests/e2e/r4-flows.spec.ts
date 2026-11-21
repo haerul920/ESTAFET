@@ -12,7 +12,10 @@ const PASSWORD = "E2e-Pass-2026!";
 const DEMO_PASSWORD = "Demo-Pass-2026!";
 const stamp = Date.now();
 
-const admin = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
+const admin = () =>
+  createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false },
+  });
 
 async function newPage(browser: Browser) {
   const context = await browser.newContext();
@@ -44,7 +47,9 @@ test("manual mode and open access: share, publish, unpublish and publish again",
   // ---- Step 1: basics
   await page.goto("/en/bagikan");
   await page.getByLabel("Project title").fill(title);
-  await page.getByLabel("Short summary").fill("A synthetic project whose notes are written by hand, with no AI involved at any point.");
+  await page
+    .getByLabel("Short summary")
+    .fill("A synthetic project whose notes are written by hand, with no AI involved at any point.");
   await page.getByLabel("Type of work").selectOption("hackathon");
   await page.getByLabel("Faculty or field").selectOption("Engineering");
   await page.getByLabel("Why did it stop?").selectOption("team_graduated");
@@ -144,7 +149,11 @@ test("paused, then full, then open again: the call to action changes and watcher
     await owner.page.getByRole("button", { name: "Save access rules" }).click();
     await expect(owner.page.getByText("Access rules saved.")).toBeVisible();
     const creator = await db.from("profiles").select("id").eq("full_name", "Demo Creator A").maybeSingle();
-    const notes = await db.from("notifications").select("payload").eq("type", "watch_open").eq("payload->>project_id", PROJECT);
+    const notes = await db
+      .from("notifications")
+      .select("payload")
+      .eq("type", "watch_open")
+      .eq("payload->>project_id", PROJECT);
     expect((notes.data ?? []).length).toBeGreaterThanOrEqual(1);
     void creator;
 
@@ -168,7 +177,10 @@ test("paused, then full, then open again: the call to action changes and watcher
     // the access holder marks a task from the workspace, and it shows in the owner's lineage
     await taker.page.goto(`/en/projects/${SLUG}/workspace`);
     await taker.page.getByRole("radio", { name: "In progress" }).first().click();
-    await expect(taker.page.getByRole("radio", { name: "In progress" }).first()).toHaveAttribute("aria-checked", "true");
+    await expect(taker.page.getByRole("radio", { name: "In progress" }).first()).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
   } finally {
     await owner.context.close();
     await watcher.context.close();

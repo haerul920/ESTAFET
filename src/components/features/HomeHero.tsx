@@ -23,13 +23,45 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
   const t = useTranslations("home.hero");
   return (
     <section className="p-3">
-      <div className="relative isolate overflow-hidden rounded-[36px] px-6 pt-5" style={{ background: "var(--sky-gradient)" }}>
+      <div
+        className="relative isolate overflow-hidden rounded-[36px] px-6 pt-5"
+        style={{ background: "var(--sky-gradient)" }}
+      >
         <ParallaxLayer>
-          <Cloud className="-left-[60px] top-[360px] h-[90px] w-[320px] opacity-55 blur-[24px]" drift={70} duration={52} depth={0.6} />
-          <Cloud className="-right-10 top-[240px] h-20 w-[300px] opacity-45 blur-[24px]" drift={60} duration={64} delay={20} depth={0.5} />
-          <Cloud className="-left-[120px] bottom-5 h-[210px] w-[560px] opacity-95 blur-[30px]" drift={80} duration={58} delay={8} depth={1} />
-          <Cloud className="-right-[100px] bottom-0 h-[230px] w-[620px] opacity-95 blur-[30px]" drift={70} duration={68} delay={30} depth={0.8} />
-          <Cloud className="bottom-[-70px] left-[30%] h-[170px] w-[640px] opacity-95 blur-[28px]" drift={50} duration={46} delay={14} depth={0.9} />
+          <Cloud
+            className="-left-[60px] top-[360px] h-[90px] w-[320px] opacity-55 blur-[24px]"
+            drift={70}
+            duration={52}
+            depth={0.6}
+          />
+          <Cloud
+            className="-right-10 top-[240px] h-20 w-[300px] opacity-45 blur-[24px]"
+            drift={60}
+            duration={64}
+            delay={20}
+            depth={0.5}
+          />
+          <Cloud
+            className="-left-[120px] bottom-5 h-[210px] w-[560px] opacity-95 blur-[30px]"
+            drift={80}
+            duration={58}
+            delay={8}
+            depth={1}
+          />
+          <Cloud
+            className="-right-[100px] bottom-0 h-[230px] w-[620px] opacity-95 blur-[30px]"
+            drift={70}
+            duration={68}
+            delay={30}
+            depth={0.8}
+          />
+          <Cloud
+            className="bottom-[-70px] left-[30%] h-[170px] w-[640px] opacity-95 blur-[28px]"
+            drift={50}
+            duration={46}
+            delay={14}
+            depth={0.9}
+          />
         </ParallaxLayer>
 
         <div className="relative z-raised">{nav}</div>
@@ -39,10 +71,16 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
             <WordReveal text={t("line1")} className="block" baseDelay={100} />
             <WordReveal text={t("line2")} className="block text-[#C7E2FF]" baseDelay={420} />
           </h1>
-          <p className="fade-up mx-auto mb-9 max-w-[560px] text-lg text-white/95" style={{ "--delay": "500ms" } as React.CSSProperties}>
+          <p
+            className="fade-up mx-auto mb-9 max-w-[560px] text-lg text-white/95"
+            style={{ "--delay": "500ms" } as React.CSSProperties}
+          >
             {t("lead")}
           </p>
-          <div className="fade-up flex flex-wrap justify-center gap-3" style={{ "--delay": "650ms" } as React.CSSProperties}>
+          <div
+            className="fade-up flex flex-wrap justify-center gap-3"
+            style={{ "--delay": "650ms" } as React.CSSProperties}
+          >
             <ButtonLink href="/explore" variant="dark" size="lg" glow>
               {t("explore")}
             </ButtonLink>
@@ -75,7 +113,10 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
             </Tilt>
           </Floating>
           <Floating duration={6.4} amplitude={10} rotate={2.2} delay={0.5} className="flex-none">
-            <Tilt deg={18} className={`flex h-[190px] w-[150px] flex-col justify-between rounded-[20px] bg-lime p-4 ${cardShadow}`}>
+            <Tilt
+              deg={18}
+              className={`flex h-[190px] w-[150px] flex-col justify-between rounded-[20px] bg-lime p-4 ${cardShadow}`}
+            >
               <div className="text-xs font-semibold">{t("cardNext")}</div>
               <div>
                 <div className="text-[52px] font-medium leading-none tracking-[-0.04em]">4</div>
@@ -98,7 +139,11 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
-                <path d="M0 80 L30 70 L60 62 L90 50 L120 34 L150 22 L180 10 L180 90 L0 90 Z" fill="#1760D6" opacity="0.12" />
+                <path
+                  d="M0 80 L30 70 L60 62 L90 50 L120 34 L150 22 L180 10 L180 90 L0 90 Z"
+                  fill="#1760D6"
+                  opacity="0.12"
+                />
               </svg>
             </div>
           </Floating>

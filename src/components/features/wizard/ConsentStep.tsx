@@ -23,7 +23,15 @@ interface Member {
 }
 
 /** The team part of "Team and access": every active member confirms that the project may be shared. */
-export function ConsentStep({ project, team, currentUserId }: { project: Project; team: Member[]; currentUserId: string }) {
+export function ConsentStep({
+  project,
+  team,
+  currentUserId,
+}: {
+  project: Project;
+  team: Member[];
+  currentUserId: string;
+}) {
   const t = useTranslations("consentStep");
   const locale = useLocale();
   const router = useRouter();
@@ -118,7 +126,14 @@ export function ConsentStep({ project, team, currentUserId }: { project: Project
 
         <form action={addAction} className="mt-5 flex flex-wrap items-end gap-3 border-t border-line pt-5">
           <input type="hidden" name="project_id" value={project.id} />
-          <TextField label={t("inviteLabel")} name="email" type="email" className="min-w-[240px] flex-1" error={addState.fieldErrors?.email} hint={t("inviteHint")} />
+          <TextField
+            label={t("inviteLabel")}
+            name="email"
+            type="email"
+            className="min-w-[240px] flex-1"
+            error={addState.fieldErrors?.email}
+            hint={t("inviteHint")}
+          />
           <Button type="submit" variant="outline" disabled={adding}>
             <UserPlus size={18} aria-hidden="true" /> {t("invite")}
           </Button>

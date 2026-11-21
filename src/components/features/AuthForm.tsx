@@ -43,7 +43,14 @@ export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; act
 
       {!login ? (
         <>
-          <TextField label={t("fullName")} name="full_name" autoComplete="name" defaultValue={v.full_name} error={fe.full_name} required />
+          <TextField
+            label={t("fullName")}
+            name="full_name"
+            autoComplete="name"
+            defaultValue={v.full_name}
+            error={fe.full_name}
+            required
+          />
           <SelectField label={t("faculty")} name="faculty" defaultValue={v.faculty ?? ""} hint={t("facultyHint")}>
             <option value="">{t("facultyNone")}</option>
             {FACULTIES.map((f) => (
@@ -54,7 +61,15 @@ export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; act
           </SelectField>
         </>
       ) : null}
-      <TextField label={t("email")} name="email" type="email" autoComplete="email" defaultValue={v.email} error={fe.email} required />
+      <TextField
+        label={t("email")}
+        name="email"
+        type="email"
+        autoComplete="email"
+        defaultValue={v.email}
+        error={fe.email}
+        required
+      />
       <TextField
         label={t("password")}
         name="password"

@@ -15,4 +15,3 @@ export const getSettings = cache(async (): Promise<EffectiveSettings> => {
     return resolveSettings([], process.env);
   }
 });
-

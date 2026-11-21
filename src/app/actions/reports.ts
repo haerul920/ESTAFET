@@ -9,11 +9,23 @@ import { getCurrentUser } from "@/lib/auth";
 import { fieldErrorsFrom, formValues, type FormState } from "@/lib/validation";
 import type { TFn } from "@/lib/labels";
 
-const REPORT_REASONS = ["copyright", "personal_data", "false_information", "inappropriate", "false_ownership", "harmful_file", "spam", "other"] as const;
+const REPORT_REASONS = [
+  "copyright",
+  "personal_data",
+  "false_information",
+  "inappropriate",
+  "false_ownership",
+  "harmful_file",
+  "spam",
+  "other",
+] as const;
 
 /** Public report. No account needed. Rate limited per client address (hashed); the database records it with a reference code. */
 export async function submitReport(_prev: FormState, formData: FormData): Promise<FormState> {
-  const [v, a] = (await Promise.all([getTranslations("validation"), getTranslations("report")])) as unknown as [TFn, TFn];
+  const [v, a] = (await Promise.all([getTranslations("validation"), getTranslations("report")])) as unknown as [
+    TFn,
+    TFn,
+  ];
   const schema = z.object({
     project_id: z.string().uuid(),
     reason: z.enum(REPORT_REASONS, { message: v("reportReason") }),
@@ -27,10 +39,17 @@ export async function submitReport(_prev: FormState, formData: FormData): Promis
 
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? h.get("x-real-ip") ?? "local";
-  const ipHash = createHash("sha256").update(ip + "report").digest("hex").slice(0, 24);
+  const ipHash = createHash("sha256")
+    .update(ip + "report")
+    .digest("hex")
+    .slice(0, 24);
   const admin = createAdminClient();
 
-  const { data: allowed } = await admin.rpc("check_rate_limit", { p_key: `report:${ipHash}`, p_max: 5, p_window_seconds: 3600 });
+  const { data: allowed } = await admin.rpc("check_rate_limit", {
+    p_key: `report:${ipHash}`,
+    p_max: 5,
+    p_window_seconds: 3600,
+  });
   if (allowed !== true) return { error: a("rateLimited"), values };
 
   const user = await getCurrentUser();

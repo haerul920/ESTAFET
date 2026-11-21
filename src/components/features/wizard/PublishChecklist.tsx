@@ -9,8 +9,7 @@ import type { PublishChecklist as Checklist } from "@/lib/db/owner";
 import { cn } from "@/lib/cn";
 
 function Mark({ state }: { state: "done" | "warn" | "todo" }) {
-  const cls =
-    state === "done" ? "bg-ok-bg text-ok" : state === "warn" ? "bg-warn-bg text-warn" : "bg-chip text-text-2";
+  const cls = state === "done" ? "bg-ok-bg text-ok" : state === "warn" ? "bg-warn-bg text-warn" : "bg-chip text-text-2";
   return (
     <motion.span
       key={state}
@@ -20,7 +19,13 @@ function Mark({ state }: { state: "done" | "warn" | "todo" }) {
       aria-hidden="true"
       className={cn("flex h-6 w-6 flex-none items-center justify-center rounded-full font-semibold", cls)}
     >
-      {state === "done" ? <Check size={14} strokeWidth={3} /> : state === "warn" ? <TriangleAlert size={13} /> : <Circle size={8} />}
+      {state === "done" ? (
+        <Check size={14} strokeWidth={3} />
+      ) : state === "warn" ? (
+        <TriangleAlert size={13} />
+      ) : (
+        <Circle size={8} />
+      )}
     </motion.span>
   );
 }
@@ -65,7 +70,9 @@ export function PublishChecklist({
             <strong>{t("reviewTitle")}</strong>
             <br />
             <span className="text-sm text-text-2">
-              {review.total === 0 ? t("reviewNone") : t("reviewCount", { reviewed: review.reviewed, total: review.total })}
+              {review.total === 0
+                ? t("reviewNone")
+                : t("reviewCount", { reviewed: review.reviewed, total: review.total })}
             </span>
           </span>
         </li>

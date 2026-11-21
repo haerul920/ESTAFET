@@ -11,7 +11,11 @@ import { dbErrorMessage } from "@/lib/errors";
 import type { TFn } from "@/lib/labels";
 
 async function tr() {
-  const [v, a, e] = await Promise.all([getTranslations("validation"), getTranslations("actions"), getTranslations("errors")]);
+  const [v, a, e] = await Promise.all([
+    getTranslations("validation"),
+    getTranslations("actions"),
+    getTranslations("errors"),
+  ]);
   return { v: v as unknown as TFn, a: a as unknown as TFn, e: e as unknown as TFn };
 }
 
@@ -69,16 +73,25 @@ export async function submitRequest(_prev: FormState, formData: FormData): Promi
     p_target_date: parsed.data.target_date,
     p_fit_note: parsed.data.fit_note ?? "",
   });
-  if (error || !data) return { error: error ? dbErrorMessage(t.e, error) : t.a("requestFailed"), values, data: { task_ids } };
+  if (error || !data)
+    return { error: error ? dbErrorMessage(t.e, error) : t.a("requestFailed"), values, data: { task_ids } };
   revalidatePath("/dasbor");
   redirect({ href: `/requests/${data}`, locale });
 }
 
-export async function decideRequest(requestId: string, decision: "approved" | "declined", note: string): Promise<{ error?: string }> {
+export async function decideRequest(
+  requestId: string,
+  decision: "approved" | "declined",
+  note: string,
+): Promise<{ error?: string }> {
   const t = await tr();
   await requireUser(`/requests/${requestId}`);
   const supabase = await createClient();
-  const { error } = await supabase.rpc("decide_request", { p_request_id: requestId, p_decision: decision, p_note: note });
+  const { error } = await supabase.rpc("decide_request", {
+    p_request_id: requestId,
+    p_decision: decision,
+    p_note: note,
+  });
   if (error) return { error: dbErrorMessage(t.e, error) };
   revalidatePath(`/requests/${requestId}`);
   revalidatePath("/dasbor");
@@ -122,7 +135,11 @@ export async function markNotificationsRead(ids: string[]): Promise<void> {
   const user = await requireUser("/dasbor");
   const supabase = await createClient();
   if (ids.length === 0) {
-    await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", user.id).is("read_at", null);
+    await supabase
+      .from("notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("user_id", user.id)
+      .is("read_at", null);
   } else {
     await supabase.from("notifications").update({ read_at: new Date().toISOString() }).in("id", ids);
   }

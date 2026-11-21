@@ -14,9 +14,33 @@ interface Sentence {
 }
 
 const TECH = [
-  "Python", "TypeScript", "JavaScript", "React", "Next.js", "Node.js", "Flutter", "TensorFlow", "PyTorch",
-  "Postgres", "Supabase", "Arduino", "ESP32", "Raspberry Pi", "Docker", "Django", "Flask", "FastAPI",
-  "OpenCV", "scikit-learn", "Pandas", "R", "MATLAB", "Java", "Kotlin", "Rust", "Go",
+  "Python",
+  "TypeScript",
+  "JavaScript",
+  "React",
+  "Next.js",
+  "Node.js",
+  "Flutter",
+  "TensorFlow",
+  "PyTorch",
+  "Postgres",
+  "Supabase",
+  "Arduino",
+  "ESP32",
+  "Raspberry Pi",
+  "Docker",
+  "Django",
+  "Flask",
+  "FastAPI",
+  "OpenCV",
+  "scikit-learn",
+  "Pandas",
+  "R",
+  "MATLAB",
+  "Java",
+  "Kotlin",
+  "Rust",
+  "Go",
 ];
 
 function sentencesOf(docs: ExtractedDoc[]): Sentence[] {
@@ -41,15 +65,18 @@ const sentenceTitle = (s: string) => {
   return short.charAt(0).toUpperCase() + short.slice(1) + (words.length > 12 ? "…" : "");
 };
 const ev = (s: Sentence) => [{ file: s.file, page: s.page, quote: clip(s.text) }];
-const uniq = <T,>(items: T[], key: (t: T) => string) => {
+const uniq = <T>(items: T[], key: (t: T) => string) => {
   const seen = new Set<string>();
   return items.filter((i) => (seen.has(key(i)) ? false : (seen.add(key(i)), true)));
 };
 
-const NEXT_RE = /\b(todo|still (?:has|have|needs?|missing)|not (?:yet|started|built|justified|designed)|needs? (?:far |much )?more|future work|planned but|never started|next milestone|should be|must be|was planned|were planned|left for future|recommend)/i;
-const DONE_RE = /\b(reached|completed|collected|built|trained|extracted|computed|delivered|ran for|achieved|produced|finished|agrees?)\b/i;
+const NEXT_RE =
+  /\b(todo|still (?:has|have|needs?|missing)|not (?:yet|started|built|justified|designed)|needs? (?:far |much )?more|future work|planned but|never started|next milestone|should be|must be|was planned|were planned|left for future|recommend)/i;
+const DONE_RE =
+  /\b(reached|completed|collected|built|trained|extracted|computed|delivered|ran for|achieved|produced|finished|agrees?)\b/i;
 const OBJ_RE = /\b(will be|aim|objective|goal|plan(?:ned)? to)\b/i;
-const LESSON_RE = /\b(lesson|learned|learnt|delayed|blocker|feedback|reviewers?|asked for|more honest|dropped to|failed|corroded|differ(?:s)? a lot|only .* stayed|graduated before)\b/i;
+const LESSON_RE =
+  /\b(lesson|learned|learnt|delayed|blocker|feedback|reviewers?|asked for|more honest|dropped to|failed|corroded|differ(?:s)? a lot|only .* stayed|graduated before)\b/i;
 
 function lessonType(text: string): SynthesisOutput["lessons"][number]["type"] {
   if (/fund|grant|panel|renew/i.test(text)) return "funding_feedback";
@@ -72,12 +99,18 @@ export function mockSynthesize(docs: ExtractedDoc[]): SynthesisOutput {
     ? clip(intro.text, 60)
     : "No readable text was found in the uploaded files, so no summary could be drafted.";
 
-  const nextS = uniq(all.filter((s) => NEXT_RE.test(s.text)), (s) => s.text.toLowerCase()).slice(0, 5);
+  const nextS = uniq(
+    all.filter((s) => NEXT_RE.test(s.text)),
+    (s) => s.text.toLowerCase(),
+  ).slice(0, 5);
   const doneS = uniq(
     all.filter((s) => DONE_RE.test(s.text) && !NEXT_RE.test(s.text)),
     (s) => s.text.toLowerCase(),
   ).slice(0, 4);
-  const objS = uniq(all.filter((s) => OBJ_RE.test(s.text)), (s) => s.text.toLowerCase()).slice(0, 5);
+  const objS = uniq(
+    all.filter((s) => OBJ_RE.test(s.text)),
+    (s) => s.text.toLowerCase(),
+  ).slice(0, 5);
   const lessonS = uniq(
     all.filter((s) => LESSON_RE.test(s.text) && !NEXT_RE.test(s.text)),
     (s) => s.text.toLowerCase(),
@@ -85,7 +118,8 @@ export function mockSynthesize(docs: ExtractedDoc[]): SynthesisOutput {
 
   const tech = new Set<string>();
   const corpus = docs.flatMap((d) => d.pages.map((p) => p.text)).join("\n");
-  for (const t of TECH) if (new RegExp(`(^|[^A-Za-z])${t.replace(/[.+]/g, "\\$&")}([^A-Za-z]|$)`).test(corpus)) tech.add(t);
+  for (const t of TECH)
+    if (new RegExp(`(^|[^A-Za-z])${t.replace(/[.+]/g, "\\$&")}([^A-Za-z]|$)`).test(corpus)) tech.add(t);
   for (const d of docs) {
     if (d.kind !== "code_tree") continue;
     for (const p of d.pages) {

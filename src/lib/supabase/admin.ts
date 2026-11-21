@@ -8,9 +8,7 @@ import { SUPABASE_URL, pickSecretKey } from "./keys";
  * The key never reaches the browser: this module is server-only.
  */
 export function createAdminClient() {
-  return createSupabaseClient(
-    SUPABASE_URL,
-    pickSecretKey(process.env)!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
+  return createSupabaseClient(SUPABASE_URL, pickSecretKey(process.env)!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }

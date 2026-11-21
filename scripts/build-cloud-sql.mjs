@@ -11,7 +11,9 @@ const read = (p) => readFileSync(p, "utf8").replace(/\r\n/g, "\n").trimEnd();
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 
-const files = readdirSync("supabase/migrations").filter((f) => f.endsWith(".sql")).sort();
+const files = readdirSync("supabase/migrations")
+  .filter((f) => f.endsWith(".sql"))
+  .sort();
 const rows = [];
 files.forEach((f, i) => {
   const n = String(i + 1).padStart(2, "0");

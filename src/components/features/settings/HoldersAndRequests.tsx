@@ -33,10 +33,18 @@ export function HoldersList({ holders, teams }: { holders: HolderRow[]; teams: n
           <p className="m-0 text-sm text-text-2">{t("count", { count: holders.length, teams })}</p>
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {holders.map((h) => (
-              <li key={h.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-line-soft bg-white p-3.5">
+              <li
+                key={h.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-line-soft bg-white p-3.5"
+              >
                 <span className="flex flex-col">
                   <strong>{h.name}</strong>
-                  <span className="text-sm text-text-2">{t("since", { date: h.sinceLabel, source: h.source === "open" ? t("sourceOpen") : t("sourceRequest") })}</span>
+                  <span className="text-sm text-text-2">
+                    {t("since", {
+                      date: h.sinceLabel,
+                      source: h.source === "open" ? t("sourceOpen") : t("sourceRequest"),
+                    })}
+                  </span>
                 </span>
                 <ConfirmDialog
                   trigger={t("revoke")}
@@ -72,16 +80,26 @@ export interface RequestRow {
 
 const FILTERS = ["all", "pending", "approved", "declined", "closed"] as const;
 type Filter = (typeof FILTERS)[number];
-const TONE = { pending: "warn", approved: "ok", declined: "neutral", withdrawn: "neutral", expired: "neutral" } as const;
+const TONE = {
+  pending: "warn",
+  approved: "ok",
+  declined: "neutral",
+  withdrawn: "neutral",
+  expired: "neutral",
+} as const;
 
 /** The owners' inbox: every request for this project, with filters. */
 export function RequestInbox({ rows, openMode }: { rows: RequestRow[]; openMode: boolean }) {
   const t = useTranslations("settings.req");
   const [filter, setFilter] = useState<Filter>(rows.some((r) => r.status === "pending") ? "pending" : "all");
   const match = (r: RequestRow) =>
-    filter === "all" || (filter === "closed" ? r.status === "withdrawn" || r.status === "expired" : r.status === filter);
+    filter === "all" ||
+    (filter === "closed" ? r.status === "withdrawn" || r.status === "expired" : r.status === filter);
   const shown = rows.filter(match);
-  const count = (f: Filter) => rows.filter((r) => f === "all" || (f === "closed" ? r.status === "withdrawn" || r.status === "expired" : r.status === f)).length;
+  const count = (f: Filter) =>
+    rows.filter(
+      (r) => f === "all" || (f === "closed" ? r.status === "withdrawn" || r.status === "expired" : r.status === f),
+    ).length;
 
   return (
     <Card as="section" aria-labelledby="req-h" className="flex flex-col gap-4">
@@ -109,7 +127,10 @@ export function RequestInbox({ rows, openMode }: { rows: RequestRow[]; openMode:
       ) : (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {shown.map((r) => (
-            <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-line-soft bg-white p-3.5">
+            <li
+              key={r.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-line-soft bg-white p-3.5"
+            >
               <span className="flex flex-col gap-1">
                 <span className="flex flex-wrap items-center gap-2">
                   <strong>{r.team}</strong>

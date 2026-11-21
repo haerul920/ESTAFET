@@ -15,7 +15,17 @@ import { cn } from "@/lib/cn";
 export const metadata: Metadata = { title: "Audit log" };
 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
-const TARGETS = ["project", "report", "user", "setting", "synthesis_run", "trial_session", "file", "platform", "request"];
+const TARGETS = [
+  "project",
+  "report",
+  "user",
+  "setting",
+  "synthesis_run",
+  "trial_session",
+  "file",
+  "platform",
+  "request",
+];
 
 export default async function AdminAuditPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
@@ -41,16 +51,37 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
 
   const openId = first(sp.open);
   const supabase = await createClient();
-  const open = openId ? ((await supabase.from("admin_audit_v").select("*").eq("id", openId).maybeSingle()).data as AuditEvent | null) : null;
+  const open = openId
+    ? ((await supabase.from("admin_audit_v").select("*").eq("id", openId).maybeSingle()).data as AuditEvent | null)
+    : null;
 
   const exportQs = withParams(sp, { open: undefined, page: undefined, sort: undefined, dir: undefined });
 
   const columns: Column<AuditEvent>[] = [
-    { key: "created_at", label: "When", sortable: true, render: (r) => <Time iso={r.created_at} className="text-ink" /> },
+    {
+      key: "created_at",
+      label: "When",
+      sortable: true,
+      render: (r) => <Time iso={r.created_at} className="text-ink" />,
+    },
     { key: "actor_name", label: "Actor", sortable: true },
-    { key: "action", label: "Action", sortable: true, render: (r) => <code className="font-code text-[13px]">{r.action}</code> },
-    { key: "target_type", label: "Target", sortable: true, render: (r) => `${r.target_type}${r.target_id ? ` ${r.target_id.slice(0, 8)}` : ""}` },
-    { key: "reason", label: "Reason", render: (r) => <span className="line-clamp-2 max-w-[320px] text-text-2">{r.reason ?? "—"}</span> },
+    {
+      key: "action",
+      label: "Action",
+      sortable: true,
+      render: (r) => <code className="font-code text-[13px]">{r.action}</code>,
+    },
+    {
+      key: "target_type",
+      label: "Target",
+      sortable: true,
+      render: (r) => `${r.target_type}${r.target_id ? ` ${r.target_id.slice(0, 8)}` : ""}`,
+    },
+    {
+      key: "reason",
+      label: "Reason",
+      render: (r) => <span className="line-clamp-2 max-w-[320px] text-text-2">{r.reason ?? "—"}</span>,
+    },
   ];
 
   return (
@@ -58,7 +89,15 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
       <PageHeader
         title="Audit log"
         intro="Every admin action, with who, what and why."
-        actions={<a href={`/api/admin/audit/export${exportQs}`} download className="inline-flex min-h-[44px] items-center rounded-full border-[1.5px] border-line-strong bg-white px-5 font-semibold text-ink no-underline hover:bg-surface">Export CSV (current filter)</a>}
+        actions={
+          <a
+            href={`/api/admin/audit/export${exportQs}`}
+            download
+            className="inline-flex min-h-[44px] items-center rounded-full border-[1.5px] border-line-strong bg-white px-5 font-semibold text-ink no-underline hover:bg-surface"
+          >
+            Export CSV (current filter)
+          </a>
+        }
       />
       <p className="mb-4 mt-0 flex items-center gap-2 rounded-2xl bg-blue-tint px-4 py-2.5 text-sm text-text-3">
         <Lock size={16} aria-hidden="true" /> This log is append-only. Entries cannot be edited or deleted, by anyone.
@@ -67,22 +106,42 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
       {open ? (
         <aside aria-label="Audit entry" className="mb-5 rounded-3xl border-2 border-blue bg-white p-5">
           <div className="mb-3 flex items-start justify-between gap-2">
-            <h2 className="m-0 text-lg"><code className="font-code">{open.action}</code></h2>
-            <Link href={`/admin/audit${withParams(sp, { open: undefined })}`} className="text-sm">Close</Link>
+            <h2 className="m-0 text-lg">
+              <code className="font-code">{open.action}</code>
+            </h2>
+            <Link href={`/admin/audit${withParams(sp, { open: undefined })}`} className="text-sm">
+              Close
+            </Link>
           </div>
-          <KeyValueList items={[
-            { label: "Actor", value: open.actor_name },
-            { label: "When", value: formatWita(open.created_at) },
-            { label: "Target", value: `${open.target_type}${open.target_id ? ` (${open.target_id})` : ""}` },
-            { label: "Reason", value: open.reason ?? "—" },
-          ]} />
+          <KeyValueList
+            items={[
+              { label: "Actor", value: open.actor_name },
+              { label: "When", value: formatWita(open.created_at) },
+              { label: "Target", value: `${open.target_type}${open.target_id ? ` (${open.target_id})` : ""}` },
+              { label: "Reason", value: open.reason ?? "—" },
+            ]}
+          />
           <h3 className="mb-2 mt-4 text-sm">Before and after</h3>
           {open.before || open.after ? (
             <table className="w-full text-left text-sm">
-              <thead><tr className="text-text-2"><th className="py-1 font-semibold">Field</th><th className="font-semibold">Before</th><th className="font-semibold">After</th></tr></thead>
+              <thead>
+                <tr className="text-text-2">
+                  <th className="py-1 font-semibold">Field</th>
+                  <th className="font-semibold">Before</th>
+                  <th className="font-semibold">After</th>
+                </tr>
+              </thead>
               <tbody>
                 {diffObjects(open.before, open.after).map((d) => (
-                  <tr key={d.key} className={cn("border-t border-line", d.kind === "changed" && "bg-warn-bg/60", d.kind === "added" && "bg-ok-bg/60", d.kind === "removed" && "bg-[#fdecea]/70")}>
+                  <tr
+                    key={d.key}
+                    className={cn(
+                      "border-t border-line",
+                      d.kind === "changed" && "bg-warn-bg/60",
+                      d.kind === "added" && "bg-ok-bg/60",
+                      d.kind === "removed" && "bg-[#fdecea]/70",
+                    )}
+                  >
                     <td className="py-1.5 pr-3 font-code text-[13px]">{d.key}</td>
                     <td className="pr-3">{d.before || "—"}</td>
                     <td>{d.after || "—"}</td>
@@ -90,18 +149,39 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
                 ))}
               </tbody>
             </table>
-          ) : <p className="m-0 text-sm text-text-2">This action recorded no before or after values.</p>}
+          ) : (
+            <p className="m-0 text-sm text-text-2">This action recorded no before or after values.</p>
+          )}
         </aside>
       ) : null}
 
       <FilterBar
         searchLabel="Search action, reason or actor"
-        filters={[{ key: "target", label: "Target type", options: TARGETS.map((t) => ({ value: t, label: t.replace("_", " ") })) }]}
+        filters={[
+          {
+            key: "target",
+            label: "Target type",
+            options: TARGETS.map((t) => ({ value: t, label: t.replace("_", " ") })),
+          },
+        ]}
       />
       <AuditTextFilters actor={actor} action={action} />
       <DateRange from={from} to={to} />
-      <Panel className="p-0"><span className="sr-only">Results below</span></Panel>
-      <DataTable columns={columns} rows={rows} total={total} params={params} sp={sp} basePath="/admin/audit" rowHref={(r) => `/admin/audit${withParams(sp, { open: r.id })}`} caption="Audit events" selectedId={openId} empty={{ title: "No audit events match", text: "Clear a filter or widen the date range." }} />
+      <Panel className="p-0">
+        <span className="sr-only">Results below</span>
+      </Panel>
+      <DataTable
+        columns={columns}
+        rows={rows}
+        total={total}
+        params={params}
+        sp={sp}
+        basePath="/admin/audit"
+        rowHref={(r) => `/admin/audit${withParams(sp, { open: r.id })}`}
+        caption="Audit events"
+        selectedId={openId}
+        empty={{ title: "No audit events match", text: "Clear a filter or widen the date range." }}
+      />
     </>
   );
 }
@@ -110,9 +190,29 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
 function AuditTextFilters({ actor, action }: { actor?: string; action?: string }) {
   return (
     <form method="get" className="mb-4 flex flex-wrap items-end gap-3 text-sm">
-      <label className="flex flex-col gap-1">Actor<input name="actor" defaultValue={actor} className="min-h-[40px] rounded-xl border border-line-strong bg-white px-3" /></label>
-      <label className="flex flex-col gap-1">Action starts with<input name="action" defaultValue={action} placeholder="project." className="min-h-[40px] rounded-xl border border-line-strong bg-white px-3" /></label>
-      <button type="submit" className="min-h-[40px] cursor-pointer rounded-full border-[1.5px] border-line-strong bg-white px-4 font-semibold hover:bg-surface">Apply</button>
+      <label className="flex flex-col gap-1">
+        Actor
+        <input
+          name="actor"
+          defaultValue={actor}
+          className="min-h-[40px] rounded-xl border border-line-strong bg-white px-3"
+        />
+      </label>
+      <label className="flex flex-col gap-1">
+        Action starts with
+        <input
+          name="action"
+          defaultValue={action}
+          placeholder="project."
+          className="min-h-[40px] rounded-xl border border-line-strong bg-white px-3"
+        />
+      </label>
+      <button
+        type="submit"
+        className="min-h-[40px] cursor-pointer rounded-full border-[1.5px] border-line-strong bg-white px-4 font-semibold hover:bg-surface"
+      >
+        Apply
+      </button>
     </form>
   );
 }

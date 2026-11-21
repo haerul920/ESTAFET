@@ -7,7 +7,9 @@ import { formatDate } from "@/lib/format";
  * It still needs enum labels and dates, so it reads them from the English messages.
  */
 const lookup = (key: string): string => {
-  const value = key.split(".").reduce<unknown>((o, part) => (o as Record<string, unknown> | undefined)?.[part], en.labels);
+  const value = key
+    .split(".")
+    .reduce<unknown>((o, part) => (o as Record<string, unknown> | undefined)?.[part], en.labels);
   return typeof value === "string" ? value : key;
 };
 

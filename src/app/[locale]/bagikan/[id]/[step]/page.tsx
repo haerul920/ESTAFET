@@ -10,7 +10,7 @@ import {
   getOwnedProject,
   getFiles,
   getItems,
-    getLatestRun,
+  getLatestRun,
   getTeam,
 } from "@/lib/db/owner";
 import { getConfig } from "@/lib/llm";
@@ -101,10 +101,7 @@ export default async function WizardStepPage({ params }: Params) {
       <WizardFrame projectId={id} current="berkas">
         <div className="flex flex-wrap items-start gap-8">
           <div className="flex min-w-0 flex-[1_1_600px] flex-col gap-6">
-            <StepHeader
-              title={t("filesTitle")}
-              intro={t("filesIntro")}
-            />
+            <StepHeader title={t("filesTitle")} intro={t("filesIntro")} />
             <FilesStep
               projectId={id}
               files={files}
@@ -189,11 +186,7 @@ export default async function WizardStepPage({ params }: Params) {
     max_active_adopters: project.max_active_adopters,
     active_adopters: 0,
   };
-  const reason = !checklist.team.done
-    ? t("reasonTeam")
-    : !checklist.review.done
-      ? t("reasonReview")
-      : "";
+  const reason = !checklist.team.done ? t("reasonTeam") : !checklist.review.done ? t("reasonReview") : "";
 
   return (
     <WizardFrame projectId={id} current="terbit">
@@ -204,7 +197,8 @@ export default async function WizardStepPage({ params }: Params) {
       {published ? (
         <Card tone="blue" className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <span className="flex items-center gap-2">
-            <CheckCircle2 size={20} className="text-ok" aria-hidden="true" /> <strong>{t("publishedBold")}</strong> {t("publishedText")}
+            <CheckCircle2 size={20} className="text-ok" aria-hidden="true" /> <strong>{t("publishedBold")}</strong>{" "}
+            {t("publishedText")}
           </span>
           <ButtonLink href={`/projects/${project.slug}`} arrow>
             {t("viewPublic")}
@@ -221,14 +215,23 @@ export default async function WizardStepPage({ params }: Params) {
           items={teaserItems}
           lineageSteps={[
             { id: "o", title: tl("origin"), sub: tl("originSub", { year: project.year }), state: "done" },
-            { id: "p", title: tl("published"), sub: published ? tl("live") : tl("afterPublish"), state: published ? "done" : "next" },
+            {
+              id: "p",
+              title: tl("published"),
+              sub: published ? tl("live") : tl("afterPublish"),
+              state: published ? "done" : "next",
+            },
             { id: "n", title: tl("next"), sub: tl("nextWaiting"), state: "next" },
           ]}
           cta={
             <Card tone="lime" className="flex flex-col gap-2">
               <h2 className="m-0 text-xl">{t("ctaTitle")}</h2>
               <p className="m-0 text-[15px] text-text-2">
-                {project.access_mode === "open" ? t("ctaOpen") : project.access_mode === "paused" ? t("ctaPaused") : t("ctaRequest")}
+                {project.access_mode === "open"
+                  ? t("ctaOpen")
+                  : project.access_mode === "paused"
+                    ? t("ctaPaused")
+                    : t("ctaRequest")}
               </p>
             </Card>
           }
@@ -239,11 +242,22 @@ export default async function WizardStepPage({ params }: Params) {
           {t("effectsTitle")}
         </h2>
         <ul className="m-0 flex list-disc flex-col gap-1.5 pl-5 text-[15px] text-text-3">
-          <li>{project.access_mode === "open" ? t("effectOpen") : project.access_mode === "paused" ? t("effectPaused") : t("effectRequest")}</li>
+          <li>
+            {project.access_mode === "open"
+              ? t("effectOpen")
+              : project.access_mode === "paused"
+                ? t("effectPaused")
+                : t("effectRequest")}
+          </li>
           {project.access_mode === "paused" ? null : (
             <li>
               {t("effectLimit", {
-                limit: project.max_active_adopters === null ? t("limitNone") : project.max_active_adopters === 1 ? t("limit1") : t("limit3"),
+                limit:
+                  project.max_active_adopters === null
+                    ? t("limitNone")
+                    : project.max_active_adopters === 1
+                      ? t("limit1")
+                      : t("limit3"),
               })}
             </li>
           )}

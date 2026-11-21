@@ -8,7 +8,9 @@ import { splitLocale } from "@/lib/supabase/middleware";
 import { translator } from "./i18n-helpers";
 
 const flat = (o: Record<string, unknown>, p = ""): string[] =>
-  Object.entries(o).flatMap(([k, v]) => (v && typeof v === "object" ? flat(v as Record<string, unknown>, `${p}${k}.`) : [`${p}${k}`]));
+  Object.entries(o).flatMap(([k, v]) =>
+    v && typeof v === "object" ? flat(v as Record<string, unknown>, `${p}${k}.`) : [`${p}${k}`],
+  );
 
 describe("messages", () => {
   it("have the same keys in Indonesian and English", () => {
@@ -60,9 +62,13 @@ describe("database errors", () => {
   it("maps a hint to a message in the language, and never leaks raw text", () => {
     const tid = translator("errors", "id");
     const ten = translator("errors", "en");
-    expect(dbErrorMessage(tid, { message: "The team quota for this project is full", hint: "quota_full" })).toBe("Kuota tim penerus penuh.");
+    expect(dbErrorMessage(tid, { message: "The team quota for this project is full", hint: "quota_full" })).toBe(
+      "Kuota tim penerus penuh.",
+    );
     expect(dbErrorMessage(ten, { hint: "email_unverified" })).toBe("Verify your email address first.");
-    expect(dbErrorMessage(tid, { message: "duplicate key value violates unique constraint", hint: null })).toBe(id.errors.generic);
+    expect(dbErrorMessage(tid, { message: "duplicate key value violates unique constraint", hint: null })).toBe(
+      id.errors.generic,
+    );
     expect(dbErrorMessage(tid, { code: "42501" })).toBe(id.errors.forbidden);
   });
 });

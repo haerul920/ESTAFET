@@ -9,7 +9,11 @@ const DOC: ExtractedDoc = {
   fileName: "notes.md",
   kind: "markdown",
   pages: [
-    { page: 1, label: "Overview", text: "Overview\nThe team built a baseline model and collected 600 photos from one reef." },
+    {
+      page: 1,
+      label: "Overview",
+      text: "Overview\nThe team built a baseline model and collected 600 photos from one reef.",
+    },
     {
       page: 2,
       label: "Open work",
@@ -22,7 +26,14 @@ const VALID = {
   summary: "A baseline model.",
   objectives: [],
   completed: [],
-  next_tasks: [{ title: "More labels", description: "", effort: "small", evidence: [{ file: "notes.md", page: 2, quote: "TODO: edge class needs far more labeled images" }] }],
+  next_tasks: [
+    {
+      title: "More labels",
+      description: "",
+      effort: "small",
+      evidence: [{ file: "notes.md", page: 2, quote: "TODO: edge class needs far more labeled images" }],
+    },
+  ],
   lessons: [],
   tech: [],
 };
@@ -38,14 +49,18 @@ describe("mock provider", () => {
   it("quotes real text and adds exactly one deliberately unsupported item", async () => {
     const out = await synthesize([DOC], { provider: "mock", model: "", mode: "mock" });
     const pages = new Map(DOC.pages.map((p) => [p.page, p.text]));
-    const statuses = out.next_tasks.flatMap((t) => t.evidence.map((e) => matchQuote(e.quote, pages.get(e.page)).status));
+    const statuses = out.next_tasks.flatMap((t) =>
+      t.evidence.map((e) => matchQuote(e.quote, pages.get(e.page)).status),
+    );
     expect(statuses.filter((s) => s === "not_found")).toHaveLength(1);
     expect(statuses.filter((s) => s === "matched").length).toBeGreaterThan(0);
     expect(out.next_tasks.some((t) => /edge class/i.test(t.title))).toBe(true);
   });
 
   it("fails with a readable error when there is no text", async () => {
-    await expect(synthesize([{ ...DOC, pages: [{ page: 1, label: "x", text: "  " }] }])).rejects.toThrow(/no readable text/);
+    await expect(synthesize([{ ...DOC, pages: [{ page: 1, label: "x", text: "  " }] }])).rejects.toThrow(
+      /no readable text/,
+    );
   });
 });
 
@@ -54,7 +69,9 @@ describe("schema", () => {
     const long = Array.from({ length: 26 }, () => "word").join(" ");
     const bad = { ...VALID, next_tasks: [{ ...VALID.next_tasks[0], evidence: [{ file: "a", page: 1, quote: long }] }] };
     expect(synthesisSchema.safeParse(bad).success).toBe(false);
-    expect(synthesisSchema.safeParse({ ...VALID, summary: Array.from({ length: 91 }, () => "w").join(" ") }).success).toBe(false);
+    expect(
+      synthesisSchema.safeParse({ ...VALID, summary: Array.from({ length: 91 }, () => "w").join(" ") }).success,
+    ).toBe(false);
   });
 
   it("requires evidence on every item", () => {

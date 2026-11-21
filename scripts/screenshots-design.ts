@@ -73,11 +73,26 @@ async function main() {
     for (const role of ["guest", "creator", "adopter", "alumni", "admin"] as Role[]) {
       if (!PAGES.some((p) => p.role === role)) continue;
       if (role === "guest") {
-        sessions.set(role, await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: "reduce", deviceScaleFactor: width < 600 ? 2 : 1 }));
+        sessions.set(
+          role,
+          await browser.newContext({
+            viewport: { width, height: 900 },
+            reducedMotion: "reduce",
+            deviceScaleFactor: width < 600 ? 2 : 1,
+          }),
+        );
       } else {
         const { ctx, state } = await login(browser, role, width);
         await ctx.close();
-        sessions.set(role, await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: "reduce", storageState: state, deviceScaleFactor: width < 600 ? 2 : 1 }));
+        sessions.set(
+          role,
+          await browser.newContext({
+            viewport: { width, height: 900 },
+            reducedMotion: "reduce",
+            storageState: state,
+            deviceScaleFactor: width < 600 ? 2 : 1,
+          }),
+        );
       }
     }
     for (const p of PAGES) {

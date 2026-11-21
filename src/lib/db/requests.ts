@@ -70,7 +70,13 @@ export async function getRequestDetail(id: string, userId: string): Promise<Requ
   if (!project) return null;
 
   const holders = (access ?? []) as ProjectAccess[];
-  const profileIds = [...new Set([req.created_by, ...holders.map((h) => h.profile_id), ...(owners ?? []).map((o: { profile_id: string }) => o.profile_id)])];
+  const profileIds = [
+    ...new Set([
+      req.created_by,
+      ...holders.map((h) => h.profile_id),
+      ...(owners ?? []).map((o: { profile_id: string }) => o.profile_id),
+    ]),
+  ];
   const { data: profiles } = await admin.from("profiles").select("id, full_name").in("id", profileIds);
   const nameOf = new Map((profiles ?? []).map((p: { id: string; full_name: string }) => [p.id, p.full_name]));
 
@@ -80,7 +86,13 @@ export async function getRequestDetail(id: string, userId: string): Promise<Requ
     tasks: (tasks ?? []) as RequestTask[],
     requesterName: nameOf.get(req.created_by) ?? "",
     ownerNames: (owners ?? []).map((o: { profile_id: string }) => nameOf.get(o.profile_id) ?? "").filter(Boolean),
-    holders: holders.map((h) => ({ accessId: h.id, profileId: h.profile_id, name: nameOf.get(h.profile_id) ?? "—", acceptedAt: h.accepted_at, status: h.status })),
+    holders: holders.map((h) => ({
+      accessId: h.id,
+      profileId: h.profile_id,
+      name: nameOf.get(h.profile_id) ?? "—",
+      acceptedAt: h.accepted_at,
+      status: h.status,
+    })),
     isOwner: isOwner === true,
     isTeam: isTeam === true,
     myAccess: holders.find((h) => h.profile_id === userId && h.status === "active") ?? null,

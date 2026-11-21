@@ -21,7 +21,15 @@ export interface ThreadMessage {
 const MAX = 500;
 
 /** A short conversation between the requesting team and the owners. Closed once the request is decided. */
-export function RequestThread({ requestId, messages, open }: { requestId: string; messages: ThreadMessage[]; open: boolean }) {
+export function RequestThread({
+  requestId,
+  messages,
+  open,
+}: {
+  requestId: string;
+  messages: ThreadMessage[];
+  open: boolean;
+}) {
   const t = useTranslations("thread");
   const router = useRouter();
   const [body, setBody] = useState("");
@@ -42,9 +50,16 @@ export function RequestThread({ requestId, messages, open }: { requestId: string
       ) : (
         <ol className="m-0 flex list-none flex-col gap-2.5 p-0" aria-live="polite">
           {messages.map((m) => (
-            <li key={m.id} className={cn("item-in flex flex-col gap-0.5 rounded-[18px] p-3.5 text-[15px]", m.mine ? "ml-6 bg-blue-tint" : "mr-6 bg-white")}>
+            <li
+              key={m.id}
+              className={cn(
+                "item-in flex flex-col gap-0.5 rounded-[18px] p-3.5 text-[15px]",
+                m.mine ? "ml-6 bg-blue-tint" : "mr-6 bg-white",
+              )}
+            >
               <span className="text-[13px] text-text-2">
-                <strong className="text-ink">{m.mine ? t("you") : m.authorName}</strong> · {m.fromOwner ? t("owner") : t("team")} · {m.whenLabel}
+                <strong className="text-ink">{m.mine ? t("you") : m.authorName}</strong> ·{" "}
+                {m.fromOwner ? t("owner") : t("team")} · {m.whenLabel}
               </span>
               <span className="whitespace-pre-wrap">{m.body}</span>
             </li>
@@ -79,7 +94,9 @@ export function RequestThread({ requestId, messages, open }: { requestId: string
             onChange={(e) => setBody(e.target.value)}
             className="w-full resize-y rounded-[14px] border border-line-strong bg-white px-3.5 py-3 text-base"
           />
-          <span className={cn("text-[13px]", left < 40 ? "text-warn" : "text-text-2")}>{t("left", { count: left })}</span>
+          <span className={cn("text-[13px]", left < 40 ? "text-warn" : "text-text-2")}>
+            {t("left", { count: left })}
+          </span>
           {error ? <FormMessage tone="error">{error}</FormMessage> : null}
           <div>
             <Button type="submit" variant="outlineBlue" disabled={pending || body.trim().length === 0}>

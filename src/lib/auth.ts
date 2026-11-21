@@ -15,7 +15,10 @@ export interface CurrentUser {
   verified: boolean;
 }
 
-export function isSuspendedProfile(p: Pick<Profile, "suspended_at" | "suspended_until"> | null | undefined, now = Date.now()): boolean {
+export function isSuspendedProfile(
+  p: Pick<Profile, "suspended_at" | "suspended_until"> | null | undefined,
+  now = Date.now(),
+): boolean {
   if (!p?.suspended_at) return false;
   return !p.suspended_until || new Date(p.suspended_until).getTime() > now;
 }
@@ -29,7 +32,13 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   if (!user) return null;
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
   const p = (profile as Profile | null) ?? null;
-  return { id: user.id, email: user.email ?? "", profile: p, suspended: isSuspendedProfile(p), verified: Boolean(user.email_confirmed_at) };
+  return {
+    id: user.id,
+    email: user.email ?? "",
+    profile: p,
+    suspended: isSuspendedProfile(p),
+    verified: Boolean(user.email_confirmed_at),
+  };
 });
 
 /** Redirects guests to the login page, then back to `next` after sign in. */

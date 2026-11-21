@@ -20,6 +20,10 @@ export async function GET(req: Request) {
   const { data, error } = await q;
   if (error) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return new NextResponse(auditCsv((data ?? []) as AuditEvent[]), {
-    headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": 'attachment; filename="estafet-audit.csv"', "cache-control": "private, no-store" },
+    headers: {
+      "content-type": "text/csv; charset=utf-8",
+      "content-disposition": 'attachment; filename="estafet-audit.csv"',
+      "cache-control": "private, no-store",
+    },
   });
 }

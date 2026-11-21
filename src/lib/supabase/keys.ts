@@ -5,7 +5,8 @@
  * bundle when it is spelled out in the source.
  */
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-export const SUPABASE_PUBLIC_KEY = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)!;
+export const SUPABASE_PUBLIC_KEY = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)!;
 
 /** The same rule for tests and scripts that pass an environment object. */
 export function pickPublicKey(env: Record<string, string | undefined>): string | undefined {

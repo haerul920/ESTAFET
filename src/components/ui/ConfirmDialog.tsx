@@ -79,7 +79,9 @@ export function ConfirmDialog({
               className="w-full resize-y rounded-[14px] border border-line-strong bg-white px-3.5 py-3 text-base"
             />
             {minReason > 0 ? (
-              <span className={reasonOk ? "text-[13px] text-ok" : "text-[13px] text-text-2"}>{t("reasonCount", { count: reason.trim().length, min: minReason })}</span>
+              <span className={reasonOk ? "text-[13px] text-ok" : "text-[13px] text-text-2"}>
+                {t("reasonCount", { count: reason.trim().length, min: minReason })}
+              </span>
             ) : null}
           </div>
         ) : null}

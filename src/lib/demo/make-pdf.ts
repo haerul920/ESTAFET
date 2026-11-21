@@ -3,7 +3,11 @@
  * of text per page, no images. Not for production uploads.
  */
 function escapePdf(s: string): string {
-  return s.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)").replace(/[^\x20-\x7e]/g, "?");
+  return s
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)")
+    .replace(/[^\x20-\x7e]/g, "?");
 }
 
 function wrap(text: string, max = 88): string[] {
@@ -33,7 +37,9 @@ export function makePdf(pages: string[]): Uint8Array {
   const pageIds: number[] = [];
   for (const text of pages) {
     const lines = wrap(text).slice(0, 52);
-    const stream = ["BT", "/F1 11 Tf", "14 TL", "50 780 Td", ...lines.map((l) => `(${escapePdf(l)}) Tj T*`), "ET"].join("\n");
+    const stream = ["BT", "/F1 11 Tf", "14 TL", "50 780 Td", ...lines.map((l) => `(${escapePdf(l)}) Tj T*`), "ET"].join(
+      "\n",
+    );
     const content = add(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
     pageIds.push(
       add(
@@ -41,7 +47,8 @@ export function makePdf(pages: string[]): Uint8Array {
       ),
     );
   }
-  objects[pagesObj - 1] = `<< /Type /Pages /Kids [${pageIds.map((i) => `${i} 0 R`).join(" ")}] /Count ${pageIds.length} >>`;
+  objects[pagesObj - 1] =
+    `<< /Type /Pages /Kids [${pageIds.map((i) => `${i} 0 R`).join(" ")}] /Count ${pageIds.length} >>`;
 
   let out = "%PDF-1.4\n";
   const offsets: number[] = [];

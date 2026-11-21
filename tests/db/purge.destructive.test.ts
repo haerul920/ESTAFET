@@ -19,16 +19,43 @@ let demoProject: string;
 
 beforeAll(async () => {
   const email = `purge.admin.${stamp}@example.test`;
-  const { data, error } = await svc.auth.admin.createUser({ email, password: "Purge-Test-2026!", email_confirm: true, user_metadata: { full_name: "Purge Admin" } });
+  const { data, error } = await svc.auth.admin.createUser({
+    email,
+    password: "Purge-Test-2026!",
+    email_confirm: true,
+    user_metadata: { full_name: "Purge Admin" },
+  });
   if (error) throw error;
   adminId = data.user.id;
   await svc.rpc("promote_admin", { p_email: email });
   adminClient = createClient(URL, ANON, { auth: { persistSession: false } });
   await adminClient.auth.signInWithPassword({ email, password: "Purge-Test-2026!" });
 
-  const base = { summary: "x".repeat(40), kind: "research", field: "Engineering", year: 2025, stop_reason: "other", advisor_name: "Dr. A", advisor_email: "a@example.test", created_by: adminId, status: "published" };
-  realProject = (await svc.from("projects").insert({ ...base, title: `Real ${stamp}`, is_demo: false }).select("id").single()).data!.id;
-  demoProject = (await svc.from("projects").insert({ ...base, title: `Demo ${stamp}`, is_demo: true }).select("id").single()).data!.id;
+  const base = {
+    summary: "x".repeat(40),
+    kind: "research",
+    field: "Engineering",
+    year: 2025,
+    stop_reason: "other",
+    advisor_name: "Dr. A",
+    advisor_email: "a@example.test",
+    created_by: adminId,
+    status: "published",
+  };
+  realProject = (
+    await svc
+      .from("projects")
+      .insert({ ...base, title: `Real ${stamp}`, is_demo: false })
+      .select("id")
+      .single()
+  ).data!.id;
+  demoProject = (
+    await svc
+      .from("projects")
+      .insert({ ...base, title: `Demo ${stamp}`, is_demo: true })
+      .select("id")
+      .single()
+  ).data!.id;
   await svc.from("trial_sessions").insert([
     { participant_code: "PR1", cohort: "estafet", consent_confirmed: true, is_demo: false },
     { participant_code: "PD1", cohort: "estafet", consent_confirmed: true, is_demo: true },
@@ -52,6 +79,8 @@ describe("purge demo data", () => {
     const audit = await svc.from("audit_log").select("reason, after").eq("action", "purge.demo");
     expect(audit.data?.some((a) => a.reason === REASON)).toBe(true);
     // the audit log itself and lineage of real projects are intact
-    expect((await svc.from("lineage_events").select("id").eq("project_id", realProject)).data!.length).toBeGreaterThan(0);
+    expect((await svc.from("lineage_events").select("id").eq("project_id", realProject)).data!.length).toBeGreaterThan(
+      0,
+    );
   });
 });

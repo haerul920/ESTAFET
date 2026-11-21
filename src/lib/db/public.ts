@@ -61,4 +61,3 @@ export async function getTeaserLineage(projectId: string): Promise<TeaserLineage
   if (error) throw new Error(`Could not load lineage: ${error.message}`);
   return (data ?? []) as TeaserLineageEvent[];
 }
-

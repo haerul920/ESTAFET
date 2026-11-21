@@ -38,7 +38,9 @@ export function PublicationControls({
         <Badge tone={TONE[status]}>{t(`pub.${status}`)}</Badge>
       </div>
       <p className="m-0 text-[15px] text-text-3">{t(`pub.${status}Text`)}</p>
-      {moderated ? <p className="m-0 rounded-[14px] bg-warn-bg p-3 text-sm text-warn-ink">{t("pub.moderated")}</p> : null}
+      {moderated ? (
+        <p className="m-0 rounded-[14px] bg-warn-bg p-3 text-sm text-warn-ink">{t("pub.moderated")}</p>
+      ) : null}
 
       <div className="flex flex-wrap gap-3">
         {status === "draft" ? (

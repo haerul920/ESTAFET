@@ -7,12 +7,19 @@ function tag(locale: string): string {
 
 export function formatDate(iso: string | null | undefined, locale: string): string {
   if (!iso) return "";
-  return new Intl.DateTimeFormat(tag(locale), { day: "numeric", month: "short", year: "numeric", timeZone: TIME_ZONE }).format(new Date(iso));
+  return new Intl.DateTimeFormat(tag(locale), {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: TIME_ZONE,
+  }).format(new Date(iso));
 }
 
 export function formatMonthYear(iso: string | null | undefined, locale: string): string {
   if (!iso) return "";
-  return new Intl.DateTimeFormat(tag(locale), { month: "short", year: "numeric", timeZone: TIME_ZONE }).format(new Date(iso));
+  return new Intl.DateTimeFormat(tag(locale), { month: "short", year: "numeric", timeZone: TIME_ZONE }).format(
+    new Date(iso),
+  );
 }
 
 /** Date and time with the zone, used as the absolute value behind a relative time. */

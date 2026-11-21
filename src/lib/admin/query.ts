@@ -22,8 +22,17 @@ export interface QueryConfig {
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 /** Reads one of the admin_* views with URL-driven filters, sort and paging. The view itself enforces is_admin(). */
-export async function queryView<Row>(view: string, sp: SearchParams, cfg: QueryConfig): Promise<{ rows: Row[]; total: number; params: TableParams }> {
-  const params = parseTableParams(sp, { sortable: cfg.sortable, defaultSort: cfg.defaultSort, defaultDir: cfg.defaultDir, pageSize: cfg.pageSize });
+export async function queryView<Row>(
+  view: string,
+  sp: SearchParams,
+  cfg: QueryConfig,
+): Promise<{ rows: Row[]; total: number; params: TableParams }> {
+  const params = parseTableParams(sp, {
+    sortable: cfg.sortable,
+    defaultSort: cfg.defaultSort,
+    defaultDir: cfg.defaultDir,
+    pageSize: cfg.pageSize,
+  });
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let q: any = supabase.from(view).select("*", { count: "exact" });

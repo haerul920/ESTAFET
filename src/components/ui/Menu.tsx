@@ -7,7 +7,15 @@ import { cn } from "@/lib/cn";
 export const Menu = DM.Root;
 export const MenuTrigger = DM.Trigger;
 
-export function MenuContent({ className, children, align = "end" }: { className?: string; children: React.ReactNode; align?: "start" | "center" | "end" }) {
+export function MenuContent({
+  className,
+  children,
+  align = "end",
+}: {
+  className?: string;
+  children: React.ReactNode;
+  align?: "start" | "center" | "end";
+}) {
   return (
     <DM.Portal>
       <DM.Content

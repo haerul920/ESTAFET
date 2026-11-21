@@ -24,7 +24,12 @@ async function confirmDialog(page: Page, confirmName: string, opts: { reason?: s
   if (opts.phrase) await dialog.getByLabel(/Type .* to confirm/).fill(opts.phrase);
   await dialog.getByRole("button", { name: confirmName, exact: true }).click();
   const pw = dialog.getByLabel("Confirm your password");
-  if (await pw.waitFor({ state: "visible", timeout: 4000 }).then(() => true, () => false)) {
+  if (
+    await pw.waitFor({ state: "visible", timeout: 4000 }).then(
+      () => true,
+      () => false,
+    )
+  ) {
     await pw.fill(PASSWORD);
     await dialog.getByRole("button", { name: "Confirm and continue" }).click();
   }
@@ -41,7 +46,9 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
   await visitor.page.getByLabel("Reason").selectOption("false_information");
   await visitor.page.getByLabel("What is wrong?").fill("E2E: the summary says more than the files support.");
   await visitor.page.getByRole("button", { name: "Send report" }).click();
-  await expect(visitor.page.getByText(/Your report was sent to the ESTAFET team. Reference code: LP-[0-9A-F]{8}/)).toBeVisible();
+  await expect(
+    visitor.page.getByText(/Your report was sent to the ESTAFET team. Reference code: LP-[0-9A-F]{8}/),
+  ).toBeVisible();
   await visitor.context.close();
 
   // 2. The admin opens it and hides the project with a reason.
@@ -98,7 +105,18 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
 
 test("the admin area is invisible to guests and normal users (404)", async ({ browser }) => {
   const guest = await fresh(browser);
-  for (const path of ["/admin", "/admin/projects", "/admin/reports", "/admin/users", "/admin/pipeline", "/admin/consents", "/admin/requests", "/admin/trials", "/admin/audit", "/admin/settings"]) {
+  for (const path of [
+    "/admin",
+    "/admin/projects",
+    "/admin/reports",
+    "/admin/users",
+    "/admin/pipeline",
+    "/admin/consents",
+    "/admin/requests",
+    "/admin/trials",
+    "/admin/audit",
+    "/admin/settings",
+  ]) {
     expect((await guest.page.goto(path))?.status(), path).toBe(404);
   }
   expect((await guest.page.request.get("/api/admin/trials/export")).status()).toBe(404);
@@ -120,9 +138,15 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
 
   // Every page opens with its heading and the shell.
   const pages: [string, string][] = [
-    ["/admin", "Overview"], ["/admin/projects", "Projects"], ["/admin/reports", "Reports"], ["/admin/users", "Users"],
-    ["/admin/pipeline", "Pipeline"], ["/admin/requests", "Requests"],
-    ["/admin/trials", "Onboarding trials"], ["/admin/audit", "Audit log"], ["/admin/settings", "Settings"],
+    ["/admin", "Overview"],
+    ["/admin/projects", "Projects"],
+    ["/admin/reports", "Reports"],
+    ["/admin/users", "Users"],
+    ["/admin/pipeline", "Pipeline"],
+    ["/admin/requests", "Requests"],
+    ["/admin/trials", "Onboarding trials"],
+    ["/admin/audit", "Audit log"],
+    ["/admin/settings", "Settings"],
   ];
   for (const [path, heading] of pages) {
     expect((await a.goto(path))?.status(), path).toBe(200);

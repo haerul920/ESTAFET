@@ -36,16 +36,36 @@
 }
 
 /* The only z-index utilities. Ad hoc values are rejected by tests/unit/layering.test.ts. */
-@utility z-base { z-index: var(--z-base); }
-@utility z-raised { z-index: var(--z-raised); }
-@utility z-sticky { z-index: var(--z-sticky); }
-@utility z-nav { z-index: var(--z-nav); }
-@utility z-dropdown { z-index: var(--z-dropdown); }
-@utility z-drawer { z-index: var(--z-drawer); }
-@utility z-overlay { z-index: var(--z-overlay); }
-@utility z-modal { z-index: var(--z-modal); }
-@utility z-toast { z-index: var(--z-toast); }
-@utility z-system-banner { z-index: var(--z-system-banner); }
+@utility z-base {
+  z-index: var(--z-base);
+}
+@utility z-raised {
+  z-index: var(--z-raised);
+}
+@utility z-sticky {
+  z-index: var(--z-sticky);
+}
+@utility z-nav {
+  z-index: var(--z-nav);
+}
+@utility z-dropdown {
+  z-index: var(--z-dropdown);
+}
+@utility z-drawer {
+  z-index: var(--z-drawer);
+}
+@utility z-overlay {
+  z-index: var(--z-overlay);
+}
+@utility z-modal {
+  z-index: var(--z-modal);
+}
+@utility z-toast {
+  z-index: var(--z-toast);
+}
+@utility z-system-banner {
+  z-index: var(--z-system-banner);
+}
 
 html {
   scroll-behavior: smooth;

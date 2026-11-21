@@ -59,16 +59,30 @@ export default async function ProjectSettingsPage({ params }: { params: Promise<
           <h1 className="mb-2 mt-0 text-4xl font-medium max-sm:text-[28px]">{t("title")}</h1>
           <p className="m-0 max-w-[620px] text-text-2">{t("lead")}</p>
         </div>
-        <ButtonLink href={published ? `/projects/${project.slug}?as=visitor` : `/bagikan/${project.id}/terbit`} variant="outline">
+        <ButtonLink
+          href={published ? `/projects/${project.slug}?as=visitor` : `/bagikan/${project.id}/terbit`}
+          variant="outline"
+        >
           {t("previewVisitor")}
         </ButtonLink>
       </div>
 
       <div className="flex flex-col gap-6">
-        <PublicationControls projectId={project.id} slug={project.slug} status={project.status} moderated={moderated} resumeHref={resumeHref} />
+        <PublicationControls
+          projectId={project.id}
+          slug={project.slug}
+          status={project.status}
+          moderated={moderated}
+          resumeHref={resumeHref}
+        />
 
         {project.status === "archived" ? null : (
-          <AccessSettings projectId={project.id} mode={project.access_mode} max={project.max_active_adopters} watchers={data.watchers} />
+          <AccessSettings
+            projectId={project.id}
+            mode={project.access_mode}
+            max={project.max_active_adopters}
+            watchers={data.watchers}
+          />
         )}
 
         <TeamControls
@@ -76,7 +90,12 @@ export default async function ProjectSettingsPage({ params }: { params: Promise<
           currentUserId={user.id}
           isPrimaryOwner={data.isPrimaryOwner}
           transfer={data.transfer}
-          team={data.team.map((m) => ({ profile_id: m.profile_id, full_name: m.full_name, role: m.role, status: m.status }))}
+          team={data.team.map((m) => ({
+            profile_id: m.profile_id,
+            full_name: m.full_name,
+            role: m.role,
+            status: m.status,
+          }))}
         />
 
         <RequestInbox

@@ -16,18 +16,46 @@ beforeAll(async () => {
   // The owner makes a draft through the normal RLS path.
   const { data, error } = await owner.client
     .from("projects")
-    .insert({ title: `DB Rules ${Date.now()}`, summary: "x".repeat(40), kind: "research", field: "Engineering", year: 2025, stop_reason: "other", advisor_name: "Dr. A", advisor_email: "a@example.test", created_by: owner.id })
+    .insert({
+      title: `DB Rules ${Date.now()}`,
+      summary: "x".repeat(40),
+      kind: "research",
+      field: "Engineering",
+      year: 2025,
+      stop_reason: "other",
+      advisor_name: "Dr. A",
+      advisor_email: "a@example.test",
+      created_by: owner.id,
+    })
     .select("id")
     .single();
   if (error) throw error;
   projectId = data.id;
 
   // A private file and one pending task (the service role stands in for the upload route).
-  const f = await svc.from("project_files").insert({ project_id: projectId, kind: "markdown", storage_path: "x/y.md", original_name: "notes.md", created_by: owner.id }).select("id").single();
+  const f = await svc
+    .from("project_files")
+    .insert({
+      project_id: projectId,
+      kind: "markdown",
+      storage_path: "x/y.md",
+      original_name: "notes.md",
+      created_by: owner.id,
+    })
+    .select("id")
+    .single();
   fileId = f.data!.id;
   const t = await svc
     .from("draft_items")
-    .insert({ project_id: projectId, kind: "next_task", title: "A task", effort: "small", evidence: [{ file_id: fileId, page: 1, quote: "q" }], evidence_status: "matched", review_status: "pending" })
+    .insert({
+      project_id: projectId,
+      kind: "next_task",
+      title: "A task",
+      effort: "small",
+      evidence: [{ file_id: fileId, page: 1, quote: "q" }],
+      evidence_status: "matched",
+      review_status: "pending",
+    })
     .select("id")
     .single();
   taskId = t.data!.id;
@@ -90,7 +118,10 @@ describe("private files", () => {
 describe("lineage is append-only", () => {
   it("rejects update and delete, even for the service role", async () => {
     const { data } = await svc.from("lineage_events").select("id").eq("project_id", projectId).limit(1).single();
-    const upd = await svc.from("lineage_events").update({ payload: { hacked: true } }).eq("id", data!.id);
+    const upd = await svc
+      .from("lineage_events")
+      .update({ payload: { hacked: true } })
+      .eq("id", data!.id);
     expect(upd.error?.message).toMatch(/append-only/);
     const del = await svc.from("lineage_events").delete().eq("id", data!.id);
     expect(del.error?.message).toMatch(/append-only/);
