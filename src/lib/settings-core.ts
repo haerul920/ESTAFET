@@ -10,6 +10,8 @@ export const SETTING_KEYS = [
   "show_demo_banner",
   "registrations_open",
   "contact_email",
+  "request_expiry_days",
+  "reapply_cooldown_days",
 ] as const;
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
@@ -21,6 +23,8 @@ export const SETTING_SCHEMAS = {
   show_demo_banner: z.boolean(),
   registrations_open: z.boolean(),
   contact_email: z.union([z.literal(""), z.string().trim().email("Enter a valid email address.")]),
+  request_expiry_days: z.number().int("Use a whole number.").min(1, "At least 1 day.").max(180, "At most 180 days."),
+  reapply_cooldown_days: z.number().int("Use a whole number.").min(0, "Zero turns the cooldown off.").max(90, "At most 90 days."),
 } satisfies Record<SettingKey, z.ZodType>;
 
 export interface SettingValues {
@@ -31,6 +35,8 @@ export interface SettingValues {
   show_demo_banner: boolean;
   registrations_open: boolean;
   contact_email: string;
+  request_expiry_days: number;
+  reapply_cooldown_days: number;
 }
 
 export interface EffectiveSetting<T> {
@@ -57,6 +63,8 @@ export function envDefaults(env: Record<string, string | undefined>): { [K in Se
     show_demo_banner: { value: true, fromEnv: false },
     registrations_open: { value: true, fromEnv: false },
     contact_email: { value: env.CONTACT_EMAIL ?? "", fromEnv: Boolean(env.CONTACT_EMAIL) },
+    request_expiry_days: { value: num(env.REQUEST_EXPIRY_DAYS, 30), fromEnv: Boolean(env.REQUEST_EXPIRY_DAYS) },
+    reapply_cooldown_days: { value: env.REAPPLY_COOLDOWN_DAYS !== undefined && env.REAPPLY_COOLDOWN_DAYS !== "" && Number.isFinite(Number(env.REAPPLY_COOLDOWN_DAYS)) ? Number(env.REAPPLY_COOLDOWN_DAYS) : 7, fromEnv: Boolean(env.REAPPLY_COOLDOWN_DAYS) },
   };
 }
 

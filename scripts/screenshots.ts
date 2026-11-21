@@ -11,7 +11,7 @@ async function login(page: import("@playwright/test").Page, email: string) {
   await page.getByLabel("University email").fill(email);
   await page.getByLabel("Password").fill("Demo-Pass-2026!");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL("**/dashboard");
+  await page.waitForURL("**/dasbor");
 }
 
 async function shot(page: import("@playwright/test").Page, name: string, url: string, full = true) {
@@ -43,7 +43,7 @@ async function main() {
   await shot(p, "04-login", "/login");
 
   await login(p, "creator@estafet.demo");
-  await shot(p, "05-dashboard", "/dashboard");
+  await shot(p, "05-dashboard", "/dasbor");
   await shot(p, "06-verify", "/share/b0000000-0000-4000-8000-000000000007/verify");
   await shot(p, "07-files", "/share/b0000000-0000-4000-8000-000000000007/files");
   await shot(p, "08-consent-step", "/share/b0000000-0000-4000-8000-000000000008/consent");

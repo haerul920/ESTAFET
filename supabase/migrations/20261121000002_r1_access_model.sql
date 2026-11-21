@@ -899,6 +899,53 @@ begin
     jsonb_build_object('key', p_key, 'value', v_before), jsonb_build_object('key', p_key, 'value', p_value));
 end $$;
 
+-- Admin read and consent functions that used the old roles and statuses.
+create or replace function public.admin_regenerate_consent(p_project uuid, p_token_hash text, p_expires timestamptz, p_reason text)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare v_id uuid;
+begin
+  perform public.assert_admin();
+  perform public.require_reason(p_reason);
+  update public.advisor_consents set status = 'withdrawn', decided_at = now() where project_id = p_project and status = 'pending';
+  insert into public.advisor_consents (project_id, token_hash, expires_at) values (p_project, p_token_hash, p_expires) returning id into v_id;
+  update public.projects set advisor_mode = 'advisor', no_advisor_declared_at = null where id = p_project;
+  perform public.write_audit('consent.regenerate', 'project', p_project, p_reason, null, jsonb_build_object('consent_id', v_id, 'expires_at', p_expires));
+  return v_id;
+end $$;
+
+create or replace function public.admin_project_detail(p_id uuid) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare v jsonb;
+begin
+  perform public.assert_admin();
+  select jsonb_build_object(
+    'project', to_jsonb(p) - 'advisor_email',
+    'creators', (select coalesce(jsonb_agg(jsonb_build_object('id', pr.id, 'name', pr.full_name)), '[]'::jsonb)
+                 from public.project_members m join public.profiles pr on pr.id = m.profile_id where m.project_id = p.id and m.status = 'active'),
+    'items', (select coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'title', i.title, 'effort', i.effort,
+                 'objective_status', i.objective_status) order by i.position), '[]'::jsonb)
+              from public.draft_items i where i.project_id = p.id and i.review_status = 'kept'),
+    'evidence', jsonb_build_object(
+      'matched', (select count(*) from public.draft_items i where i.project_id = p.id and i.evidence_status = 'matched' and i.origin = 'ai'),
+      'partial', (select count(*) from public.draft_items i where i.project_id = p.id and i.evidence_status = 'partial' and i.origin = 'ai'),
+      'not_found', (select count(*) from public.draft_items i where i.project_id = p.id and i.evidence_status = 'not_found' and i.origin = 'ai')),
+    'files', (select coalesce(jsonb_agg(jsonb_build_object('id', f.id, 'name', f.original_name, 'kind', f.kind, 'size_bytes', f.size_bytes,
+                'page_count', f.page_count, 'skipped', jsonb_array_length(f.skipped_sensitive), 'status', f.ingest_status,
+                'stored', f.storage_path <> '') order by f.created_at), '[]'::jsonb) from public.project_files f where f.project_id = p.id),
+    'requests', (select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'team', r.adopter_team_name, 'status', r.status, 'created_at', r.created_at)
+                 order by r.created_at desc), '[]'::jsonb) from public.continuation_requests r where r.project_id = p.id),
+    'consent', (select to_jsonb(c) - 'token_hash' from public.advisor_consents c where c.project_id = p.id
+                order by (c.status = 'approved') desc, c.created_at desc limit 1),
+    'lineage', (select coalesce(jsonb_agg(jsonb_build_object('id', e.id, 'type', e.type, 'created_at', e.created_at) order by e.created_at), '[]'::jsonb)
+                from public.lineage_events e where e.project_id = p.id),
+    'audit', (select coalesce(jsonb_agg(x order by x.created_at desc), '[]'::jsonb) from
+              (select a.id, a.action, a.reason, a.created_at, coalesce(pr.full_name, 'System') as actor_name
+               from public.audit_log a left join public.profiles pr on pr.id = a.actor_id
+               where a.target_id = p.id or a.after ->> 'project_id' = p.id::text order by a.created_at desc limit 25) x)
+  ) into v from public.projects p where p.id = p_id;
+  return v;
+end $$;
+
 -- ---------------------------------------------------------------------------
 -- 15. Views (public teaser and admin read side), re-created for the new model
 -- ---------------------------------------------------------------------------

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Check, Circle, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { CopyLinkButton } from "./CopyLinkButton";
-import type { PublishChecklist as Checklist } from "@/lib/db/creator";
+import type { PublishChecklist as Checklist } from "@/lib/db/owner";
 import { cn } from "@/lib/cn";
 
 function Mark({ state }: { state: "done" | "warn" | "todo" }) {
@@ -37,17 +37,19 @@ export function PublishChecklist({
   advisorEmail: string;
   step: string;
 }) {
-  const { team, advisor, review } = checklist;
+  const { team, advisor, review, policies } = checklist;
   const advisorText =
-    advisor.status === "approved"
-      ? "Advisor approved"
-      : advisor.status === "declined"
-        ? "Advisor said not now"
-        : advisor.status === "withdrawn"
-          ? "Advisor approval withdrawn"
-          : advisor.status === "pending"
-            ? "Advisor approval pending"
-            : "Advisor approval not requested";
+    advisor.status === "not_needed"
+      ? "No advisor declared"
+      : advisor.status === "approved"
+        ? "Advisor approved"
+        : advisor.status === "declined"
+          ? "Advisor said not now"
+          : advisor.status === "withdrawn"
+            ? "Advisor approval withdrawn"
+            : advisor.status === "pending"
+              ? "Advisor approval pending"
+              : "Advisor approval not requested";
 
   return (
     <Card as="aside" aria-label="Before you can publish">
@@ -80,8 +82,8 @@ export function PublishChecklist({
               {advisor.done
                 ? "Publishing is unlocked on this side."
                 : advisor.status === "pending"
-                  ? `Share the private link with ${advisorEmail || "your advisor"}. Publishing stays locked until they approve.`
-                  : "Publishing stays locked until your advisor approves."}
+                  ? `Share the private link with ${advisorEmail || "your advisor"}. Publishing stays locked until they approve. You can keep working meanwhile.`
+                  : "Publishing stays locked until your advisor approves, or you declare that there is no advisor."}
             </span>
             {!advisor.done ? (
               <>
@@ -101,6 +103,14 @@ export function PublishChecklist({
                 ? "Next step: upload files and draft items."
                 : `${review.reviewed} of ${review.total} items reviewed`}
             </span>
+          </span>
+        </li>
+        <li className="flex gap-3">
+          <Mark state={policies.done ? "done" : "warn"} />
+          <span>
+            <strong>{policies.done ? "Terms and Privacy Policy accepted" : "Terms and Privacy Policy not accepted yet"}</strong>
+            <br />
+            <span className="text-sm text-text-2">{policies.done ? "You can publish once the other steps are done." : "You accept them on the last step, before publishing."}</span>
           </span>
         </li>
       </ul>

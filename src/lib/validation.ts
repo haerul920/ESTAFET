@@ -28,7 +28,7 @@ export function formValues(fd: FormData): Record<string, string> {
 }
 
 /** Only allow same-site relative redirects. */
-export function safeNext(next: string | null | undefined, fallback = "/dashboard"): string {
+export function safeNext(next: string | null | undefined, fallback = "/dasbor"): string {
   if (!next) return fallback;
   if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return fallback;
   return next;

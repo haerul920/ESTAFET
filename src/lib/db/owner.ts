@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   AdvisorConsent,
+  AdvisorMode,
   DraftItem,
   Project,
   ProjectFile,
@@ -25,28 +26,31 @@ export interface SourceView {
 }
 
 export interface PublishChecklist {
+  /** Active members only. People who were invited but have not accepted do not count. */
   team: { confirmed: number; total: number; done: boolean };
-  advisor: { status: AdvisorConsent["status"] | "none"; done: boolean; expiresAt: string | null };
+  advisor: { status: AdvisorConsent["status"] | "none" | "not_needed"; done: boolean; expiresAt: string | null; mode: AdvisorMode };
   review: { reviewed: number; total: number; kept: number; done: boolean };
+  policies: { done: boolean };
   canPublish: boolean;
 }
 
-/** The project row if the signed-in user is one of its creators (RLS + membership), otherwise null. */
-export async function getCreatorProject(id: string): Promise<Project | null> {
+/** The project row if the signed-in user is one of its owners (RLS + membership), otherwise null. */
+export async function getOwnedProject(id: string): Promise<Project | null> {
   const supabase = await createClient();
-  const { data: ok } = await supabase.rpc("is_project_creator", { pid: id });
+  const { data: ok } = await supabase.rpc("is_project_owner", { pid: id });
   if (ok !== true) return null;
   const { data } = await supabase.from("projects").select("*").eq("id", id).maybeSingle();
   return (data as Project | null) ?? null;
 }
 
+/** Active owners and pending invitations, oldest first. */
 export async function getTeam(projectId: string): Promise<(ProjectMember & { full_name: string })[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("project_members")
-    .select("project_id, profile_id, role, consented_at")
+    .select("project_id, profile_id, role, status, consented_at")
     .eq("project_id", projectId)
-    .eq("role", "creator")
+    .in("status", ["active", "invited"])
     .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as ProjectMember[];
@@ -102,21 +106,34 @@ export async function getLatestRun(projectId: string): Promise<(SynthesisRun & {
 }
 
 export function buildChecklist(
-  team: { consented_at: string | null }[],
+  team: { consented_at: string | null; status?: string }[],
   consent: AdvisorConsent | null,
   items: DraftItem[],
+  extra: { advisorMode: AdvisorMode; noAdvisorDeclared: boolean; policiesAccepted: boolean } = {
+    advisorMode: "advisor",
+    noAdvisorDeclared: false,
+    policiesAccepted: true,
+  },
 ): PublishChecklist {
-  const confirmed = team.filter((m) => m.consented_at).length;
+  const active = team.filter((m) => (m.status ?? "active") === "active");
+  const confirmed = active.filter((m) => m.consented_at).length;
   const reviewed = items.filter((i) => i.review_status !== "pending").length;
   const kept = items.filter((i) => i.review_status === "kept").length;
-  const teamDone = team.length > 0 && confirmed === team.length;
-  const advisorDone = consent?.status === "approved";
+  const teamDone = active.length > 0 && confirmed === active.length;
+  const noAdvisor = extra.advisorMode === "none" && extra.noAdvisorDeclared;
+  const advisorDone = noAdvisor || (extra.advisorMode === "advisor" && consent?.status === "approved");
   const reviewDone = items.length > 0 && reviewed === items.length && kept > 0;
   return {
-    team: { confirmed, total: team.length, done: teamDone },
-    advisor: { status: consent?.status ?? "none", done: advisorDone, expiresAt: consent?.expires_at ?? null },
+    team: { confirmed, total: active.length, done: teamDone },
+    advisor: {
+      status: noAdvisor ? "not_needed" : (consent?.status ?? "none"),
+      done: advisorDone,
+      expiresAt: consent?.expires_at ?? null,
+      mode: extra.advisorMode,
+    },
     review: { reviewed, total: items.length, kept, done: reviewDone },
-    canPublish: teamDone && advisorDone && reviewDone,
+    policies: { done: extra.policiesAccepted },
+    canPublish: teamDone && advisorDone && reviewDone && extra.policiesAccepted,
   };
 }
 
@@ -173,11 +190,10 @@ export async function buildSourceViews(items: DraftItem[], files: ProjectFile[])
   return out;
 }
 
-/** The step the wizard should resume at, based on what is already done. */
-export function resumeStep(project: Project, hasFiles: boolean, hasItems: boolean): string {
-  if (project.status === "published" || project.status === "adopted") return "publish";
+/** The step the wizard should resume at, based on what is already done (not on a stored status). */
+export function resumeStep(project: Pick<Project, "status" | "title" | "summary">, hasFiles: boolean, hasItems: boolean): string {
+  if (project.status !== "draft") return "publish";
   if (!project.title || !project.summary) return "basics";
-  if (project.status === "draft" || project.status === "awaiting_advisor") return hasFiles ? "files" : "consent";
-  if (project.status === "verifying") return hasItems ? "verify" : "files";
-  return "basics";
+  if (hasItems) return "verify";
+  return hasFiles ? "files" : "consent";
 }

@@ -115,6 +115,45 @@ describe("admin can work", () => {
     expect((await admin.client.from("admin_projects_v").select("id").eq("id", projectId)).data).toHaveLength(1);
   });
 
+  it("the read functions work with the owner and member model", async () => {
+    const detail = await admin.client.rpc("admin_project_detail", { p_id: projectId });
+    expect(detail.error).toBeNull();
+    expect((detail.data as { creators: { id: string }[] }).creators.map((c) => c.id)).toEqual([creator.id]);
+    const user = await admin.client.rpc("admin_user_detail", { p_id: creator.id });
+    expect(user.error).toBeNull();
+    expect((user.data as { projects: unknown[] }).projects).toHaveLength(1);
+    expect((await admin.client.rpc("admin_search", { p_q: "Admin Rules" })).error).toBeNull();
+    const users = await admin.client.from("admin_users_v").select("projects_count").eq("id", creator.id).single();
+    expect(users.data!.projects_count).toBe(1);
+  });
+
+  it("regenerating an advisor link does not depend on the old statuses", async () => {
+    const r = await admin.client.rpc("admin_regenerate_consent", {
+      p_project: projectId,
+      p_token_hash: `regen-${stamp}`,
+      p_expires: new Date(Date.now() + 864e5).toISOString(),
+      p_reason: "Testing the regenerate function with a long reason.",
+    });
+    expect(r.error).toBeNull();
+    const { data } = await svc.from("projects").select("advisor_mode").eq("id", projectId).single();
+    expect(data!.advisor_mode).toBe("advisor");
+  });
+
+  it("an admin can revoke access, and it is audited", async () => {
+    const holder = await makeUser("holder");
+    try {
+      await svc.from("projects").update({ access_mode: "open" }).eq("id", projectId);
+      expect((await holder.client.rpc("take_access", { p_project_id: projectId, p_agreement_version: 1 })).error).toBeNull();
+      const { data: row } = await svc.from("project_access").select("id").eq("project_id", projectId).eq("profile_id", holder.id).single();
+      const r = await admin.client.rpc("revoke_access", { p_access: row!.id, p_reason: "An admin revoked this in a test, with a reason." });
+      expect(r.error).toBeNull();
+      const audit = await svc.from("audit_log").select("action").eq("target_id", row!.id).eq("action", "access.revoke");
+      expect(audit.data).toHaveLength(1);
+    } finally {
+      await svc.auth.admin.deleteUser(holder.id).catch(() => undefined);
+    }
+  });
+
   it.each(ADMIN_VIEWS)("view %s is readable by an admin without errors", async (v) => {
     const r = await admin.client.from(v).select("*").limit(3);
     expect(r.error, v).toBeNull();

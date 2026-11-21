@@ -1,0 +1,76 @@
+# Continuous integration (phase R1 skeleton). Later phases add the i18n key check (R2) and the overlap audit (R3).
+# NOTE: this workflow has not been run on GitHub yet. It mirrors the commands that pass locally.
+name: CI
+
+on:
+  push:
+    branches: [main, "release/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, types, unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # High and critical advisories fail the build. Moderate ones are reviewed by hand.
+      - run: pnpm audit --audit-level=high
+
+  database:
+    name: Database tests (local Supabase)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start the local stack
+        run: supabase start -x imgproxy,edge-runtime,logflare,vector,supavisor,mailpit
+      - name: Write .env.localstack from the running stack
+        run: |
+          supabase status -o env > status.env
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$(grep '^API_URL=' status.env | cut -d= -f2- | tr -d '\"')"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(grep '^ANON_KEY=' status.env | cut -d= -f2- | tr -d '\"')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(grep '^SERVICE_ROLE_KEY=' status.env | cut -d= -f2- | tr -d '\"')"
+            echo "LLM_PROVIDER=mock"
+            echo "APP_ENV=LOCAL"
+          } > .env.localstack
+      - run: supabase db reset
+      - run: pnpm test:db
+      - name: Migration dry run on legacy-shaped data
+        run: node scripts/migrate-r1-dry-run.mjs

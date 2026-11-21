@@ -162,8 +162,12 @@ export function TeaserContent({
                   </p>
                 ) : (
                   <p className="m-0 text-text-2">
-                    The proposal, the final report, the notes and the code folder tree are locked. They open for you after
-                    the creators approve your request.
+                    The proposal, the final report, the notes and the code folder tree are locked.{" "}
+                    {project.access_mode === "open"
+                      ? "They open for you right after you accept the attribution agreement."
+                      : project.access_mode === "paused"
+                        ? "The owners paused new access for now."
+                        : "They open for you after the owners approve your request and you accept the attribution agreement."}
                   </p>
                 )}
               </div>

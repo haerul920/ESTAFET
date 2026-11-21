@@ -4,10 +4,11 @@ ESTAFET uses Supabase (Postgres + Auth + Storage). The whole database is plain S
 
 | File | What it is |
 |---|---|
-| `supabase/migrations/20261119000001_schema.sql` | Enums, 12 tables, state-rule functions, RLS policies, public views, storage buckets |
+| `supabase/migrations/20261119000001_schema.sql` | Enums, tables, state-rule functions, RLS policies, public views, storage buckets |
 | `supabase/migrations/20261120000001_admin.sql` | Admin area: reports, audit log, settings, trial sessions, break glass, `is_admin()`, `admin_*` functions, admin views, moderation columns |
+| `supabase/migrations/20261121000001_r1_enum_additions.sql`, `20261121000002_r1_access_model.sql` | Release R1: owners and co-owners, `project_access`, access modes and team quota, lifecycle, policy acceptance. See `docs/migrations-r1.md` |
 | `supabase/seed.sql` | Demo data (all `is_demo = true`): 3 demo users, 8 projects, items with evidence, 2 requests |
-| `supabase/setup-all.sql` | The two files above in one file, for pasting into the SQL Editor |
+| `supabase/setup-all.sql` | The migrations and the seed in one generated file (`node scripts/build-setup-all.mjs`), for pasting into the SQL Editor |
 | `scripts/seed-storage.ts` | Uploads the demo files to Storage (SQL cannot upload file bytes) |
 | `scripts/seed-admin.ts` | Creates the demo admin (only when `SEED_DEMO=true`; refuses non-local targets) |
 
@@ -44,7 +45,7 @@ Demo data is synthetic. Do not seed a production project that real students use.
 Run these in the SQL Editor (or `docker exec supabase_db_estafet psql -U postgres -c "..."`).
 
 ```sql
--- 1. All 12 tables exist and every one has RLS on (expect 12 rows, rowsecurity = true)
+-- 1. All tables exist and every one has RLS on (expect 12 rows, rowsecurity = true)
 select tablename, rowsecurity from pg_tables where schemaname = 'public' order by 1;
 
 -- 2. Policies per table

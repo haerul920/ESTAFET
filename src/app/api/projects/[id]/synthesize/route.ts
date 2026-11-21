@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { getCreatorProject } from "@/lib/db/creator";
+import { getOwnedProject } from "@/lib/db/owner";
 import { runSynthesis } from "@/lib/synthesis";
 
 export const runtime = "nodejs";
@@ -13,7 +13,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   if (user.suspended) return NextResponse.json({ error: "Your account is suspended." }, { status: 403 });
 
-  const project = await getCreatorProject(projectId);
+  const project = await getOwnedProject(projectId);
   if (!project) return NextResponse.json({ error: "You can only run this on your own projects." }, { status: 403 });
 
   const result = await runSynthesis(projectId, user.id);

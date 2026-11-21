@@ -145,6 +145,8 @@ const SETTING_INPUT: Record<SettingKey, (raw: string | boolean) => unknown> = {
   show_demo_banner: (r) => r === true || r === "true",
   registrations_open: (r) => r === true || r === "true",
   contact_email: (r) => String(r).trim(),
+  request_expiry_days: (r) => Number(r),
+  reapply_cooldown_days: (r) => Number(r),
 };
 
 export async function updateSetting(key: string, raw: string | boolean, reason: string): Promise<ActionResult> {

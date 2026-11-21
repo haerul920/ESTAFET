@@ -16,13 +16,13 @@ const s = StyleSheet.create({
 
 export interface AgreementPdfData {
   projectTitle: string;
-  creators: string[];
+  owners: string[];
   advisor: string;
   adopterTeam: string;
   adopters: string[];
   tasks: string[];
-  creatorAccepted: { name: string; at: string }[];
-  adopterAccepted: { name: string; at: string }[];
+  /** Each person who accepted the agreement for themselves. Acceptance is per person. */
+  accepted: { name: string; at: string }[];
   lineageId: string;
   creditLine: string;
   isDemo: boolean;
@@ -44,8 +44,8 @@ export function AgreementDocument({ data }: { data: AgreementPdfData }) {
           <Text>{data.projectTitle}</Text>
         </View>
         <View style={s.row}>
-          <Text style={s.label}>Original creators</Text>
-          <Text>{data.creators.join(", ") || "Not listed"}</Text>
+          <Text style={s.label}>Project owners</Text>
+          <Text>{data.owners.join(", ") || "Not listed"}</Text>
         </View>
         <View style={s.row}>
           <Text style={s.label}>Advisor</Text>
@@ -72,14 +72,9 @@ export function AgreementDocument({ data }: { data: AgreementPdfData }) {
         ))}
 
         <Text style={s.h2}>Accepted by</Text>
-        {data.creatorAccepted.map((a, i) => (
-          <Text key={"c" + i}>
-            Creator: {a.name} · {a.at}
-          </Text>
-        ))}
-        {data.adopterAccepted.map((a, i) => (
+        {data.accepted.map((a, i) => (
           <Text key={"a" + i}>
-            Adopter: {a.name} · {a.at}
+            {a.name} · {a.at}
           </Text>
         ))}
 

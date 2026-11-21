@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageShell, Breadcrumb } from "@/components/ui/PageShell";
-import { Card } from "@/components/ui/Card";
-import { ButtonLink } from "@/components/ui/Button";
 import { TeaserContent } from "@/components/features/TeaserContent";
+import { ProjectCta, type CtaState } from "@/components/features/ProjectCta";
 import { getTeaserBySlug, getTeaserItems, getTeaserLineage } from "@/lib/db/public";
-import { canReadPrivate, isProjectCreator } from "@/lib/db/access";
+import { getMyAccess, isProjectOwner } from "@/lib/db/access";
 import { getCurrentUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { buildPublicLineage } from "@/lib/lineage";
 import { ReportProject } from "@/components/features/ReportProject";
+import type { TeaserProject } from "@/lib/db/types";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -23,58 +24,49 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+const quotaIsFull = (p: Pick<TeaserProject, "max_active_adopters" | "active_adopters">) =>
+  p.max_active_adopters !== null && p.active_adopters >= p.max_active_adopters;
+
+/** Decides what the visitor can do from their relationship to this project. No account type is involved. */
+async function ctaStateFor(project: TeaserProject): Promise<CtaState> {
+  const user = await getCurrentUser();
+  const full = quotaIsFull(project);
+  if (!user) return { kind: "guest", mode: project.access_mode, quotaFull: full };
+  if (await isProjectOwner(project.id)) return { kind: "owner" };
+
+  const access = await getMyAccess(project.id, user.id);
+  if (access?.status === "active") return { kind: "holder" };
+  if (access?.status === "revoked") return { kind: "revoked" };
+
+  const supabase = await createClient();
+  const { data: open } = await supabase
+    .from("continuation_requests")
+    .select("id, status")
+    .eq("project_id", project.id)
+    .eq("created_by", user.id)
+    .in("status", ["pending", "approved"])
+    .maybeSingle();
+  if (open) return { kind: "request", requestId: open.id as string, status: open.status as "pending" | "approved" };
+
+  if (project.access_mode === "paused") return { kind: "paused" };
+  if (full) return { kind: "quota_full" };
+  return project.access_mode === "open"
+    ? { kind: "open", verified: user.verified, email: user.email }
+    : { kind: "by_request", verified: user.verified, email: user.email };
+}
+
 export default async function ProjectTeaserPage({ params }: Params) {
   const { slug } = await params;
   const project = await getTeaserBySlug(slug);
   if (!project) notFound();
 
-  const [items, lineageEvents, user] = await Promise.all([
-    getTeaserItems(project.id),
-    getTeaserLineage(project.id),
-    getCurrentUser(),
-  ]);
-  const [creator, unlocked] = user
-    ? await Promise.all([isProjectCreator(project.id), canReadPrivate(project.id)])
-    : [false, false];
-
+  const [items, lineageEvents, state] = await Promise.all([getTeaserItems(project.id), getTeaserLineage(project.id), ctaStateFor(project)]);
+  const unlocked = state.kind === "owner" || state.kind === "holder";
   const workspace = `/projects/${project.slug}/workspace`;
+
   const cta = (
-    <Card tone="lime" className="flex flex-col gap-3">
-      {creator ? (
-        <>
-          <h2 className="m-0 text-xl">This is your project</h2>
-          <p className="m-0 text-[15px] text-text-2">Requests from other teams appear on your dashboard.</p>
-          <ButtonLink href="/dashboard" variant="outline">
-            Open dashboard
-          </ButtonLink>
-        </>
-      ) : unlocked ? (
-        <>
-          <h2 className="m-0 text-xl">Your team has access</h2>
-          <ButtonLink href={workspace} arrow>
-            Open workspace
-          </ButtonLink>
-        </>
-      ) : project.status === "adopted" ? (
-        <>
-          <h2 className="m-0 text-xl">Already being continued</h2>
-          <p className="m-0 text-[15px] text-text-2">Another team has taken over this project. You can still read the teaser.</p>
-        </>
-      ) : (
-        <>
-          <h2 className="m-0 text-xl">Want to continue this project?</h2>
-          <p className="m-0 text-[15px] text-text-2">Send a short plan. It takes about 5 minutes. Creators reply through ESTAFET.</p>
-          <ButtonLink href={`/projects/${project.slug}/request`} className="justify-center">
-            Request to continue
-          </ButtonLink>
-          <p className="m-0 text-[13px] text-text-2">Continuing means crediting the original team in your future submissions.</p>
-        </>
-      )}
-    </Card>
-  );
-  const ctaWithReport = (
     <div className="flex flex-col gap-4">
-      {cta}
+      <ProjectCta state={state} projectId={project.id} slug={project.slug} />
       <ReportProject projectId={project.id} />
     </div>
   );
@@ -86,7 +78,7 @@ export default async function ProjectTeaserPage({ params }: Params) {
         project={project}
         items={items}
         lineageSteps={buildPublicLineage(project, lineageEvents)}
-        cta={ctaWithReport}
+        cta={cta}
         unlockedHref={unlocked ? workspace : undefined}
       />
     </PageShell>

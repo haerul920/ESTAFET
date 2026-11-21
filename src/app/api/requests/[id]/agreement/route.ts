@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/labels";
 
 export const runtime = "nodejs";
 
-/** Agreement PDF. Only for people on the request, and only once both sides accepted. */
+/** Agreement PDF. Only for owners and people on the request, and only once somebody accepted the agreement. */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -18,8 +18,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
 
   const d = await getRequestDetail(id, user.id);
-  if (!d || (!d.isCreator && !d.isTeam)) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  if (!d.unlocked) return NextResponse.json({ error: "The agreement PDF is available after both sides accept." }, { status: 409 });
+  if (!d || (!d.isOwner && !d.isTeam)) return NextResponse.json({ error: "Not found." }, { status: 404 });
+  if (!d.unlocked) return NextResponse.json({ error: "The agreement PDF is available after someone accepts the agreement." }, { status: 409 });
 
   const { data: teamProfiles } = await supabase.from("profiles").select("full_name").eq("id", d.request.created_by);
   const adopters = [teamProfiles?.[0]?.full_name ?? d.requesterName, ...d.request.members.map((m) => m.email)];
@@ -29,15 +29,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     AgreementDocument({
       data: {
         projectTitle: d.project.title,
-        creators: d.creatorNames,
+        owners: d.ownerNames,
         advisor: d.project.advisor_name,
         adopterTeam: d.request.adopter_team_name,
         adopters,
         tasks: d.tasks.map((t) => t.title),
-        creatorAccepted: d.acceptances.filter((a) => a.side === "creator").map((a) => ({ name: a.name, at: formatDate(a.accepted_at) })),
-        adopterAccepted: d.acceptances.filter((a) => a.side === "adopter").map((a) => ({ name: a.name, at: formatDate(a.accepted_at) })),
+        accepted: d.holders.map((h) => ({ name: h.name, at: formatDate(h.acceptedAt) })),
         lineageId: d.request.id.slice(0, 8),
-        creditLine: creditLine({ title: d.project.title, creators: d.creatorNames, advisor: d.project.advisor_name, lineageId: d.request.id.slice(0, 8) }),
+        creditLine: creditLine({ title: d.project.title, creators: d.ownerNames, advisor: d.project.advisor_name, lineageId: d.request.id.slice(0, 8) }),
         isDemo: d.project.is_demo,
       },
     }),

@@ -37,8 +37,8 @@ export function StatusPill({ tone = "neutral", children }: { tone?: keyof typeof
 
 /** Maps common statuses to pill tones so every table reads the same way. */
 export function toneFor(status: string): keyof typeof PILL {
-  if (["ok", "published", "approved", "done", "resolved", "matched", "restored", "adopted", "mock"].includes(status)) return "ok";
-  if (["open", "pending", "in_review", "running", "queued", "verifying", "awaiting_advisor", "partial"].includes(status)) return "warn";
+  if (["ok", "published", "approved", "done", "resolved", "matched", "restored", "mock"].includes(status)) return "ok";
+  if (["open", "pending", "in_review", "running", "queued", "unpublished", "partial"].includes(status)) return "warn";
   if (["hidden", "removed", "failed", "declined", "not_found", "suspended", "expired"].includes(status)) return "danger";
   if (["live"].includes(status)) return "info";
   return "neutral";

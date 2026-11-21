@@ -9,7 +9,7 @@ async function login(page: Page, email: string) {
   await page.getByLabel("University email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL(/\/(dashboard|admin)/);
+  await page.waitForURL(/\/(dasbor|dashboard|admin|mulai)/);
 }
 
 async function fresh(browser: Browser) {
@@ -70,7 +70,7 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
   // 4. The creators get an in-app notification with the reason.
   const creator = await fresh(browser);
   await login(creator.page, "alumni@estafet.demo");
-  await creator.page.goto("/dashboard?tab=notifications");
+  await creator.page.goto("/dasbor");
   await expect(creator.page.getByText(/Fish Freshness Indicator was hidden from public view/)).toBeVisible();
   await expect(creator.page.getByText(REASON).first()).toBeVisible();
   await creator.context.close();
@@ -207,7 +207,7 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   await confirmDialog(a, "Restore access");
   await blocked.page.getByLabel("Password").fill(PASSWORD); // the form clears the password after a failed attempt
   await blocked.page.getByRole("button", { name: "Sign in" }).click();
-  await blocked.page.waitForURL("**/dashboard");
+  await blocked.page.waitForURL("**/dasbor");
   await blocked.context.close();
 
   // The audit log has every action above.

@@ -48,7 +48,7 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
       />
       <p className="mt-0 text-sm">
         <Link href="/admin/projects">All projects</Link>
-        {mod === "ok" && ["published", "adopted"].includes(p.status) ? <> · <Link href={`/projects/${p.slug}`}>View public teaser</Link></> : null}
+        {mod === "ok" && p.status === "published" ? <> · <Link href={`/projects/${p.slug}`}>View public teaser</Link></> : null}
       </p>
 
       <div className="grid items-start gap-4 lg:grid-cols-[1fr_380px]">
@@ -57,7 +57,7 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
             <KeyValueList
               items={[
                 { label: "Slug", value: <code className="font-code">{p.slug}</code> },
-                { label: "Creators", value: d.creators.map((c) => c.name).join(", ") || "—" },
+                { label: "Owners", value: d.creators.map((c) => c.name).join(", ") || "—" },
                 { label: "Advisor", value: p.advisor_name || "—" },
                 { label: "Published", value: p.published_at ? formatWita(p.published_at) : "Not published" },
                 { label: "Created", value: formatWita(p.created_at) },
@@ -136,7 +136,7 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
                 <ReasonAction
                   label="Restore"
                   tone="primary"
-                  consequence={<>The project becomes visible again if its status is published or adopted. The creators are told.</>}
+                  consequence={<>The project becomes visible again if its status is published. The owners are told.</>}
                   action={setProjectModeration.bind(null, id, "ok")}
                   undo={mod === "hidden" ? { action: setProjectModeration.bind(null, id, "hidden") } : undefined}
                   successMessage="Project restored."
