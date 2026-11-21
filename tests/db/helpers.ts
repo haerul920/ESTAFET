@@ -53,7 +53,7 @@ export interface Fixture {
   fileId: string;
 }
 
-/** A published project owned by `owner`: one file, one kept next task, advisor approved, team consented. */
+/** A published project owned by `owner`: one file, one kept next task, team consented. */
 export async function publishedProject(owner: TestUser, opts: { mode?: "open" | "by_request" | "paused"; max?: number | null; title?: string } = {}): Promise<Fixture> {
   const { data, error } = await owner.client
     .from("projects")
@@ -64,8 +64,6 @@ export async function publishedProject(owner: TestUser, opts: { mode?: "open" | 
       field: "Engineering",
       year: 2025,
       stop_reason: "other",
-      advisor_name: "Dr. A",
-      advisor_email: "a@example.test",
       created_by: owner.id,
     })
     .select("id")
@@ -80,8 +78,6 @@ export async function publishedProject(owner: TestUser, opts: { mode?: "open" | 
     .select("id")
     .single();
   if (t.error) throw t.error;
-  const c = await svc.from("advisor_consents").insert({ project_id: projectId, token_hash: `hash-${run}-${counter++}`, status: "approved", expires_at: new Date(Date.now() + 1e9).toISOString() });
-  if (c.error) throw c.error;
   const consent = await owner.client.rpc("confirm_team_consent", { p_project_id: projectId });
   if (consent.error) throw consent.error;
   const pub = await owner.client.rpc("publish_project", { p_project_id: projectId });

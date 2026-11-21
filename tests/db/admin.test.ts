@@ -127,18 +127,6 @@ describe("admin can work", () => {
     expect(users.data!.projects_count).toBe(1);
   });
 
-  it("regenerating an advisor link does not depend on the old statuses", async () => {
-    const r = await admin.client.rpc("admin_regenerate_consent", {
-      p_project: projectId,
-      p_token_hash: `regen-${stamp}`,
-      p_expires: new Date(Date.now() + 864e5).toISOString(),
-      p_reason: "Testing the regenerate function with a long reason.",
-    });
-    expect(r.error).toBeNull();
-    const { data } = await svc.from("projects").select("advisor_mode").eq("id", projectId).single();
-    expect(data!.advisor_mode).toBe("advisor");
-  });
-
   it("an admin can revoke access, and it is audited", async () => {
     const holder = await makeUser("holder");
     try {

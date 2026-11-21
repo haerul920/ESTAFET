@@ -36,14 +36,10 @@ beforeAll(async () => {
 afterAll(() => cleanup(created));
 
 describe("publish rule", () => {
-  it("blocks publishing without advisor approval", async () => {
+  it("blocks publishing until the team confirmed, then while any item is pending", async () => {
+    const early = await owner.client.rpc("publish_project", { p_project_id: projectId });
+    expect(early.error?.message).toMatch(/Every team member must confirm/);
     await owner.client.rpc("confirm_team_consent", { p_project_id: projectId });
-    const { error } = await owner.client.rpc("publish_project", { p_project_id: projectId });
-    expect(error?.message).toMatch(/Advisor approval is required/);
-  });
-
-  it("blocks publishing while any item is pending, even after the advisor approved", async () => {
-    await svc.from("advisor_consents").insert({ project_id: projectId, token_hash: `hash-${projectId}`, status: "approved", expires_at: new Date(Date.now() + 1e9).toISOString() });
     const { error } = await owner.client.rpc("publish_project", { p_project_id: projectId });
     expect(error?.message).toMatch(/Review every drafted item/);
   });
@@ -107,16 +103,23 @@ describe("lineage is append-only", () => {
 });
 
 describe("server-only functions", () => {
-  const call = (c: SupabaseClient) => c.rpc("decide_advisor_consent", { p_token_hash: "x", p_decision: "approved", p_comment: "" });
-  it("the advisor decision function is not callable by users or anonymous visitors", async () => {
-    expect((await call(owner.client)).error).not.toBeNull();
-    expect((await call(createClient(URL, ANON, { auth: { persistSession: false } }))).error).not.toBeNull();
-    expect((await call(svc)).error).toBeNull(); // service role works (returns not_found)
+  it("the old advisor functions no longer exist", async () => {
+    // The product has no advisor role (R5). The endpoint that took advisor decisions is gone for everyone.
+    for (const [fn, args] of [
+      ["decide_advisor_consent", { p_token_hash: "x", p_decision: "approved", p_comment: "" }],
+      ["issue_advisor_consent", { p_project_id: projectId, p_token_hash: "x", p_expires_at: new Date().toISOString() }],
+      ["declare_no_advisor", { p_project_id: projectId }],
+    ] as const) {
+      expect((await owner.client.rpc(fn, args)).error, fn).not.toBeNull();
+      expect((await svc.rpc(fn, args)).error, fn).not.toBeNull();
+    }
   });
 
-  it("advisor consent token hashes are not readable by owners", async () => {
-    const r = await owner.client.from("advisor_consents").select("token_hash").eq("project_id", projectId);
-    expect(r.error).not.toBeNull();
+  it("publishing needs no advisor: the public view carries no advisor columns", async () => {
+    const { data } = await svc.from("public_project_teaser").select("*").limit(1);
+    const keys = Object.keys(data?.[0] ?? {});
+    expect(keys).not.toEqual(expect.arrayContaining(["advisor_name"]));
+    expect(keys).not.toEqual(expect.arrayContaining(["no_advisor"]));
   });
 
   it("internal helpers are not callable by users", async () => {

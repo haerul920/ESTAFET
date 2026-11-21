@@ -59,7 +59,6 @@ describe("verification and policies", () => {
     const fresh = await mk("nopolicy", { policies: false });
     const { data } = await fresh.client.from("projects").insert({ title: `Policy gate ${Date.now()}${Math.floor(Math.random() * 1000)}`, summary: "x".repeat(40), created_by: fresh.id }).select("id").single();
     const pid = data!.id as string;
-    await svc.from("advisor_consents").insert({ project_id: pid, token_hash: `h-${pid}`, status: "approved", expires_at: new Date(Date.now() + 1e9).toISOString() });
     await svc.from("draft_items").insert({ project_id: pid, kind: "lesson", title: "L", review_status: "kept" });
     await fresh.client.rpc("confirm_team_consent", { p_project_id: pid });
     expect((await fresh.client.rpc("i_accepted_current_policies")).data).toBe(false);
@@ -127,24 +126,6 @@ describe("lifecycle: draft, published, unpublished, archived", () => {
   });
 });
 
-describe("no advisor declaration", () => {
-  it("publishing needs an advisor approval or the declaration, and the declaration is blocked after an approval", async () => {
-    const { data } = await owner.client.from("projects").insert({ title: `No advisor ${Date.now()}${Math.floor(Math.random() * 1000)}`, summary: "x".repeat(40), created_by: owner.id }).select("id").single();
-    const pid = data!.id as string;
-    await svc.from("draft_items").insert({ project_id: pid, kind: "lesson", title: "L", review_status: "kept" });
-    await owner.client.rpc("confirm_team_consent", { p_project_id: pid });
-    expect(hint((await owner.client.rpc("publish_project", { p_project_id: pid })).error)).toBe("advisor_required");
-    expect((await other.client.rpc("declare_no_advisor", { p_project_id: pid })).error?.message).toMatch(/Only an owner/);
-    expect((await owner.client.rpc("declare_no_advisor", { p_project_id: pid })).error).toBeNull();
-    expect((await owner.client.rpc("publish_project", { p_project_id: pid })).error).toBeNull();
-    const { data: p } = await svc.from("public_project_teaser").select("no_advisor").eq("id", pid).single();
-    expect(p!.no_advisor).toBe(true);
-
-    const withAdvisor = await publishedProject(owner);
-    expect(hint((await owner.client.rpc("declare_no_advisor", { p_project_id: withAdvisor.projectId })).error)).toBe("not_editable");
-  });
-});
-
 describe("co-owners", () => {
   it("an invitation is not membership until the invitee accepts; consent is per active member", async () => {
     const co = await mk("coowner");
@@ -161,7 +142,6 @@ describe("co-owners", () => {
     expect(hint((await owner.client.rpc("respond_co_owner_invite", { p_project_id: pid, p_accept: true })).error)).toBe("no_invitation");
 
     // the co-owner has not consented, so publishing is blocked even though the owner has
-    await svc.from("advisor_consents").insert({ project_id: pid, token_hash: `h-co-${pid}`, status: "approved", expires_at: new Date(Date.now() + 1e9).toISOString() });
     await svc.from("draft_items").insert({ project_id: pid, kind: "lesson", title: "L", review_status: "kept" });
     await owner.client.rpc("confirm_team_consent", { p_project_id: pid });
     expect(hint((await owner.client.rpc("publish_project", { p_project_id: pid })).error)).toBe("team_consent");
