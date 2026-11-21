@@ -273,3 +273,134 @@ Purpose: keep the platform trustworthy and running during the competition and af
 - Times are stored in UTC and displayed in WITA (Asia/Makassar) with the absolute time in a tooltip.
 - Stats come from SQL views, not from client side aggregation.
 - Demo mode: seed data and trial rows with `is_demo = true` are excluded from "real" metrics by default, with a toggle to include them.
+
+## 14. Release edition (supersedes earlier sections where they conflict)
+
+### 14.1 Principles
+- This is a real public product, not a demo. No demo data, no mock AI, no placeholder copy in production.
+- One account type. A person can share projects and continue other people's projects with the same account.
+- Clear flows over clever ones: one primary action per screen, plain Indonesian, visible status, no dead ends.
+- Privacy and safety by default. Private files stay private. Reports are easy. Moderation is transparent and reversible.
+- Calm, animated, polished, and never obstructed: no UI layer may hide or cover another.
+
+### 14.2 Competition compatibility (STACK 2026)
+- Default UI language is Indonesian. English must remain fully available through a language switcher, because judged materials, the README and the Final Day pitch and demo are in English.
+- Keep a separate `demo` environment: demo data (`is_demo = true`), mock LLM allowed, "Data contoh" badge. Judges use it.
+- Production refuses to boot with `LLM_PROVIDER=mock` or with `SEED_DEMO=true`.
+- Keep the declared Final Day tasks unfinished until the build session. Tag `final-day-start`. Never claim a feature is done unless it was run.
+- The README stays in English and keeps the AI assistance disclosure current. Add `README.id.md` in Indonesian.
+
+### 14.3 Accounts and relationships
+- `profiles` has no role column for creator or adopter. Remove it (migrate data). Keep `is_admin`.
+- Relationships live per project:
+  - `project_members(project_id, profile_id, role enum[owner, co_owner], status enum[invited, active, left], consented_at)`.
+  - `project_access(id, project_id, profile_id, source enum[open, approved_request], status enum[active, revoked], agreement_version, accepted_at, revoked_at, revoked_reason, request_id null)`.
+- A person cannot request or take access to a project they own.
+- Sign up: email and password, email verification required before sharing a project or taking access. Browsing needs no account. Accept the current Terms and Privacy Policy (versioned, stored in `policy_acceptances`).
+- First-run screen: "Apa yang ingin kamu lakukan?" with two cards, "Bagikan proyek" and "Jelajahi proyek". This only guides the first visit and is not stored as a role.
+- Dashboard (`/dasbor`) has one view with two sections: "Proyek saya" (projects I share) and "Proyek yang saya lanjutkan" (access I hold, requests I sent). No role switch.
+
+### 14.4 Project settings owned by the owner
+Per project, editable by owners at any time (`/proyek/[slug]/pengaturan`):
+- Publication: `draft`, `published`, `unpublished`, `archived`. Owner can unpublish and republish when requirements are met.
+- File access mode (`access_mode`):
+  - `open`: any signed-in, verified user can take access after accepting the attribution agreement. No approval. Owners are notified.
+  - `by_request`: a user submits a request, owners decide, then the agreement is accepted.
+  - `paused`: teaser stays public, no new access or requests. Existing access continues.
+- `max_active_adopters`: 1, 3 (default) or unlimited. When full, the CTA shows "Kuota tim penerus penuh" and offers "Beri tahu saya".
+- Co-owners: invite by email, they confirm. Ownership transfer needs the recipient to confirm.
+- Advisor consent status, resend link.
+- Incoming requests, active adopters, revoke access with a reason (adopters keep their attribution duty).
+- Notifications for this project.
+
+### 14.5 State machines
+Project lifecycle (`status`): draft -> published <-> unpublished -> archived.
+- draft -> published needs ALL of: at least one kept item, every drafted item reviewed, all active members consented, advisor approved OR "no advisor" declaration accepted, current policies accepted by the publisher.
+- unpublished hides the teaser from public pages but keeps data and active access.
+- archived is read-only for the owner; active adopters keep access; cannot be deleted while any active access or agreement exists (owner can ask admin).
+
+Moderation (`moderation_status`, separate): ok -> held (automatic or by admin, temporary) -> hidden (admin) -> removed (admin). Any state can return to ok by admin decision or successful appeal. Public pages show a project only if `status = published AND moderation_status = ok`.
+
+Access for a user U on project P:
+- none -> (mode open) accept agreement -> active
+- none -> (mode by_request) request pending -> approved -> agreement accepted -> active
+- pending -> declined (can re-apply after 7 days, configurable) | withdrawn | expired (30 days, owners and applicant notified)
+- active -> revoked (owner or admin, with reason)
+
+Team requests: the applicant may list teammates by email. Access is per person: each teammate must have an account and accept the agreement once. The applicant acts as team contact.
+
+### 14.6 Reporting and moderation
+- Anyone can report a project from the teaser page and from the project menu. Guests pass a bot check. Reasons map to the rules: `copyright`, `personal_data`, `false_information`, `inappropriate`, `false_ownership`, `harmful_file`, `spam`, `other`. Details required, evidence link optional.
+- The reporter gets a reference code. Signed-in reporters see status under "Laporan saya". The reporter's identity is never shown to owners.
+- Duplicate reports on the same project and reason are grouped.
+- Automatic hold: when distinct reporters reach the threshold (default 3 for `copyright`, `personal_data`, `harmful_file`; configurable in settings), the project becomes `held`: hidden from public lists with a neutral notice, and an admin is alerted. A hold is temporary and must be reviewed within the review target (default 3 days) or an admin alert escalates. Holds can be abused, so the threshold counts distinct verified accounts or distinct guest IP hashes, with rate limits, and admins can dismiss.
+- Every decision (dismiss, hold, hide, remove, restore) needs a written reason. The owner always receives the reason and a link to appeal.
+- Appeals: one open appeal per decision, admin reviews, outcome notified. Appeals appear in a separate admin queue.
+- Rules are published as "Pedoman Komunitas", linked from every report form.
+
+### 14.7 Language and copy
+- Use `next-intl`. Default locale `id`, secondary `en`. Locale in the URL only for English (`/en/...`), Indonesian has no prefix. Persist choice in a cookie. `<html lang>` follows the locale.
+- No hard coded user-facing strings. All text lives in `messages/id.json` and `messages/en.json`. A CI check fails if a key exists in one file and not the other.
+- Formats: `id-ID` numbers and dates, timezone shown in WITA (Asia/Makassar) with absolute time on hover.
+- Tone: friendly, direct, short. Address the user as "kamu". Errors say what went wrong and how to fix it. No jargon, no English leftovers in the Indonesian UI (except proper names such as ESTAFET, STACK, PDF, Markdown, ZIP).
+- Glossary (keep consistent everywhere):
+
+| English | Indonesian |
+|---|---|
+| Creator (owner) | Pemilik proyek |
+| Adopter | Tim penerus (hubungan per proyek) |
+| Teaser | Ringkasan publik |
+| Share a project | Bagikan proyek |
+| Explore | Jelajahi |
+| Dashboard | Dasbor |
+| Verify the AI draft | Tinjau draf AI |
+| Evidence matched / not found | Bukti cocok / Bukti tidak ditemukan |
+| Advisor | Dosen pembimbing |
+| Attribution agreement | Perjanjian atribusi |
+| Request to continue | Ajukan untuk melanjutkan |
+| Take access (open mode) | Lanjutkan proyek ini |
+| Workspace | Ruang proyek |
+| Lineage | Jejak estafet |
+| Report | Laporkan |
+| Hold / Hide / Remove / Restore | Tahan / Sembunyikan / Hapus / Pulihkan |
+| Appeal | Banding |
+| Publish / Unpublish / Archive | Terbitkan / Tarik / Arsipkan |
+| Demo data | Data contoh |
+
+### 14.8 Motion
+Tokens: durations 150 ms (micro), 250 ms (standard), 500 ms (reveal), easing `cubic-bezier(0.22, 1, 0.36, 1)`. Animate only `transform` and `opacity` (and small `blur` on glass). No layout shifting animations. Target CLS under 0.05.
+
+Required motion:
+- Home: hero cards float and drift with different durations (6 to 9 s), amplitudes (8 to 16 px) and slight rotation, staggered delays, `ease-in-out`, alternate infinite. Clouds drift horizontally slowly (40 to 70 s, linear). Headline reveals word by word. Hero CTAs have a hover glow and an arrow that nudges. Stat numbers count up once when scrolled into view (the final value is in the accessible name). Sections reveal with a small upward fade and stagger. Subtle scroll parallax on clouds (max 24 px). Meadow flowers sway gently.
+- Global hover and press: cards lift 4 px with soft shadow growth, buttons lift and brighten, pills and chips scale 1.03, links get an animated underline, icon buttons rotate or nudge, active press scales 0.98. Visible focus ring animates in.
+- State changes: progress bars ease, accordion and tab content slides, toasts slide and fade, dialogs scale from 0.96 with overlay fade, success checkmark draw, skeleton shimmer, list items enter and exit with a short fade.
+- Wizard steps transition horizontally with direction awareness.
+
+Rules:
+- `prefers-reduced-motion: reduce` disables floating, drifting, parallax, count-up, stagger and word reveal, and keeps instant state changes.
+- Pause looping animations when off screen (IntersectionObserver toggles `animation-play-state`) and when `document.hidden`.
+- Use `will-change` only on the floating hero cards. No JS driven per frame animation except for scroll parallax throttled with `requestAnimationFrame`.
+- On phones, reduce floating elements to 3 and shorten amplitudes.
+- Prefer CSS keyframes and CSS transitions. Add the `motion` library only for orchestrated reveals and wizard transitions.
+
+### 14.9 Layering and anti-overlap rules
+- Use a z-index scale defined as tokens, nothing else: `base 0`, `raised 10`, `sticky 20`, `nav 30`, `dropdown 40`, `drawer 50`, `overlay 60`, `modal 70`, `toast 80`, `system-banner 90`. Never use ad hoc z-index values.
+- Dialogs, menus, popovers, tooltips and toasts render in portals (use Radix UI primitives: Dialog, DropdownMenu, Popover, Tooltip, Tabs, Toast, Select). They handle focus trap, focus return, escape, collision flipping and scroll lock.
+- Never put popovers inside containers with `overflow: hidden`. Avoid creating accidental stacking contexts (`transform`, `filter`, `opacity < 1`) on ancestors of positioned UI.
+- Decorative layers (clouds, gradients, floating cards, flowers) are `aria-hidden`, `pointer-events: none`, sit below content, and live in their own container with reserved space. Floating cards must never overlap the headline, subtext or CTAs at any width. Use grid areas and minimum heights to guarantee separation.
+- Sticky nav: set `scroll-margin-top` on anchor targets, add top padding so content is not hidden behind it.
+- Bottom bars on mobile: add matching `padding-bottom` plus `env(safe-area-inset-bottom)`; toasts sit above bars; cookie or notice banners are in flow or non-blocking and never cover the primary action.
+- System banners (staging badge, moderation notices, emergency access banner) push content down, they do not overlay it.
+- Test viewports: 360x740, 390x844, 768x1024, 1024x768, 1280x800, 1536x864.
+- An automated overlap audit (Playwright) is part of CI: for every key route and viewport it verifies that (a) the center of every visible interactive element hits that element or its label, (b) there is no horizontal page overflow, (c) clipped text is flagged, (d) hero floating elements do not intersect the h1 or CTAs. Failures block merging.
+
+### 14.10 Production requirements
+- Environments: local, demo, staging, production. Config via env vars, validated at boot with Zod. Production fails fast on unsafe config.
+- Email: transactional provider through SMTP or an API (provider agnostic adapter), templates in Indonesian and English, SPF, DKIM, DMARC documented. Emails: verify account, advisor consent link and reminder, request received and decided, agreement signed, report outcome, appeal outcome, moderation notice. Respect notification preferences, except essential account and safety emails.
+- Security: HTTPS only, HSTS, strict CSP with nonces, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, frame protection, secure cookies, CSRF protection for non Server Action routes, rate limits (login, signup, report, upload, synthesis, token endpoints), Cloudflare Turnstile (or equivalent) on guest forms and signup, password policy plus breach check if feasible, file downloads served as attachments with safe content types, upload scanning hook, dependency audit in CI.
+- Privacy: data export (JSON) and account deletion (30 day grace, then delete or anonymize; keep attribution lines for existing agreements as "Pengguna lama" if needed and say so in the Privacy Policy), cookie use limited to essential cookies, optional privacy friendly analytics only with notice, data retention rules documented, AI processing disclosure with an opt-out ("Isi manual tanpa AI").
+- Legal pages (drafts for campus review): Syarat dan Ketentuan, Kebijakan Privasi, Pedoman Komunitas, Perjanjian Atribusi (versioned), Kontak. Footer links on every page. Acceptance stored with version and timestamp. Admin can publish a new version and force re-acceptance.
+- Reliability: error tracking (Sentry or equivalent), structured logs without personal data or file contents, uptime check, health endpoint, database backups with a tested restore, migrations through CI with a rollback note, feature flags for risky features, cost caps for LLM per user per day and globally per day.
+- SEO and sharing: Indonesian metadata, sitemap, robots, Open Graph images, canonical URLs, structured data for public projects (not for held or hidden ones), `noindex` for staging and demo.
+- Performance budget: LCP under 2.5 s on a mid range phone for Home and Explore, JS budget documented, images optimized, fonts preloaded and subsetted.
+- Accessibility: WCAG 2.1 AA, keyboard complete, screen reader labels in Indonesian, contrast checks, reduced motion.
