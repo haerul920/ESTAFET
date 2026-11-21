@@ -75,7 +75,10 @@ export function AccessSettings({
               name={`access-mode-${projectId}`}
               value={m}
               checked={mode === m}
-              onChange={() => setMode(m)}
+              onChange={() => {
+                setMode(m);
+                setMessage(null);
+              }}
               className="mt-1 h-5 w-5 flex-none accent-[var(--blue)]"
             />
             <span>
@@ -87,7 +90,15 @@ export function AccessSettings({
       </fieldset>
 
       <div className="max-w-[360px]">
-        <SelectField label={t("max")} value={max} onChange={(e) => setMax(e.target.value)} hint={t("maxHint")}>
+        <SelectField
+          label={t("max")}
+          value={max}
+          onChange={(e) => {
+            setMax(e.target.value);
+            setMessage(null);
+          }}
+          hint={t("maxHint")}
+        >
           <option value="1">{t("max1")}</option>
           <option value="3">{t("max3")}</option>
           <option value="none">{t("maxNone")}</option>
