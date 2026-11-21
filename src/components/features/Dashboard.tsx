@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { Link } from "@/i18n/navigation";
 import { useRouter } from "@/i18n/navigation";
-import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { Bell, FolderPlus, Inbox, KeyRound, Send, UserPlus } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -20,8 +19,8 @@ import type { DashboardAccess, DashboardData, DashboardInvitation, DashboardProj
 function ProjectRow({ p }: { p: DashboardProject }) {
   return (
     <StaggerItem>
-      <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 300, damping: 24 }}>
-        <Card className="flex flex-col gap-4">
+      <div>
+        <Card className="lift flex flex-col gap-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="mb-1 mt-0 text-[22px]">
@@ -41,7 +40,7 @@ function ProjectRow({ p }: { p: DashboardProject }) {
           </div>
           <div className={cn("rounded-[14px] px-4 py-3 text-[15px] text-text-3", p.noteTone === "warn" ? "bg-warn-bg" : p.noteTone === "blue" ? "bg-blue-tint" : "bg-chip")}>{p.note}</div>
         </Card>
-      </motion.div>
+      </div>
     </StaggerItem>
   );
 }
