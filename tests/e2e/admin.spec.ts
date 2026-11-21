@@ -71,7 +71,7 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
   const creator = await fresh(browser);
   await login(creator.page, "alumni@estafet.demo");
   await creator.page.goto("/en/dasbor");
-  await expect(creator.page.getByText(/Fish Freshness Indicator was hidden from public view/)).toBeVisible();
+  await expect(creator.page.getByText(/Fish Freshness Indicator was hidden from public view/).first()).toBeVisible();
   await expect(creator.page.getByText(REASON).first()).toBeVisible();
   await creator.context.close();
 
@@ -128,7 +128,10 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
     expect((await a.goto(path))?.status(), path).toBe(200);
     await expect(a.getByRole("heading", { level: 1, name: heading })).toBeVisible();
     await expect(a.getByLabel("Search projects, users and reports")).toBeVisible();
-    await expect(a.getByTitle("Current environment")).toHaveText("LOCAL");
+    // The environment pill is a focusable element with a tooltip (Radix), no longer a title attribute.
+    await expect(a.locator("header").getByText("LOCAL", { exact: true })).toBeVisible();
+    await a.locator("header").getByText("LOCAL", { exact: true }).focus();
+    await expect(a.getByRole("tooltip").getByText("Current environment")).toBeVisible();
   }
 
   // Keyboard: g then p goes to Projects, ? shows the shortcuts.
