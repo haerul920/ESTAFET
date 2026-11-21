@@ -16,7 +16,7 @@ import { applyDraftSummary } from "@/app/actions/projects";
 import { useLabels } from "@/lib/use-labels";
 import { cn } from "@/lib/cn";
 import type { DraftItem, ItemKind, ReviewStatus } from "@/lib/db/types";
-import type { SourceView, PublishChecklist } from "@/lib/db/owner";
+import type { SourceView } from "@/lib/db/owner";
 
 const FILTERS = [
   { id: "all", key: "fAll" },
@@ -36,20 +36,22 @@ export function VerifyBoard({
   projectId,
   initialItems,
   sources,
-  checklist,
   mockMode,
   summary,
   draftSummary,
+  manual = false,
 }: {
   projectId: string;
   initialItems: DraftItem[];
   sources: Record<string, SourceView>;
-  checklist: PublishChecklist;
   mockMode: boolean;
   summary: string;
   draftSummary: string | null;
+  /** The owners chose "Isi manual tanpa AI": no AI draft, no evidence checks, items are written by hand. */
+  manual?: boolean;
 }) {
   const t = useTranslations("board");
+  const tf = useTranslations("fill");
   const L = useLabels();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -61,7 +63,7 @@ export function VerifyBoard({
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState({ title: "", description: "" });
   const [error, setError] = useState("");
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState(manual && initialItems.length === 0);
   const [, startTransition] = useTransition();
   const [summaryUsed, setSummaryUsed] = useState(false);
 
@@ -69,8 +71,8 @@ export function VerifyBoard({
   const reviewed = items.filter((i) => i.review_status !== "pending").length;
   const keptCount = items.filter((i) => i.review_status === "kept").length;
   const allReviewed = total > 0 && reviewed === total && keptCount > 0;
-  const ready = allReviewed && checklist.advisor.done && checklist.team.done;
-  const advisorOk = checklist.advisor.done;
+  // Review only needs the items. Team consent and the advisor come on the next step ("Team and access").
+  const ready = allReviewed;
   const visible = items.filter((i) => filter === "all" || i.kind === filter);
   const sel = items.find((i) => i.id === selected) ?? null;
   const source = sel ? sources[sel.id] : null;
@@ -115,17 +117,25 @@ export function VerifyBoard({
     ? t("footReady")
     : total === 0
       ? t("footNone")
-      : !allReviewed
-        ? reviewed === total && keptCount === 0
-          ? t("footKeepOne")
-          : t("footRemaining", { count: total - reviewed })
-        : !checklist.advisor.done
-          ? t("footAdvisor")
-          : t("footTeam");
+      : reviewed === total && keptCount === 0
+        ? t("footKeepOne")
+        : t("footRemaining", { count: total - reviewed });
 
   return (
     <LayoutGroup>
-      {mockMode ? (
+      {manual ? (
+        <div
+          role="status"
+          className="mb-6 flex flex-wrap items-start justify-between gap-3 rounded-[18px] bg-blue-tint p-4 text-blue-dark"
+        >
+          <span>
+            <strong>{tf("manualBadge")}.</strong> {tf("manualBanner")}
+          </span>
+          <ButtonLink href={`/bagikan/${projectId}/berkas`} variant="outlineBlue" size="md">
+            {tf("switchBtn")}
+          </ButtonLink>
+        </div>
+      ) : mockMode ? (
         <div role="status" className="mb-6 flex items-start gap-3 rounded-[18px] bg-warn-bg p-4 text-warn-ink">
           <FlaskConical size={20} className="mt-0.5 flex-none" aria-hidden="true" />
           <span>
@@ -417,26 +427,18 @@ export function VerifyBoard({
           <span aria-live="polite" className="text-[15px]">
             {footnote}
           </span>
-          <span className={cn("text-[13px] font-semibold", checklist.advisor.done ? "text-ok" : "text-warn")}>
-            {advisorOk
-              ? checklist.advisor.status === "not_needed"
-                ? t("advisorNotNeeded")
-                : t("advisorApproved")
-              : t("advisorPending")}
-            {checklist.team.done ? "" : t("teamPending")}
-          </span>
         </div>
         <div className="flex flex-wrap gap-3">
-          <ButtonLink href={`/share/${projectId}/files`} variant="outline">
+          <ButtonLink href={`/bagikan/${projectId}/berkas`} variant="outline">
             {t("back")}
           </ButtonLink>
           {ready ? (
-            <ButtonLink href={`/share/${projectId}/publish`} arrow>
-              {t("continuePublish")}
+            <ButtonLink href={`/bagikan/${projectId}/tim`} arrow>
+              {t("continueTeam")}
             </ButtonLink>
           ) : (
             <Button disabled aria-disabled="true">
-              {t("continuePublish")}
+              {t("continueTeam")}
             </Button>
           )}
         </div>

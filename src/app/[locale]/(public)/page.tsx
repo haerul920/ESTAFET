@@ -155,7 +155,7 @@ export default function HomePage() {
               <p className="mb-6 max-w-[420px] text-white/95">
                 {t("audience.owner.text")}
               </p>
-              <ButtonLink href="/share" size="lg" arrow>
+              <ButtonLink href="/bagikan" size="lg" arrow>
                 {t("audience.owner.cta")}
               </ButtonLink>
             </div>

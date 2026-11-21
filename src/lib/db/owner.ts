@@ -191,9 +191,14 @@ export async function buildSourceViews(items: DraftItem[], files: ProjectFile[])
 }
 
 /** The step the wizard should resume at, based on what is already done (not on a stored status). */
-export function resumeStep(project: Pick<Project, "status" | "title" | "summary">, hasFiles: boolean, hasItems: boolean): string {
-  if (project.status !== "draft") return "publish";
-  if (!project.title || !project.summary) return "basics";
-  if (hasItems) return "verify";
-  return hasFiles ? "files" : "consent";
+export function resumeStep(
+  project: Pick<Project, "status" | "title" | "summary"> & { fill_mode?: "ai" | "manual" | null },
+  hasFiles: boolean,
+  hasItems: boolean,
+): string {
+  if (project.status !== "draft") return "terbit";
+  if (!project.title || !project.summary) return "info";
+  // Items exist (AI draft or written by hand): keep reviewing them. Otherwise start at the files, or at the manual path.
+  if (hasItems || project.fill_mode === "manual") return "tinjau";
+  return "berkas";
 }

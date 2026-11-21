@@ -25,6 +25,7 @@ export function PublishBar({
   verified: boolean;
 }) {
   const t = useTranslations("publishBar");
+  const tw = useTranslations("wizard");
   const router = useRouter();
   const [confirmed, setConfirmed] = useState(false);
   const [policies, setPolicies] = useState(policiesAccepted);
@@ -55,9 +56,14 @@ export function PublishBar({
       {!ready ? <FormMessage tone="error">{reason}</FormMessage> : null}
       {error ? <FormMessage tone="error">{error}</FormMessage> : null}
       <div className="flex flex-wrap justify-between gap-3">
-        <ButtonLink href={`/share/${projectId}/verify`} variant="outline">
-          {t("back")}
-        </ButtonLink>
+        <div className="flex flex-wrap gap-3">
+          <ButtonLink href={`/bagikan/${projectId}/tim`} variant="outline">
+            {t("back")}
+          </ButtonLink>
+          <ButtonLink href="/dasbor" variant="outline">
+            {tw("saveDraft")}
+          </ButtonLink>
+        </div>
         <Button
           size="md"
           disabled={!canPublish || !confirmed || !policies || pending}

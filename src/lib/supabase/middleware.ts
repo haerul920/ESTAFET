@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing, type Locale } from "@/i18n/routing";
 
-const PROTECTED_PREFIXES = ["/dasbor", "/dashboard", "/mulai", "/share", "/requests"];
+const PROTECTED_PREFIXES = ["/dasbor", "/dashboard", "/mulai", "/bagikan", "/proyek", "/requests"];
 
 function needsSession(pathname: string) {
   if (PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) return true;

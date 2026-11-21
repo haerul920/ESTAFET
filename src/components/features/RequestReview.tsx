@@ -112,6 +112,25 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
   return (
     <Card as="section" className="flex flex-col gap-4">
       <h2 className="m-0 text-[22px]">{t("yourDecision")}</h2>
+      <div role="group" aria-label={t("tplLabel")} className="flex flex-wrap gap-2">
+        {(
+          [
+            ["tplApproveShort", "tplApprove"],
+            ["tplScopeShort", "tplScope"],
+            ["tplBusyShort", "tplBusy"],
+            ["tplAskShort", "tplAsk"],
+          ] as const
+        ).map(([label, text]) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => setMessage(t(text))}
+            className="chip-hover min-h-[44px] cursor-pointer rounded-full border-[1.5px] border-line bg-white px-4 text-sm font-semibold hover:bg-surface"
+          >
+            {t(label)}
+          </button>
+        ))}
+      </div>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="msg" className="text-sm font-semibold">
           {t("msgLabel")}
@@ -120,7 +139,7 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
           id="msg"
           rows={3}
           value={message}
-          maxLength={1000}
+          maxLength={500}
           onChange={(e) => setMessage(e.target.value)}
           placeholder={t("msgPh")}
           className="w-full resize-y rounded-[14px] border border-line-strong bg-white px-3.5 py-3 text-base"

@@ -40,7 +40,7 @@ export async function saveBasics(_prev: FormState, formData: FormData): Promise<
   const t = await tr();
   const locale = await getLocale();
   const values = formValues(formData);
-  const user = await requireUser("/share");
+  const user = await requireUser("/bagikan");
   const parsed = basicsSchema(t.v).safeParse(values);
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error), values, error: t.v("fixAndSave") };
 
@@ -58,8 +58,8 @@ export async function saveBasics(_prev: FormState, formData: FormData): Promise<
     if (!project) return { error: t.a("notOwnerEdit"), values };
     const { error } = await supabase.from("projects").update(input).eq("id", id);
     if (error) return { error: t.a("saveLocked"), values };
-    revalidatePath(`/share/${id}`, "layout");
-    redirect({ href: `/share/${id}/consent`, locale });
+    revalidatePath(`/bagikan/${id}`, "layout");
+    redirect({ href: `/bagikan/${id}/berkas`, locale });
   }
 
   const { data, error } = await supabase
@@ -71,7 +71,7 @@ export async function saveBasics(_prev: FormState, formData: FormData): Promise<
     if (!user.verified) return { error: t.a("verifyFirst"), values };
     return { error: t.a("draftFailed"), values };
   }
-  redirect({ href: `/share/${data.id}/consent`, locale });
+  redirect({ href: `/bagikan/${data.id}/berkas`, locale });
 }
 
 /** Invite a co-owner by the email of an existing ESTAFET account. They become a member only when they accept. */
@@ -80,11 +80,11 @@ export async function inviteCoOwner(_prev: FormState, formData: FormData): Promi
   const projectId = String(formData.get("project_id") ?? "");
   const email = emailSchema(t.v).safeParse(formData.get("email"));
   if (!email.success) return { fieldErrors: { email: t.v("email") } };
-  await requireUser(`/share/${projectId}/consent`);
+  await requireUser(`/bagikan/${projectId}/tim`);
   const supabase = await createClient();
   const { error } = await supabase.rpc("invite_co_owner", { p_project_id: projectId, p_email: email.data });
   if (error) return { fieldErrors: { email: dbErrorMessage(t.e, error) } };
-  revalidatePath(`/share/${projectId}/consent`);
+  revalidatePath(`/bagikan/${projectId}/tim`);
   return { ok: true, message: t.a("inviteSent") };
 }
 
@@ -102,39 +102,39 @@ export async function respondToInvite(projectId: string, accept: boolean): Promi
 /** The project has no supervising lecturer. Publishing then needs this declaration instead of an advisor approval. */
 export async function declareNoAdvisor(projectId: string): Promise<{ error?: string }> {
   const t = await tr();
-  await requireUser(`/share/${projectId}/consent`);
+  await requireUser(`/bagikan/${projectId}/tim`);
   const supabase = await createClient();
   const { error } = await supabase.rpc("declare_no_advisor", { p_project_id: projectId });
   if (error) return { error: dbErrorMessage(t.e, error) };
-  revalidatePath(`/share/${projectId}`, "layout");
+  revalidatePath(`/bagikan/${projectId}`, "layout");
   return {};
 }
 
 /** Records that the signed-in user accepted the current Terms and Privacy Policy. */
 export async function acceptPolicies(projectId?: string): Promise<{ error?: string }> {
   const t = await tr();
-  await requireUser(projectId ? `/share/${projectId}/publish` : "/dasbor");
+  await requireUser(projectId ? `/bagikan/${projectId}/terbit` : "/dasbor");
   const supabase = await createClient();
   const { error } = await supabase.rpc("accept_current_policies");
   if (error) return { error: dbErrorMessage(t.e, error) };
-  if (projectId) revalidatePath(`/share/${projectId}`, "layout");
+  if (projectId) revalidatePath(`/bagikan/${projectId}`, "layout");
   return {};
 }
 
 export async function removeTeamMember(projectId: string, profileId: string) {
-  await requireUser(`/share/${projectId}/consent`);
+  await requireUser(`/bagikan/${projectId}/tim`);
   const supabase = await createClient();
   await supabase.rpc("remove_team_member", { p_project_id: projectId, p_profile: profileId });
-  revalidatePath(`/share/${projectId}/consent`);
+  revalidatePath(`/bagikan/${projectId}/tim`);
 }
 
 export async function confirmTeamConsent(projectId: string) {
   const t = await tr();
-  await requireUser(`/share/${projectId}/consent`);
+  await requireUser(`/bagikan/${projectId}/tim`);
   const supabase = await createClient();
   const { error } = await supabase.rpc("confirm_team_consent", { p_project_id: projectId });
   if (error) return { error: dbErrorMessage(t.e, error) };
-  revalidatePath(`/share/${projectId}`, "layout");
+  revalidatePath(`/bagikan/${projectId}`, "layout");
   revalidatePath("/dasbor");
   return { ok: true };
 }
@@ -146,7 +146,7 @@ export async function confirmTeamConsent(projectId: string) {
 export async function createConsentLink(projectId: string): Promise<{ url?: string; error?: string }> {
   const t = await tr();
   const locale = await getLocale();
-  await requireUser(`/share/${projectId}/consent`);
+  await requireUser(`/bagikan/${projectId}/tim`);
   const project = await getOwnedProject(projectId);
   if (!project) return { error: t.a("notOwnerConsent") };
   if (!project.advisor_name || !project.advisor_email) return { error: t.a("advisorFirst") };
@@ -159,7 +159,7 @@ export async function createConsentLink(projectId: string): Promise<{ url?: stri
     p_expires_at: tokenExpiry(new Date(), (await getSettings()).advisor_token_ttl_days.value).toISOString(),
   });
   if (error) return { error: dbErrorMessage(t.e, error) };
-  revalidatePath(`/share/${projectId}`, "layout");
+  revalidatePath(`/bagikan/${projectId}`, "layout");
   const base = process.env.APP_URL ?? "http://localhost:3000";
   // The advisor opens the link in the language of the person who created it.
   return { url: `${base}${locale === "id" ? "" : `/${locale}`}/consent/${token}` };
@@ -167,7 +167,7 @@ export async function createConsentLink(projectId: string): Promise<{ url?: stri
 
 export async function deleteFile(projectId: string, fileId: string): Promise<{ error?: string }> {
   const t = await tr();
-  await requireUser(`/share/${projectId}/files`);
+  await requireUser(`/bagikan/${projectId}/berkas`);
   const project = await getOwnedProject(projectId);
   if (!project) return { error: t.a("notOwnerEdit") };
   if (!["draft", "unpublished"].includes(project.status)) return { error: t.a("filesLocked") };
@@ -188,14 +188,14 @@ export async function deleteFile(projectId: string, fileId: string): Promise<{ e
     }
   }
   await admin.from("project_files").delete().eq("id", fileId);
-  revalidatePath(`/share/${projectId}/files`);
+  revalidatePath(`/bagikan/${projectId}/berkas`);
   return {};
 }
 
 export async function publishProject(projectId: string): Promise<{ error?: string }> {
   const t = await tr();
   const locale = await getLocale();
-  await requireUser(`/share/${projectId}/publish`);
+  await requireUser(`/bagikan/${projectId}/terbit`);
   const supabase = await createClient();
   const { error } = await supabase.rpc("publish_project", { p_project_id: projectId });
   if (error) return { error: dbErrorMessage(t.e, error) };
@@ -207,12 +207,12 @@ export async function publishProject(projectId: string): Promise<{ error?: strin
 
 export async function applyDraftSummary(projectId: string, summary: string): Promise<{ error?: string }> {
   const t = await tr();
-  await requireUser(`/share/${projectId}/verify`);
+  await requireUser(`/bagikan/${projectId}/tinjau`);
   const trimmed = summary.trim().slice(0, 700);
   if (trimmed.length < 30) return { error: t.a("summaryTooShort") };
   const supabase = await createClient();
   const { error } = await supabase.from("projects").update({ summary: trimmed }).eq("id", projectId);
   if (error) return { error: t.a("summaryFailed") };
-  revalidatePath(`/share/${projectId}/verify`);
+  revalidatePath(`/bagikan/${projectId}/tinjau`);
   return {};
 }

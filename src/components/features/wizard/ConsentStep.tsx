@@ -237,10 +237,10 @@ export function ConsentStep({
       </Card>
 
       <div className="flex flex-wrap justify-between gap-3">
-        <ButtonLink href={`/share/${project.id}/basics`} variant="outline">
+        <ButtonLink href={`/bagikan/${project.id}/tinjau`} variant="outline">
           {t("back")}
         </ButtonLink>
-        <ButtonLink href={`/share/${project.id}/files`} arrow size="lg">
+        <ButtonLink href={`/bagikan/${project.id}/terbit`} arrow size="lg">
           {allConfirmed ? t("next") : t("nextLater")}
         </ButtonLink>
       </div>

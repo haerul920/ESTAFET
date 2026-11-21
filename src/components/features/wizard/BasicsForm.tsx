@@ -1,18 +1,23 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { FormMessage, SelectField, TextArea, TextField } from "@/components/ui/Field";
 import { FACULTIES } from "@/lib/labels";
 import { useLabels } from "@/lib/use-labels";
 import { saveBasics } from "@/app/actions/projects";
+import { autosaveBasics } from "@/app/actions/owner";
 import type { FormState } from "@/lib/validation";
 import type { Project } from "@/lib/db/types";
 
 export function BasicsForm({ project }: { project: Project | null }) {
   const t = useTranslations("basics");
+  const tw = useTranslations("wizard");
   const L = useLabels();
+  const formRef = useRef<HTMLFormElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [auto, setAuto] = useState<"idle" | "saving" | "saved" | "invalid">("idle");
   const [state, action, pending] = useActionState<FormState, FormData>(saveBasics, {});
   const [dirty, setDirty] = useState(false);
   const fe = state.fieldErrors ?? {};
@@ -28,8 +33,34 @@ export function BasicsForm({ project }: { project: Project | null }) {
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty, pending]);
 
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  /** Autosave: once the draft exists, valid edits are saved a moment after the last keystroke. */
+  function scheduleAutosave() {
+    if (!project) return;
+    clearTimeout(timer.current);
+    timer.current = setTimeout(async () => {
+      const form = formRef.current;
+      if (!form) return;
+      const values = Object.fromEntries([...new FormData(form).entries()].filter(([, val]) => typeof val === "string")) as Record<string, string>;
+      setAuto("saving");
+      const r = await autosaveBasics(project.id, values);
+      setAuto(r.saved ? "saved" : "invalid");
+      if (r.saved) setDirty(false);
+    }, 1200);
+  }
+
   return (
-    <form action={action} noValidate onChange={() => setDirty(true)} className="flex max-w-[760px] flex-col gap-5">
+    <form
+      ref={formRef}
+      action={action}
+      noValidate
+      onChange={() => {
+        setDirty(true);
+        scheduleAutosave();
+      }}
+      className="flex max-w-[760px] flex-col gap-5"
+    >
       {project ? <input type="hidden" name="id" value={project.id} /> : null}
       {state.error ? <FormMessage tone="error">{state.error}</FormMessage> : null}
 
@@ -105,10 +136,15 @@ export function BasicsForm({ project }: { project: Project | null }) {
         />
       </fieldset>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" arrow size="lg" disabled={pending}>
           {pending ? t("saving") : t("save")}
         </Button>
+        {project ? (
+          <span role="status" aria-live="polite" className={auto === "invalid" ? "text-sm font-semibold text-warn" : "text-sm text-text-2"}>
+            {auto === "saving" ? tw("savingAuto") : auto === "saved" ? tw("savedAuto") : auto === "invalid" ? tw("autoFailed") : ""}
+          </span>
+        ) : null}
       </div>
     </form>
   );

@@ -48,13 +48,18 @@ describe("buildChecklist", () => {
 describe("resumeStep", () => {
   const draft = { status: "draft" as const, title: "T", summary: "S" };
   it("resumes from what is done, not from a stored status", () => {
-    expect(resumeStep({ ...draft, summary: "" }, false, false)).toBe("basics");
-    expect(resumeStep(draft, false, false)).toBe("consent");
-    expect(resumeStep(draft, true, false)).toBe("files");
-    expect(resumeStep(draft, true, true)).toBe("verify");
+    expect(resumeStep({ ...draft, summary: "" }, false, false)).toBe("info");
+    expect(resumeStep(draft, false, false)).toBe("berkas");
+    expect(resumeStep(draft, true, false)).toBe("berkas");
+    expect(resumeStep(draft, true, true)).toBe("tinjau");
   });
-  it("sends anything that is not a draft to the publish step", () => {
-    for (const status of ["published", "unpublished", "archived"] as const) expect(resumeStep({ ...draft, status }, true, true)).toBe("publish");
+  it("sends the manual path straight to the review, and keeps reviewing once items exist", () => {
+    expect(resumeStep({ ...draft, fill_mode: "manual" }, false, false)).toBe("tinjau");
+    expect(resumeStep({ ...draft, fill_mode: "ai" }, true, false)).toBe("berkas");
+    expect(resumeStep({ ...draft, fill_mode: "manual" }, false, true)).toBe("tinjau");
+  });
+  it("sends anything that is not a draft to the preview and publish step", () => {
+    for (const status of ["published", "unpublished", "archived"] as const) expect(resumeStep({ ...draft, status }, true, true)).toBe("terbit");
   });
 });
 
@@ -73,5 +78,25 @@ describe("describeNotification", () => {
     for (const type of ["moderation", "break_glass", "unknown_type", "access_taken", "access_revoked"]) {
       expect(describeNotification(n(type, { title: "P" }), t).href).not.toContain("/dashboard");
     }
+  });
+});
+
+describe("describeNotification (R4 events)", () => {
+  const t = translator("dashboard");
+  const n = (type: string, payload: Record<string, unknown>): NotificationRow => ({ id: "n", user_id: "u", type, payload, read_at: null, created_at: "2026-01-01T00:00:00Z" });
+  it("sends watchers to the project, and says why access opened", () => {
+    const mode = describeNotification(n("watch_open", { title: "P", slug: "p-slug", reason: "mode" }), t);
+    expect(mode.text).toBe("P is open for continuation again.");
+    expect(mode.detail).toBe("The owners opened access again.");
+    expect(mode.href).toBe("/projects/p-slug");
+    expect(describeNotification(n("watch_open", { title: "P", slug: "p", reason: "quota" }), t).detail).toBe("A team slot is free.");
+  });
+  it("describes thread replies, task progress, reminders and ownership offers with working links", () => {
+    expect(describeNotification(n("request_reply", { title: "P", team: "Tim A", request_id: "r1", message: "Hi" }), t).href).toBe("/requests/r1");
+    const p = describeNotification(n("item_progress", { title: "P", slug: "p", task: "Clean data", status: "done" }), t);
+    expect(p.text).toBe("The task “Clean data” in P is now done.");
+    expect(p.href).toBe("/projects/p/workspace");
+    expect(describeNotification(n("request_expiring", { title: "P", team: "Tim A", request_id: "r1", expires_at: "2026-12-24T00:00:00Z" }), t).detail).toContain("2026-12-24");
+    expect(describeNotification(n("ownership_offer", { title: "P", slug: "p" }), t).href).toBe("/proyek/p/pengaturan");
   });
 });

@@ -44,10 +44,10 @@ async function main() {
 
   await login(p, "creator@estafet.demo");
   await shot(p, "05-dashboard", "/dasbor");
-  await shot(p, "06-verify", "/share/b0000000-0000-4000-8000-000000000007/verify");
-  await shot(p, "07-files", "/share/b0000000-0000-4000-8000-000000000007/files");
-  await shot(p, "08-consent-step", "/share/b0000000-0000-4000-8000-000000000008/consent");
-  await shot(p, "09-basics", "/share/b0000000-0000-4000-8000-000000000008/basics");
+  await shot(p, "06-verify", "/bagikan/b0000000-0000-4000-8000-000000000007/tinjau");
+  await shot(p, "07-files", "/bagikan/b0000000-0000-4000-8000-000000000007/berkas");
+  await shot(p, "08-consent-step", "/bagikan/b0000000-0000-4000-8000-000000000008/tim");
+  await shot(p, "09-basics", "/bagikan/b0000000-0000-4000-8000-000000000008/info");
   await shot(p, "10-review", "/requests/e0000000-0000-4000-8000-000000000001");
 
   const q = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();

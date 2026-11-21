@@ -45,7 +45,7 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
   const textColor = hero ? "text-white" : "text-ink";
   const base = LINKS.map((l) => ({ href: l.href as string, label: t(l.key) }));
   const links = hero ? [base[0], { href: "/#how", label: t("how") }, base[1]] : base;
-  const drawerLinks = [...links, { href: "/share", label: t("share") }, ...(user ? [] : [{ href: "/login", label: t("signIn") }])];
+  const drawerLinks = [...links, { href: "/bagikan", label: t("share") }, ...(user ? [] : [{ href: "/login", label: t("signIn") }])];
 
   return (
     <motion.nav
@@ -89,7 +89,7 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
 
       <div className="flex items-center gap-2">
         <LanguageSwitcher tone={hero ? "light" : "dark"} className="hidden md:flex" />
-        <ButtonLink href="/share" size="sm" arrow className="hidden md:inline-flex">
+        <ButtonLink href="/bagikan" size="sm" arrow className="hidden md:inline-flex">
           {t("share")}
         </ButtonLink>
 

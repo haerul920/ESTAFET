@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { PageShell, Breadcrumb } from "@/components/ui/PageShell";
+import { ButtonLink } from "@/components/ui/Button";
 import { TeaserContent } from "@/components/features/TeaserContent";
 import { ProjectCta, type CtaState } from "@/components/features/ProjectCta";
 import { getTeaserBySlug, getTeaserItems, getTeaserLineage } from "@/lib/db/public";
@@ -31,8 +32,9 @@ const quotaIsFull = (p: Pick<TeaserProject, "max_active_adopters" | "active_adop
   p.max_active_adopters !== null && p.active_adopters >= p.max_active_adopters;
 
 /** Decides what the visitor can do from their relationship to this project. No account type is involved. */
-async function ctaStateFor(project: TeaserProject): Promise<CtaState> {
-  const user = await getCurrentUser();
+async function ctaStateFor(project: TeaserProject, asVisitor: boolean): Promise<CtaState> {
+  // "Preview as a visitor" (owners only, from the settings page): show exactly what a signed-out person sees.
+  const user = asVisitor ? null : await getCurrentUser();
   const full = quotaIsFull(project);
   if (!user) return { kind: "guest", mode: project.access_mode, quotaFull: full };
   if (await isProjectOwner(project.id)) return { kind: "owner" };
@@ -51,20 +53,27 @@ async function ctaStateFor(project: TeaserProject): Promise<CtaState> {
     .maybeSingle();
   if (open) return { kind: "request", requestId: open.id as string, status: open.status as "pending" | "approved" };
 
-  if (project.access_mode === "paused") return { kind: "paused" };
-  if (full) return { kind: "quota_full" };
+  const watching =
+    project.access_mode === "paused" || full
+      ? !!(await supabase.from("project_watchers").select("project_id").eq("project_id", project.id).eq("profile_id", user.id).maybeSingle()).data
+      : false;
+  if (project.access_mode === "paused") return { kind: "paused", watching };
+  if (full) return { kind: "quota_full", watching };
   return project.access_mode === "open"
     ? { kind: "open", verified: user.verified, email: user.email }
     : { kind: "by_request", verified: user.verified, email: user.email };
 }
 
-export default async function ProjectTeaserPage({ params }: Params) {
+export default async function ProjectTeaserPage({ params, searchParams }: Params & { searchParams: Promise<{ as?: string }> }) {
   const { slug } = await params;
+  const { as } = await searchParams;
   const project = await getTeaserBySlug(slug);
   if (!project) notFound();
   const [locale, t, tl] = await Promise.all([getLocale(), getTranslations("teaser"), getTranslations("lineage")]);
 
-  const [items, lineageEvents, state] = await Promise.all([getTeaserItems(project.id), getTeaserLineage(project.id), ctaStateFor(project)]);
+  // Only an owner can ask for the visitor preview. For everyone else the parameter is ignored.
+  const asVisitor = as === "visitor" && (await isProjectOwner(project.id));
+  const [items, lineageEvents, state] = await Promise.all([getTeaserItems(project.id), getTeaserLineage(project.id), ctaStateFor(project, asVisitor)]);
   const unlocked = state.kind === "owner" || state.kind === "holder";
   const workspace = `/projects/${project.slug}/workspace`;
 
@@ -77,6 +86,14 @@ export default async function ProjectTeaserPage({ params }: Params) {
 
   return (
     <PageShell footerNote={project.is_demo ? t("demoFooter") : undefined}>
+      {asVisitor ? (
+        <div role="status" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[18px] bg-blue-tint p-4 text-blue-dark">
+          <span>{t("previewBanner")}</span>
+          <ButtonLink href={`/proyek/${project.slug}/pengaturan`} variant="outlineBlue" size="md">
+            {t("previewExit")}
+          </ButtonLink>
+        </div>
+      ) : null}
       <Breadcrumb items={[{ label: t("explore"), href: "/explore" }, { label: project.title }]} />
       <TeaserContent
         project={project}

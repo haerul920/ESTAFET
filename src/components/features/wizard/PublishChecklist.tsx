@@ -65,10 +65,10 @@ export function PublishChecklist({
             <span className="text-sm text-text-2">
               {t("teamCount", { confirmed: team.confirmed, total: team.total })}
             </span>
-            {!team.done && step !== "consent" ? (
+            {!team.done && step !== "tim" ? (
               <>
                 <br />
-                <Link href={`/share/${projectId}/consent`} className="text-sm font-semibold">
+                <Link href={`/bagikan/${projectId}/tim`} className="text-sm font-semibold">
                   {t("goConsent")}
                 </Link>
               </>
