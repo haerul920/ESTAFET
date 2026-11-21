@@ -22,6 +22,8 @@
     "test:e2e:admin": "playwright test tests/e2e/admin.spec.ts",
     "dev:local": "node scripts/dev-local.mjs",
     "shots": "tsx scripts/screenshots.ts",
+    "shots:design": "tsx scripts/screenshots-design.ts",
+    "perf": "tsx scripts/perf-check.ts",
     "test:db:purge": "vitest run --config vitest.db.purge.config.ts"
   },
   "dependencies": {
@@ -45,6 +47,7 @@
     "react-dom": "19.3.0",
     "remark-parse": "^11.0.0",
     "server-only": "^0.0.1",
+    "tailwind-merge": "^3.7.1",
     "unified": "^11.0.5",
     "zod": "^4.6.7"
   },

@@ -63,7 +63,7 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
         <span className="text-[19px] font-semibold tracking-[0.02em]">ESTAFET</span>
       </Link>
 
-      <ul className="m-0 hidden list-none items-center gap-1 p-0 md:flex">
+      <ul className="m-0 hidden list-none items-center gap-1 p-0 min-[1100px]:flex">
         {links.map((l) => {
           const active = l.href.startsWith("/#") ? false : pathname === l.href || pathname.startsWith(l.href + "/");
           return (
@@ -88,8 +88,8 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
       </ul>
 
       <div className="flex items-center gap-2">
-        <LanguageSwitcher tone={hero ? "light" : "dark"} className="hidden sm:flex" />
-        <ButtonLink href="/share" size="sm" arrow className="hidden sm:inline-flex">
+        <LanguageSwitcher tone={hero ? "light" : "dark"} className="hidden md:flex" />
+        <ButtonLink href="/share" size="sm" arrow className="hidden md:inline-flex">
           {t("share")}
         </ButtonLink>
 
@@ -140,7 +140,7 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
         ) : (
           <Link
             href="/login"
-            className={cn("mono-label link-anim hidden min-h-[44px] items-center rounded-full px-4 sm:flex", textColor)}
+            className={cn("mono-label link-anim hidden min-h-[44px] items-center rounded-full px-4 md:flex", textColor)}
           >
             {t("signIn")}
           </Link>
@@ -151,7 +151,7 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
             <button
               type="button"
               aria-label={t("menuOpen")}
-              className={cn("icon-btn flex h-11 w-11 cursor-pointer items-center justify-center rounded-full md:hidden", textColor)}
+              className={cn("icon-btn flex h-11 w-11 cursor-pointer items-center justify-center rounded-full min-[1100px]:hidden", textColor)}
             >
               <MenuIcon size={22} aria-hidden="true" />
             </button>

@@ -157,7 +157,8 @@ async function audit(page: Page): Promise<Issue[]> {
     for (const el of interactive) {
       if (!visible(el) || decorative(el)) continue;
       if (el.matches('.sr-only, [class*="sr-only"]')) continue;
-      el.scrollIntoView({ block: "center", inline: "center" });
+      // "nearest" horizontally: centring would scroll overflow:hidden boxes sideways and fake a clipping problem.
+      el.scrollIntoView({ block: "center", inline: "nearest" });
       const r = el.getBoundingClientRect();
       const cx = r.left + r.width / 2;
       const cy = r.top + r.height / 2;
@@ -166,11 +167,18 @@ async function audit(page: Page): Promise<Issue[]> {
         continue;
       }
       const hit = document.elementFromPoint(cx, Math.min(Math.max(cy, 1), window.innerHeight - 1));
+      // The Next.js development indicator is tooling, not part of the product.
+      if (hit && hit.tagName === "NEXTJS-PORTAL") continue;
       const labelled = (el as HTMLInputElement).labels ? [...(el as HTMLInputElement).labels!].some((l) => hit && l.contains(hit)) : false;
       const ok = hit && (hit === el || el.contains(hit) || hit.contains(el) || labelled || el.closest("label")?.contains(hit));
       if (!ok) issues.push({ kind: "covered", detail: `${label(el)} is covered by ${hit ? label(hit) : "nothing"}` });
     }
     window.scrollTo(0, 0);
+    // Undo any scrolling that scrollIntoView caused inside overflow boxes, so the clipping check sees the real layout.
+    for (const box of document.querySelectorAll("body *")) {
+      if (box.scrollLeft !== 0) box.scrollLeft = 0;
+      if (box.scrollTop !== 0 && /(hidden|clip)/.test(getComputedStyle(box).overflowY)) box.scrollTop = 0;
+    }
 
     // (c) clipped text
     const clips = (cs: CSSStyleDeclaration) => /(hidden|clip)/.test(cs.overflowX) || /(hidden|clip)/.test(cs.overflowY);
