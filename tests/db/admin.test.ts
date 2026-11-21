@@ -311,34 +311,30 @@ describe("suspension", () => {
     expect(
       (await admin.client.rpc("admin_suspend_user", { p_user: member.id, p_reason: REASON, p_until: null })).error,
     ).toBeNull();
-    const blocked = await member.client
-      .from("projects")
-      .insert({
-        title: `Blocked ${stamp}`,
-        summary: "x".repeat(40),
-        kind: "research",
-        field: "Engineering",
-        year: 2025,
-        stop_reason: "other",
-        advisor_name: "Dr. A",
-        advisor_email: "a@example.test",
-        created_by: member.id,
-      });
+    const blocked = await member.client.from("projects").insert({
+      title: `Blocked ${stamp}`,
+      summary: "x".repeat(40),
+      kind: "research",
+      field: "Engineering",
+      year: 2025,
+      stop_reason: "other",
+      advisor_name: "Dr. A",
+      advisor_email: "a@example.test",
+      created_by: member.id,
+    });
     expect(blocked.error?.message).toMatch(/suspended/i);
     expect((await admin.client.rpc("admin_restore_user", { p_user: member.id, p_reason: REASON })).error).toBeNull();
-    const ok = await member.client
-      .from("projects")
-      .insert({
-        title: `Allowed ${stamp}`,
-        summary: "x".repeat(40),
-        kind: "research",
-        field: "Engineering",
-        year: 2025,
-        stop_reason: "other",
-        advisor_name: "Dr. A",
-        advisor_email: "a@example.test",
-        created_by: member.id,
-      });
+    const ok = await member.client.from("projects").insert({
+      title: `Allowed ${stamp}`,
+      summary: "x".repeat(40),
+      kind: "research",
+      field: "Engineering",
+      year: 2025,
+      stop_reason: "other",
+      advisor_name: "Dr. A",
+      advisor_email: "a@example.test",
+      created_by: member.id,
+    });
     expect(ok.error).toBeNull();
   });
 
@@ -354,19 +350,17 @@ describe("suspension", () => {
       .update({ suspended_at: new Date().toISOString(), suspended_until: new Date(Date.now() - 1000).toISOString() })
       .eq("id", member.id);
     // the suspension has ended, so the user can act again
-    const ok = await member.client
-      .from("projects")
-      .insert({
-        title: `After suspension ${stamp}`,
-        summary: "x".repeat(40),
-        kind: "research",
-        field: "Engineering",
-        year: 2025,
-        stop_reason: "other",
-        advisor_name: "Dr. A",
-        advisor_email: "a@example.test",
-        created_by: member.id,
-      });
+    const ok = await member.client.from("projects").insert({
+      title: `After suspension ${stamp}`,
+      summary: "x".repeat(40),
+      kind: "research",
+      field: "Engineering",
+      year: 2025,
+      stop_reason: "other",
+      advisor_name: "Dr. A",
+      advisor_email: "a@example.test",
+      created_by: member.id,
+    });
     expect(ok.error).toBeNull();
     await svc.from("profiles").update({ suspended_at: null, suspended_until: null }).eq("id", member.id);
   });

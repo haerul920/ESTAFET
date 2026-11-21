@@ -69,13 +69,11 @@ describe("verification and policies", () => {
     const ghost = await mk("ghost", { verified: false });
     const open = await publishedProject(owner, { mode: "open" });
     const byReq = await publishedProject(owner, { mode: "by_request" });
-    const insert = await ghost.client
-      .from("projects")
-      .insert({
-        title: `Ghost ${Date.now()}${Math.floor(Math.random() * 1000)}`,
-        summary: "x".repeat(40),
-        created_by: ghost.id,
-      });
+    const insert = await ghost.client.from("projects").insert({
+      title: `Ghost ${Date.now()}${Math.floor(Math.random() * 1000)}`,
+      summary: "x".repeat(40),
+      created_by: ghost.id,
+    });
     expect(insert.error).not.toBeNull();
     expect(
       hint((await ghost.client.rpc("take_access", { p_project_id: open.projectId, p_agreement_version: 1 })).error),
