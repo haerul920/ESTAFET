@@ -16,7 +16,7 @@ export interface ActionResult {
   data?: Record<string, unknown>;
 }
 
-export const MIN_REASON = 15;
+const MIN_REASON = 15;
 
 interface Props {
   /** Button text and dialog title. */

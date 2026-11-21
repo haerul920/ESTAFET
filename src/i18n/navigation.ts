@@ -4,7 +4,7 @@ import { routing } from "./routing";
 const nav = createNavigation(routing);
 
 /** Locale-aware Link, usePathname and useRouter. Always import these instead of next/link and next/navigation for page links. */
-export const { Link, usePathname, useRouter, getPathname } = nav;
+export const { Link, usePathname, useRouter } = nav;
 
 /**
  * Locale-aware redirect for server code. Pass the locale from `await getLocale()`.

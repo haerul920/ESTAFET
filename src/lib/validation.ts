@@ -35,19 +35,5 @@ export function safeNext(next: string | null | undefined, fallback = "/dasbor"):
   return next;
 }
 
-export function allowedEmailDomains(): string[] {
-  return (process.env.ALLOWED_EMAIL_DOMAINS ?? "")
-    .split(",")
-    .map((d) => d.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-export function isEmailAllowed(email: string): boolean {
-  const domains = allowedEmailDomains();
-  if (domains.length === 0) return true;
-  const domain = email.split("@")[1]?.toLowerCase() ?? "";
-  return domains.some((d) => domain === d || domain.endsWith("." + d));
-}
-
 /** `t` is the translator for the `validation` namespace. */
 export const emailSchema = (t: TFn) => z.string().trim().toLowerCase().email(t("email"));

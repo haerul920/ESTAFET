@@ -22,7 +22,7 @@ function formatSize(bytes: number): string {
   return `${bytes} B`;
 }
 
-export function DataNotice() {
+function DataNotice() {
   const t = useTranslations("files");
   return (
     <Card tone="blue">

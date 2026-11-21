@@ -50,7 +50,7 @@ function num(v: string | undefined, fallback: number): number {
 }
 
 /** The value from env (or the built-in default) for each key. */
-export function envDefaults(env: Record<string, string | undefined>): { [K in SettingKey]: { value: SettingValues[K]; fromEnv: boolean } } {
+function envDefaults(env: Record<string, string | undefined>): { [K in SettingKey]: { value: SettingValues[K]; fromEnv: boolean } } {
   const domains = (env.ALLOWED_EMAIL_DOMAINS ?? "").split(",").map((d) => d.trim().toLowerCase()).filter(Boolean);
   return {
     allowed_email_domains: { value: domains, fromEnv: domains.length > 0 },

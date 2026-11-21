@@ -111,7 +111,7 @@ export function buildChecklist(
 }
 
 /** Reads the extracted text of the project's files (service role, after the caller checked access). */
-export async function loadExtractedDocs(files: ProjectFile[]): Promise<Map<string, ExtractedDoc>> {
+async function loadExtractedDocs(files: ProjectFile[]): Promise<Map<string, ExtractedDoc>> {
   const admin = createAdminClient();
   const out = new Map<string, ExtractedDoc>();
   for (const f of files) {

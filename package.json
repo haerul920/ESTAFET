@@ -24,6 +24,7 @@
     "shots": "tsx scripts/screenshots.ts",
     "shots:design": "tsx scripts/screenshots-design.ts",
     "perf": "tsx scripts/perf-check.ts",
+    "cloud-sql": "node scripts/build-cloud-sql.mjs",
     "test:db:purge": "vitest run --config vitest.db.purge.config.ts"
   },
   "dependencies": {
@@ -59,7 +60,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^6.3.0",
     "dotenv": "^18.0.10",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",

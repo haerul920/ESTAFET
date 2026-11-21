@@ -1,5 +1,4 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { AGREEMENT_VERSION } from "./terms";
 
 const s = StyleSheet.create({
   page: { padding: 48, fontSize: 11, fontFamily: "Helvetica", color: "#0E1A26", lineHeight: 1.5 },
@@ -103,4 +102,3 @@ export function AgreementDocument({ data }: { data: AgreementPdfData }) {
   );
 }
 
-export { AGREEMENT_VERSION };

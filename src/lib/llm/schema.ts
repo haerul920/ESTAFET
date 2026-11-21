@@ -7,7 +7,7 @@ const quote = z
   .min(1)
   .refine((q) => wordCount(q) <= 25, "A quote can be at most 25 words.");
 
-export const evidenceSchema = z.object({
+const evidenceSchema = z.object({
   file: z.string().min(1),
   page: z.number().int().min(1),
   quote,

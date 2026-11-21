@@ -4,7 +4,7 @@ Targets (CLAUDE.md 14.8 and 14.10): CLS under 0.05, LCP under 2.5 s on a mid-ran
 
 ## Measured numbers
 
-Measured with `scripts/perf-check.ts` against a **production build** (`node scripts/prod-local.mjs`, port 3200, local Supabase, demo data), in headless Chromium with a mid-range phone profile: 390x844 at 2x, CPU 4x slower, 1.6 Mbps down, 150 ms round trip. Median of 3 runs, Indonesian pages, no cache.
+Measured with `scripts/perf-check.ts` against a **production build** (`pnpm build` then `pnpm start`, local Supabase stack, demo data; it was measured before the move to Supabase cloud), in headless Chromium with a mid-range phone profile: 390x844 at 2x, CPU 4x slower, 1.6 Mbps down, 150 ms round trip. Median of 3 runs, Indonesian pages, no cache.
 
 | Page | LCP | CLS | JavaScript (uncompressed) | Transferred (uncompressed) |
 |---|---|---|---|---|
@@ -34,6 +34,6 @@ Both are under the targets. LCP is read **before** scrolling (a first version of
 ## Re-measure
 
 ```bash
-node scripts/prod-local.mjs                     # builds to .next-perf and serves on :3200
-E2E_BASE_URL=http://localhost:3200 pnpm perf    # PERF_RUNS=5 PERF_DEBUG=1 for more runs and the LCP element
+pnpm build && pnpm start                        # production build on :3000, using .env.local
+E2E_BASE_URL=http://localhost:3000 pnpm perf    # PERF_RUNS=5 PERF_DEBUG=1 for more runs and the LCP element
 ```

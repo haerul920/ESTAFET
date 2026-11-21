@@ -9,7 +9,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { fieldErrorsFrom, formValues, type FormState } from "@/lib/validation";
 import type { TFn } from "@/lib/labels";
 
-export const REPORT_REASONS = ["copyright", "personal_data", "false_information", "inappropriate", "false_ownership", "harmful_file", "spam", "other"] as const;
+const REPORT_REASONS = ["copyright", "personal_data", "false_information", "inappropriate", "false_ownership", "harmful_file", "spam", "other"] as const;
 
 /** Public report. No account needed. Rate limited per client address (hashed); the database records it with a reference code. */
 export async function submitReport(_prev: FormState, formData: FormData): Promise<FormState> {

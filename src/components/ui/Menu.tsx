@@ -6,7 +6,6 @@ import { cn } from "@/lib/cn";
 /** Dropdown menu on Radix: portal, keyboard navigation, collision flipping, focus return. */
 export const Menu = DM.Root;
 export const MenuTrigger = DM.Trigger;
-export const MenuSeparator = () => <DM.Separator className="my-1 h-px bg-line" />;
 
 export function MenuContent({ className, children, align = "end" }: { className?: string; children: React.ReactNode; align?: "start" | "center" | "end" }) {
   return (
