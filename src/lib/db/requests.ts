@@ -88,3 +88,43 @@ export async function getRequestDetail(id: string, userId: string): Promise<Requ
     unlocked: holders.some((h) => h.status === "active"),
   };
 }
+
+export interface RequestMessageRow {
+  id: string;
+  authorId: string;
+  authorName: string;
+  fromOwner: boolean;
+  body: string;
+  createdAt: string;
+}
+
+/**
+ * The thread for a request. Visibility is decided by RLS as the signed-in user (owners and the requesting team only).
+ * Names come from the service role after that.
+ */
+export async function getRequestMessages(requestId: string, projectId: string): Promise<RequestMessageRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("request_messages")
+    .select("id, author_id, body, created_at")
+    .eq("request_id", requestId)
+    .order("created_at", { ascending: true });
+  const rows = data ?? [];
+  if (rows.length === 0) return [];
+  const admin = createAdminClient();
+  const ids = [...new Set(rows.map((r) => r.author_id as string))];
+  const [{ data: profiles }, { data: owners }] = await Promise.all([
+    admin.from("profiles").select("id, full_name").in("id", ids),
+    admin.from("project_members").select("profile_id").eq("project_id", projectId).eq("status", "active"),
+  ]);
+  const nameOf = new Map((profiles ?? []).map((p: { id: string; full_name: string }) => [p.id, p.full_name]));
+  const ownerIds = new Set((owners ?? []).map((o: { profile_id: string }) => o.profile_id));
+  return rows.map((r) => ({
+    id: r.id as string,
+    authorId: r.author_id as string,
+    authorName: nameOf.get(r.author_id as string) ?? "—",
+    fromOwner: ownerIds.has(r.author_id as string),
+    body: r.body as string,
+    createdAt: r.created_at as string,
+  }));
+}

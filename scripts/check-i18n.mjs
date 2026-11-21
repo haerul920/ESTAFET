@@ -60,7 +60,7 @@ const FILE_NS = {
   "src/lib/errors.ts": { t: "errors" },
 };
 // Keys that are built from data at run time (enum values, SQL hints), so a static scan cannot see them used.
-const DYNAMIC_PREFIXES = ["labels.", "errors.hints.", "lineage.events.", "report.r.", "advisor.r.", "auth.demo", "terms.l", "privacy.l", "wizard.step", "board.f", "board.st", "access.open", "access.byRequest", "access.paused", "wizard.limit", "wizard.effect", "settings.req.", "settings.pub."];
+const DYNAMIC_PREFIXES = ["labels.", "errors.hints.", "lineage.events.", "report.r.", "advisor.r.", "auth.demo", "terms.l", "privacy.l", "wizard.step", "board.f", "board.st", "access.open", "access.byRequest", "access.paused", "wizard.limit", "wizard.effect", "settings.req.", "settings.pub.", "review.tpl", "workspace.progressNone", "workspace.progressDoing", "workspace.progressDone"];
 // Single keys picked by a variable (for example t(link.key) or ag(k)).
 const DYNAMIC_KEYS = ["nav.explore", "nav.dashboard", "lang.id", "lang.en", "agreement.t1", "agreement.t2", "agreement.t3", "agreement.t4"];
 

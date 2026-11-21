@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireUser, initials } from "@/lib/auth";
-import { getRequestDetail } from "@/lib/db/requests";
+import { getRequestDetail, getRequestMessages } from "@/lib/db/requests";
 import { PageShell, Breadcrumb } from "@/components/ui/PageShell";
 import { Card } from "@/components/ui/Card";
 import { Badge, DemoBadge } from "@/components/ui/Badge";
 import { Stepper } from "@/components/ui/Stepper";
 import { AgreementCard, CreditLineCard, DecisionCard, type ReviewProps } from "@/components/features/RequestReview";
+import { RequestThread } from "@/components/features/RequestThread";
 import { creditLine } from "@/lib/agreement/terms";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 import { getLabels } from "@/lib/get-labels";
 import type { TFn } from "@/lib/labels";
 
@@ -25,6 +26,7 @@ export default async function RequestReviewPage({ params }: { params: Promise<{ 
   const [locale, t, ag, L] = await Promise.all([getLocale(), getTranslations("review"), getTranslations("agreement"), getLabels()]);
   const d = await getRequestDetail(id, user.id);
   if (!d || (!d.isOwner && !d.isTeam)) notFound();
+  const messages = await getRequestMessages(id, d.project.id);
   const { request: r, project } = d;
 
   const current = d.unlocked ? 4 : r.status === "approved" ? 2 : 1;
@@ -133,6 +135,18 @@ export default async function RequestReviewPage({ params }: { params: Promise<{ 
             </div>
           </Card>
           <DecisionCard {...props} />
+          <RequestThread
+            requestId={id}
+            open={d.request.status === "pending" || d.request.status === "approved"}
+            messages={messages.map((m) => ({
+              id: m.id,
+              authorName: m.authorName,
+              mine: m.authorId === user.id,
+              fromOwner: m.fromOwner,
+              body: m.body,
+              whenLabel: formatDateTime(m.createdAt, locale),
+            }))}
+          />
         </div>
 
         <aside className="flex min-w-[280px] flex-[0_1_400px] flex-col gap-4">

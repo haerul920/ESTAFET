@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge, DemoBadge, EvidenceChip } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { Lineage } from "@/components/features/Lineage";
+import { ProgressControl } from "@/components/features/ProgressControl";
 import { CreditLineCard } from "@/components/features/RequestReview";
 import { Reveal } from "@/components/ui/motion";
 import { buildFullLineage } from "@/lib/lineage";
@@ -50,13 +51,15 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
   const owner = await isProjectOwner(teaser.id);
 
   const supabase = await createClient();
-  const [{ data: files }, { data: items }, { data: ownEvents }, { data: publicEvents }, { data: members }] = await Promise.all([
+  const [{ data: files }, { data: items }, { data: ownEvents }, { data: publicEvents }, { data: members }, { data: progress }] = await Promise.all([
     supabase.from("project_files").select("*").eq("project_id", teaser.id).order("created_at"),
     supabase.from("draft_items").select("*").eq("project_id", teaser.id).eq("review_status", "kept").order("position"),
     supabase.from("lineage_events").select("*").eq("project_id", teaser.id).order("created_at"),
     supabase.from("public_project_lineage").select("*").eq("project_id", teaser.id).order("created_at"),
     supabase.from("project_members").select("profile_id").eq("project_id", teaser.id).eq("status", "active"),
+    supabase.from("backlog_progress").select("item_id, status").eq("project_id", teaser.id),
   ]);
+  const progressOf = new Map((progress ?? []).map((p: { item_id: string; status: "in_progress" | "done" }) => [p.item_id, p.status]));
   // Owners see the whole lineage. Someone with access sees the public lineage plus the events of their own request.
   const seen = new Set<string>();
   const events: LineageEvent[] = [
@@ -145,7 +148,8 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
             return (
               <Reveal key={g.kind}>
                 <Card as="section">
-                  <h2 className="mb-4 mt-0 text-[22px]">{g.title}</h2>
+                  <h2 className="mb-1 mt-0 text-[22px]">{g.title}</h2>
+                  {g.kind === "next_task" ? <p className="mb-4 mt-0 text-sm text-text-2">{t("progressHint")}</p> : <div className="mb-3" />}
                   <ul className="m-0 flex list-none flex-col gap-3 p-0">
                     {list.map((it) => {
                       const ev = it.evidence[0];
@@ -161,6 +165,9 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
                             </span>
                           </div>
                           {it.description ? <span className="text-[15px] text-text-2">{it.description}</span> : null}
+                          {it.kind === "next_task" ? (
+                            <ProgressControl itemId={it.id} slug={slug} title={it.title} status={progressOf.get(it.id) ?? "none"} />
+                          ) : null}
                           {ev && f ? (
                             <figure className="m-0 flex flex-col gap-1.5 rounded-[14px] bg-surface p-3">
                               <blockquote className="m-0 text-sm italic text-text-3">&ldquo;{ev.quote}&rdquo;</blockquote>

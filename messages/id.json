@@ -870,7 +870,16 @@
     "creditTitle": "Kalimat kredit untuk karya berikutnya",
     "copyCredit": "Salin kalimat kredit",
     "copied": "Tersalin",
-    "breadcrumbDashboard": "Dasbor"
+    "breadcrumbDashboard": "Dasbor",
+    "tplLabel": "Templat pesan (bisa kamu ubah)",
+    "tplApprove": "Rencanamu jelas dan masuk akal. Selamat melanjutkan, dan ingat menyebut tim asal di karya berikutnya.",
+    "tplScope": "Rencananya belum cukup spesifik. Kamu boleh mengajukan lagi dengan tugas yang lebih terbatas dan jadwal yang lebih jelas.",
+    "tplBusy": "Kami belum bisa mendukung saat ini. Terima kasih sudah tertarik pada proyek ini.",
+    "tplAsk": "Bisakah kamu jelaskan bagaimana kamu akan memulai tugas pertama dan siapa yang mengerjakannya?",
+    "tplApproveShort": "Pesan persetujuan",
+    "tplScopeShort": "Rencana kurang spesifik",
+    "tplBusyShort": "Belum bisa saat ini",
+    "tplAskShort": "Minta penjelasan"
   },
   "workspace": {
     "metaTitle": "Ruang proyek",
@@ -895,7 +904,12 @@
     "lineage": "Jejak estafet",
     "lineageNote": "Jejak estafet hanya bisa ditambah. Entri tidak bisa diubah atau dihapus.",
     "ownerNote": "Permintaan dan akses untuk proyek ini ada di dasbormu.",
-    "openDashboard": "Buka dasbor"
+    "openDashboard": "Buka dasbor",
+    "progressLabel": "Status pengerjaan: {title}",
+    "progressNone": "Belum dimulai",
+    "progressDoing": "Dikerjakan",
+    "progressDone": "Selesai",
+    "progressHint": "Tandai tugas yang sedang atau sudah kamu kerjakan. Pemilik diberi tahu dan perubahannya tampil di jejak estafet."
   },
   "advisor": {
     "metaTitle": "Persetujuan dosen pembimbing",
@@ -1428,5 +1442,18 @@
       "text": "Setiap perubahan pengaturan tercatat di jejak estafet dan tidak bisa diubah.",
       "empty": "Belum ada riwayat."
     }
+  },
+  "thread": {
+    "title": "Percakapan",
+    "hint": "Tanya jawab singkat antara pemilik dan tim peminta. Maksimal 500 karakter per pesan.",
+    "closed": "Permintaan ini sudah diputuskan, jadi percakapan ditutup. Riwayatnya tetap bisa dibaca.",
+    "empty": "Belum ada pesan. Pemilik bisa meminta info tambahan, dan tim bisa menjawab di sini.",
+    "you": "Kamu",
+    "owner": "pemilik",
+    "team": "tim peminta",
+    "label": "Tulis pesan",
+    "left": "Sisa {count} karakter",
+    "send": "Kirim pesan",
+    "sending": "Mengirim…"
   }
 }

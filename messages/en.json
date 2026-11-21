@@ -870,7 +870,16 @@
     "creditTitle": "Credit line for future submissions",
     "copyCredit": "Copy credit line",
     "copied": "Copied",
-    "breadcrumbDashboard": "Dashboard"
+    "breadcrumbDashboard": "Dashboard",
+    "tplLabel": "Message templates (you can edit them)",
+    "tplApprove": "Your plan is clear and realistic. Good luck continuing, and remember to credit the original team in your next work.",
+    "tplScope": "The plan is not specific enough yet. You are welcome to apply again with fewer tasks and a clearer schedule.",
+    "tplBusy": "We cannot support this right now. Thank you for your interest in the project.",
+    "tplAsk": "Could you explain how you will start the first task and who will work on it?",
+    "tplApproveShort": "Approval message",
+    "tplScopeShort": "Plan not specific enough",
+    "tplBusyShort": "Not possible right now",
+    "tplAskShort": "Ask for detail"
   },
   "workspace": {
     "metaTitle": "Workspace",
@@ -895,7 +904,12 @@
     "lineage": "Lineage",
     "lineageNote": "The lineage is append-only. Entries cannot be edited or removed.",
     "ownerNote": "Requests and access for this project are on your dashboard.",
-    "openDashboard": "Open dashboard"
+    "openDashboard": "Open dashboard",
+    "progressLabel": "Work status: {title}",
+    "progressNone": "Not started",
+    "progressDoing": "In progress",
+    "progressDone": "Done",
+    "progressHint": "Mark the tasks you are working on or have finished. The owners are told and the change shows in the lineage."
   },
   "advisor": {
     "metaTitle": "Advisor approval",
@@ -1428,5 +1442,18 @@
       "text": "Every settings change is recorded in the lineage and cannot be edited.",
       "empty": "No history yet."
     }
+  },
+  "thread": {
+    "title": "Conversation",
+    "hint": "A short exchange between the owners and the requesting team. At most 500 characters per message.",
+    "closed": "This request was decided, so the conversation is closed. You can still read the history.",
+    "empty": "No messages yet. The owners can ask for more information and the team can answer here.",
+    "you": "You",
+    "owner": "owner",
+    "team": "requesting team",
+    "label": "Write a message",
+    "left": "{count} characters left",
+    "send": "Send message",
+    "sending": "Sending…"
   }
 }
