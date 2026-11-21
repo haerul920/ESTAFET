@@ -49,7 +49,7 @@ describe("verification and policies", () => {
     const ghost = await mk("ghost", { verified: false });
     const open = await publishedProject(owner, { mode: "open" });
     const byReq = await publishedProject(owner, { mode: "by_request" });
-    const insert = await ghost.client.from("projects").insert({ title: "Ghost", summary: "x".repeat(40), created_by: ghost.id });
+    const insert = await ghost.client.from("projects").insert({ title: `Ghost ${Date.now()}${Math.floor(Math.random() * 1000)}`, summary: "x".repeat(40), created_by: ghost.id });
     expect(insert.error).not.toBeNull();
     expect(hint((await ghost.client.rpc("take_access", { p_project_id: open.projectId, p_agreement_version: 1 })).error)).toBe("email_unverified");
     expect(hint((await ghost.client.rpc("create_continuation_request", requestArgs(byReq.projectId, byReq.taskId))).error)).toBe("email_unverified");
@@ -57,7 +57,7 @@ describe("verification and policies", () => {
 
   it("publishing needs the current policies to be accepted", async () => {
     const fresh = await mk("nopolicy", { policies: false });
-    const { data } = await fresh.client.from("projects").insert({ title: "Policy gate", summary: "x".repeat(40), created_by: fresh.id }).select("id").single();
+    const { data } = await fresh.client.from("projects").insert({ title: `Policy gate ${Date.now()}${Math.floor(Math.random() * 1000)}`, summary: "x".repeat(40), created_by: fresh.id }).select("id").single();
     const pid = data!.id as string;
     await svc.from("advisor_consents").insert({ project_id: pid, token_hash: `h-${pid}`, status: "approved", expires_at: new Date(Date.now() + 1e9).toISOString() });
     await svc.from("draft_items").insert({ project_id: pid, kind: "lesson", title: "L", review_status: "kept" });
@@ -129,7 +129,7 @@ describe("lifecycle: draft, published, unpublished, archived", () => {
 
 describe("no advisor declaration", () => {
   it("publishing needs an advisor approval or the declaration, and the declaration is blocked after an approval", async () => {
-    const { data } = await owner.client.from("projects").insert({ title: "No advisor", summary: "x".repeat(40), created_by: owner.id }).select("id").single();
+    const { data } = await owner.client.from("projects").insert({ title: `No advisor ${Date.now()}${Math.floor(Math.random() * 1000)}`, summary: "x".repeat(40), created_by: owner.id }).select("id").single();
     const pid = data!.id as string;
     await svc.from("draft_items").insert({ project_id: pid, kind: "lesson", title: "L", review_status: "kept" });
     await owner.client.rpc("confirm_team_consent", { p_project_id: pid });
@@ -148,7 +148,7 @@ describe("no advisor declaration", () => {
 describe("co-owners", () => {
   it("an invitation is not membership until the invitee accepts; consent is per active member", async () => {
     const co = await mk("coowner");
-    const { data } = await owner.client.from("projects").insert({ title: "Team", summary: "x".repeat(40), created_by: owner.id }).select("id").single();
+    const { data } = await owner.client.from("projects").insert({ title: `Team ${Date.now()}${Math.floor(Math.random() * 1000)}`, summary: "x".repeat(40), created_by: owner.id }).select("id").single();
     const pid = data!.id as string;
     expect((await other.client.rpc("invite_co_owner", { p_project_id: pid, p_email: co.email })).error?.message).toMatch(/Only an owner/);
     expect((await owner.client.rpc("invite_co_owner", { p_project_id: pid, p_email: co.email })).error).toBeNull();
@@ -174,7 +174,7 @@ describe("co-owners", () => {
 
   it("declining an invitation leaves the invitee out", async () => {
     const co = await mk("decliner");
-    const { data } = await owner.client.from("projects").insert({ title: "Team 2", summary: "x".repeat(40), created_by: owner.id }).select("id").single();
+    const { data } = await owner.client.from("projects").insert({ title: `Team 2 ${Date.now()}${Math.floor(Math.random() * 1000)}`, summary: "x".repeat(40), created_by: owner.id }).select("id").single();
     const pid = data!.id as string;
     await owner.client.rpc("invite_co_owner", { p_project_id: pid, p_email: co.email });
     expect((await co.client.rpc("respond_co_owner_invite", { p_project_id: pid, p_accept: false })).error).toBeNull();
