@@ -90,6 +90,29 @@ export default async function AdminSettingsPage() {
         />
       </Panel>
 
+      <Panel title="Moderation" className="mb-4">
+        <SettingRow
+          settingKey="report_hold_threshold"
+          label="Reporters needed for an automatic hold"
+          help="For copyright, personal data and harmful file reports, a project is held when this many different reporters (verified accounts or distinct visitors) report it. One person can never hold a project alone."
+          kind="number"
+          unit="reporters"
+          value={String(s.report_hold_threshold.value)}
+          source={s.report_hold_threshold.source}
+          fallback={`${s.report_hold_threshold.fallback} reporters`}
+        />
+        <SettingRow
+          settingKey="hold_review_days"
+          label="Hold review target"
+          help="A held project should be reviewed within this many days. After that, every admin gets an alert."
+          kind="number"
+          unit="days"
+          value={String(s.hold_review_days.value)}
+          source={s.hold_review_days.source}
+          fallback={`${s.hold_review_days.fallback} days`}
+        />
+      </Panel>
+
       <Panel title="Display" className="mb-4">
         <SettingRow
           settingKey="show_demo_banner"

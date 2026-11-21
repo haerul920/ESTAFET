@@ -78,7 +78,7 @@ const ADMIN_PAGES = [
   "/admin/reports",
   "/admin/users",
   "/admin/pipeline",
-  "/admin/consents",
+  "/admin/appeals",
   "/admin/requests",
   "/admin/trials",
   "/admin/audit",

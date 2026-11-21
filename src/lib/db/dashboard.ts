@@ -137,18 +137,41 @@ export function describeNotification(n: NotificationRow, t: TFn): { text: string
         detail: t("n.filesUnlocked.detail"),
         href: `/requests/${p.request_id}`,
       };
-    case "moderation":
+    case "moderation": {
+      const href = p.slug ? `/proyek/${p.slug}/keputusan` : "/dasbor";
+      if (p.action === "restored")
+        return {
+          text: t("n.moderation.restored", { title }),
+          detail: t("n.moderation.detail", { reason: p.reason ?? "" }),
+          href,
+        };
+      if (p.action === "held")
+        return { text: t("n.moderation.held", { title }), detail: t("n.moderation.detailHeld"), href };
       return {
-        text: t(
-          p.action === "restored"
-            ? "n.moderation.restored"
-            : p.action === "removed"
-              ? "n.moderation.removed"
-              : "n.moderation.hidden",
-          { title },
-        ),
-        detail: t("n.moderation.detail", { reason: p.reason ?? "" }),
-        href: "/dasbor",
+        text: t(p.action === "removed" ? "n.moderation.removed" : "n.moderation.hidden", { title }),
+        detail: t("n.moderation.detailAppeal", { reason: p.reason ?? "" }),
+        href,
+      };
+    }
+    case "appeal_outcome":
+      return {
+        text: t(p.outcome === "accepted" ? "n.appeal.accepted" : "n.appeal.rejected", { title }),
+        detail: t("n.appeal.detail", { note: p.note ?? "" }),
+        href: p.slug ? `/proyek/${p.slug}/keputusan` : "/dasbor",
+      };
+    case "admin_hold":
+      return {
+        text: t("n.adminHold.text", { title, reason: p.reason ?? "" }),
+        detail: t("n.adminHold.detail"),
+        href: `/admin/projects/${p.project_id}`,
+      };
+    case "admin_appeal":
+      return { text: t("n.adminAppeal.text", { title }), detail: t("n.adminAppeal.detail"), href: "/admin/appeals" };
+    case "admin_hold_overdue":
+      return {
+        text: t("n.adminOverdue.text", { title }),
+        detail: t("n.adminOverdue.detail"),
+        href: `/admin/projects/${p.project_id}`,
       };
     case "break_glass":
       return {

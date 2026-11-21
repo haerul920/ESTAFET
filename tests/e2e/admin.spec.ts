@@ -111,7 +111,7 @@ test("the admin area is invisible to guests and normal users (404)", async ({ br
     "/admin/reports",
     "/admin/users",
     "/admin/pipeline",
-    "/admin/consents",
+    "/admin/appeals",
     "/admin/requests",
     "/admin/trials",
     "/admin/audit",

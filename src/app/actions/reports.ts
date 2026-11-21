@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth";
+import { botSignalsFrom, verifyBot } from "@/lib/botcheck";
 import { fieldErrorsFrom, formValues, type FormState } from "@/lib/validation";
 import type { TFn } from "@/lib/labels";
 
@@ -45,14 +46,26 @@ export async function submitReport(_prev: FormState, formData: FormData): Promis
     .slice(0, 24);
   const admin = createAdminClient();
 
+  const user = await getCurrentUser();
+
+  // Guests (and accounts with an unconfirmed email) pass a bot check first. Verified accounts do not need it.
+  if (!user?.verified && !(await verifyBot(botSignalsFrom(formData), ip))) return { error: a("botFailed"), values };
+
+  // Rate limits: 5 per hour per client address, and 10 per day per signed-in account.
   const { data: allowed } = await admin.rpc("check_rate_limit", {
     p_key: `report:${ipHash}`,
     p_max: 5,
     p_window_seconds: 3600,
   });
   if (allowed !== true) return { error: a("rateLimited"), values };
-
-  const user = await getCurrentUser();
+  if (user) {
+    const { data: userOk } = await admin.rpc("check_rate_limit", {
+      p_key: `report:u:${user.id}`,
+      p_max: 10,
+      p_window_seconds: 86400,
+    });
+    if (userOk !== true) return { error: a("rateLimited"), values };
+  }
   // The database decides everything else (project available, link shape, own project, duplicates, automatic hold).
   const { data, error } = await admin.rpc("submit_report", {
     p_project: parsed.data.project_id,

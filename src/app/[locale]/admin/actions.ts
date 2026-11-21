@@ -91,6 +91,16 @@ export async function handleReport(
   );
 }
 
+export async function resolveAppeal(
+  appealId: string,
+  outcome: "accepted" | "rejected",
+  note: string,
+): Promise<ActionResult> {
+  return run(false, async (db) =>
+    fail((await db.rpc("admin_resolve_appeal", { p_appeal: appealId, p_outcome: outcome, p_note: note })).error),
+  );
+}
+
 export async function suspendUser(userId: string, reason: string, until: string | null): Promise<ActionResult> {
   return run(true, async (db) => {
     const untilDate = until ? new Date(until) : null;
@@ -181,6 +191,8 @@ const SETTING_INPUT: Record<SettingKey, (raw: string | boolean) => unknown> = {
   contact_email: (r) => String(r).trim(),
   request_expiry_days: (r) => Number(r),
   reapply_cooldown_days: (r) => Number(r),
+  report_hold_threshold: (r) => Number(r),
+  hold_review_days: (r) => Number(r),
 };
 
 export async function updateSetting(key: string, raw: string | boolean, reason: string): Promise<ActionResult> {

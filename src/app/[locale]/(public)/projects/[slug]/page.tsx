@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { PageShell, Breadcrumb } from "@/components/ui/PageShell";
 import { ButtonLink } from "@/components/ui/Button";
+import { HeldNotice } from "@/components/features/HeldNotice";
 import { TeaserContent } from "@/components/features/TeaserContent";
 import { ProjectCta, type CtaState } from "@/components/features/ProjectCta";
 import { getTeaserBySlug, getTeaserItems, getTeaserLineage } from "@/lib/db/public";
@@ -10,7 +11,8 @@ import { getMyAccess, isProjectOwner } from "@/lib/db/access";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { buildPublicLineage } from "@/lib/lineage";
-import { ReportProject } from "@/components/features/ReportProject";
+import { ReportDialog } from "@/components/features/ReportDialog";
+import { ProjectMenu } from "@/components/features/ProjectMenu";
 import type { TFn } from "@/lib/labels";
 import type { TeaserProject } from "@/lib/db/types";
 
@@ -82,7 +84,14 @@ export default async function ProjectTeaserPage({
   const { slug } = await params;
   const { as } = await searchParams;
   const project = await getTeaserBySlug(slug);
-  if (!project) notFound();
+  if (!project) {
+    // A project that is being held (after reports or by an admin) is not shown, but visitors get a neutral notice
+    // instead of a confusing "not found". No reason and no title are revealed.
+    const supabase = await createClient();
+    const { data: held } = await supabase.rpc("is_project_held", { p_slug: slug });
+    if (held === true) return <HeldNotice />;
+    notFound();
+  }
   const [locale, t, tl] = await Promise.all([getLocale(), getTranslations("teaser"), getTranslations("lineage")]);
 
   // Only an owner can ask for the visitor preview. For everyone else the parameter is ignored.
@@ -92,13 +101,14 @@ export default async function ProjectTeaserPage({
     getTeaserLineage(project.id),
     ctaStateFor(project, asVisitor),
   ]);
+  const signedIn = (await getCurrentUser()) !== null;
   const unlocked = state.kind === "owner" || state.kind === "holder";
   const workspace = `/projects/${project.slug}/workspace`;
 
   const cta = (
     <div className="flex flex-col gap-4">
       <ProjectCta state={state} projectId={project.id} slug={project.slug} />
-      <ReportProject projectId={project.id} />
+      <ReportDialog projectId={project.id} signedIn={signedIn} />
     </div>
   );
 
@@ -115,7 +125,10 @@ export default async function ProjectTeaserPage({
           </ButtonLink>
         </div>
       ) : null}
-      <Breadcrumb items={[{ label: t("explore"), href: "/explore" }, { label: project.title }]} />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Breadcrumb items={[{ label: t("explore"), href: "/explore" }, { label: project.title }]} />
+        <ProjectMenu projectId={project.id} signedIn={signedIn} />
+      </div>
       <TeaserContent
         project={project}
         items={items}

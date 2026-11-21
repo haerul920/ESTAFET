@@ -14,6 +14,7 @@ import { Badge, DemoBadge, EvidenceChip } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { Lineage } from "@/components/features/Lineage";
 import { ProgressControl } from "@/components/features/ProgressControl";
+import { ProjectMenu } from "@/components/features/ProjectMenu";
 import { CreditLineCard } from "@/components/features/RequestReview";
 import { Reveal } from "@/components/ui/motion";
 import { buildFullLineage } from "@/lib/lineage";
@@ -132,9 +133,12 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
           <h1 className="mb-2 mt-0 text-[40px] font-medium max-sm:text-[30px]">{teaser.title}</h1>
           <p className="m-0 text-text-2">{owner ? t("leadOwner") : t("leadHolder")}</p>
         </div>
-        <ButtonLink href={`/projects/${slug}`} variant="outline">
-          {t("publicTeaser")}
-        </ButtonLink>
+        <div className="flex items-center gap-3">
+          <ButtonLink href={`/projects/${slug}`} variant="outline">
+            {t("publicTeaser")}
+          </ButtonLink>
+          <ProjectMenu projectId={teaser.id} signedIn />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-start gap-8">

@@ -23,13 +23,18 @@
     "account": "Account menu for {name}",
     "accountUnread": ", {count} unread notifications",
     "breadcrumb": "Breadcrumb",
-    "menuTitle": "Menu"
+    "menuTitle": "Menu",
+    "myReports": "My reports",
+    "accountPrivacy": "Account privacy"
   },
   "footer": {
     "note": "Prototype built for STACK 2026 by team Beban Server. Sample projects are simulated demo data.",
     "terms": "Terms",
     "privacy": "Privacy",
-    "nav": "Footer links"
+    "nav": "Footer links",
+    "guidelines": "Guidelines",
+    "attribution": "Attribution",
+    "contact": "Contact"
   },
   "lang": {
     "label": "Language",
@@ -214,7 +219,17 @@
       "not_primary_owner": "Only the owner can hand over ownership.",
       "not_co_owner": "Ownership can only go to an active co-owner.",
       "transfer_pending": "A transfer is already waiting for an answer.",
-      "no_transfer": "There is no transfer waiting for you."
+      "no_transfer": "There is no transfer waiting for you.",
+      "appeal_short": "Explain your appeal in at least 20 characters.",
+      "appeal_long": "Keep your appeal under 1500 characters.",
+      "appeal_exists": "This decision was already appealed.",
+      "decision_outdated": "A newer decision replaced this one.",
+      "not_appealable": "This decision cannot be appealed.",
+      "not_due": "This account deletion is not due yet.",
+      "details_short": "Tell us a little more (at least 10 characters).",
+      "details_long": "The details are too long. At most 1000 characters.",
+      "bad_link": "The link must start with http:// or https:// and be at most 500 characters.",
+      "version_not_higher": "The new version must be higher than the current one."
     },
     "generic": "Something went wrong. Try again, or contact the ESTAFET team if it keeps happening.",
     "suspended": "Your account is suspended.",
@@ -504,8 +519,6 @@
   "report": {
     "open": "Report this project",
     "intro": "Use this for copyright, personal data, wrong information or inappropriate content. The ESTAFET team reads every report and may hide a project while they check. You do not need an account.",
-    "reason": "Reason",
-    "choose": "Choose one",
     "r": {
       "copyright": "Copyright",
       "personal_data": "Personal data",
@@ -539,7 +552,17 @@
     "badLink": "The evidence link must start with http:// or https://.",
     "ownProject": "You cannot report your own project.",
     "sentRef": "Thank you. Your report was sent to the ESTAFET team. Reference code: {reference}",
-    "duplicate": "You already reported this and it is still open. Reference code: {reference}"
+    "duplicate": "You already reported this and it is still open. Reference code: {reference}",
+    "title": "Report this project",
+    "reasonLegend": "What is the problem?",
+    "close": "Close",
+    "cancel": "Cancel",
+    "botFailed": "We could not confirm you are not a bot. Wait a few seconds and send again.",
+    "myReports": "See my reports",
+    "keepReference": "Keep this reference code if you want to ask about your report.",
+    "menu": "Project menu",
+    "guidelinesLink": "Community Guidelines",
+    "rules": "The ESTAFET team reads every report and judges it by the <guidelines>Community Guidelines</guidelines>. Your identity is never shown to the project owners."
   },
   "agreement": {
     "title": "Attribution agreement",
@@ -627,7 +650,10 @@
         "restored": "{title} was restored by the ESTAFET team.",
         "removed": "{title} was removed from public view by the ESTAFET team.",
         "hidden": "{title} was hidden from public view by the ESTAFET team.",
-        "detail": "Reason: “{reason}”. Your data and any signed agreement are unchanged."
+        "detail": "Reason: “{reason}”. Your data and any signed agreement are unchanged.",
+        "held": "{title} is being held for review by the ESTAFET team.",
+        "detailHeld": "The team is reviewing incoming reports. You can see the decision and appeal.",
+        "detailAppeal": "Reason: “{reason}”. Your data and any accepted agreement are unchanged. You can appeal."
       },
       "breakGlass": {
         "text": "An admin opened a private file of {title} for an emergency review.",
@@ -673,6 +699,23 @@
       "ownerDeclined": {
         "text": "The recipient declined ownership of {title}.",
         "detail": "You remain the owner."
+      },
+      "appeal": {
+        "accepted": "Your appeal for {title} was accepted.",
+        "rejected": "Your appeal for {title} was rejected.",
+        "detail": "Team note: “{note}”"
+      },
+      "adminHold": {
+        "text": "{title} was held automatically after several different reporters ({reason}).",
+        "detail": "Review it within the target time."
+      },
+      "adminAppeal": {
+        "text": "There is a new appeal for {title}.",
+        "detail": "Open the appeals queue."
+      },
+      "adminOverdue": {
+        "text": "The hold on {title} is past the review target.",
+        "detail": "Decide: restore, hide or remove."
       }
     },
     "p": {
@@ -757,7 +800,9 @@
     "review": "Review",
     "open": "Open",
     "openWorkspace": "Open workspace",
-    "revokedReason": "Reason from the owners: “{reason}”"
+    "revokedReason": "Reason from the owners: “{reason}”",
+    "deletionBanner": "Your account is scheduled for deletion on {date}.",
+    "deletionManage": "Manage or cancel"
   },
   "reqForm": {
     "f1": "1. Your team",
@@ -956,30 +1001,6 @@
     "exploreText": "Browse verified projects and find one you can continue. Some open right away, others ask the owners first.",
     "start": "Start",
     "skip": "Skip to my dashboard"
-  },
-  "terms": {
-    "metaTitle": "Terms",
-    "draft": "Draft, not yet reviewed by the university. This is version 1 of the Terms. A full text will replace it before launch.",
-    "title": "Terms",
-    "intro": "ESTAFET helps student teams hand over discontinued competition and research projects to the next team.",
-    "l1": "You may share a project only if you worked on it and you have the right to share it. Everyone on the team must agree.",
-    "l2": "The public teaser shows only what you approve. Your files stay private and open only to people who hold access.",
-    "l3": "Anyone who takes access accepts the attribution agreement and credits the original team.",
-    "l4": "Anyone can report a project. The ESTAFET team may hold, hide or remove a project, with a written reason you can appeal.",
-    "l5": "Do not upload secrets, personal data of other people, or files you may not share.",
-    "note": "The attribution agreement is a simple template for student projects. It is not legal advice."
-  },
-  "privacy": {
-    "metaTitle": "Privacy Policy",
-    "draft": "Draft, not yet reviewed by the university. This is version 1 of the Privacy Policy. A full text will replace it before launch.",
-    "title": "Privacy Policy",
-    "intro": "What ESTAFET stores and does today:",
-    "l1": "Your account: name, email address, and the faculty you choose to give. We record which version of these documents you accepted.",
-    "l2": "Your projects: the details you enter, and the files you upload. Files are stored privately and are not shown on public pages.",
-    "l3": "AI drafting: when you ask for a draft, the text of your files is sent to the AI provider that ESTAFET is configured to use. In demo mode a built-in simulator is used and nothing leaves the server. Every team member must agree before this happens.",
-    "l4": "Reports and moderation: a report is stored with its reason. The owner of a project never sees who reported it.",
-    "l5": "Security: we keep a hashed form of an address to limit abuse. We do not store file contents in logs.",
-    "note": "Rights to access, correct, export and delete your data are described in the full text. Data export and account deletion are not built yet."
   },
   "wizard": {
     "frameLabel": "Share a project: progress",
@@ -1269,7 +1290,8 @@
       "republishEffect": "The teaser appears on Explore again. The same requirements apply as the first time: team consent, every item reviewed, and the terms accepted.",
       "archive": "Archive",
       "archiveTitle": "Archive this project?",
-      "archiveEffect": "The project becomes read-only and leaves public pages. People who already have access keep it. You cannot change it any more, and it cannot be deleted while access or an agreement exists."
+      "archiveEffect": "The project becomes read-only and leaves public pages. People who already have access keep it. You cannot change it any more, and it cannot be deleted while access or an agreement exists.",
+      "decisionLink": "See the decision and appeal"
     },
     "confirm": "Yes, continue",
     "confirmArchive": "Yes, archive",
@@ -1348,5 +1370,273 @@
     "left": "{count} characters left",
     "send": "Send message",
     "sending": "Sending…"
+  },
+  "held": {
+    "title": "This project is being reviewed",
+    "text": "The ESTAFET team is reviewing this project and is not showing it for now. A hold is temporary and does not mean a rule was broken.",
+    "explore": "Explore other projects",
+    "contact": "Contact us"
+  },
+  "myReports": {
+    "metaTitle": "My reports",
+    "title": "My reports",
+    "lead": "Reports you sent while signed in. Your identity is never shown to the project owners.",
+    "emptyTitle": "You have not sent a report",
+    "emptyText": "Reports you send while signed in show up here with their status. You can report a project from the menu on its page.",
+    "reference": "Reference code",
+    "sent": "Sent {date}",
+    "status": {
+      "open": "Received",
+      "in_review": "Being reviewed",
+      "resolved": "Acted on",
+      "dismissed": "Not acted on"
+    },
+    "explain": {
+      "open": "Your report arrived and is waiting for the team to read it.",
+      "in_review": "The team is checking your report.",
+      "resolved": "The team took action on this report.",
+      "dismissed": "The team judged that this report does not break a rule, or it was already handled."
+    }
+  },
+  "decision": {
+    "metaTitle": "Moderation decision",
+    "title": "Decision about your project",
+    "anonymity": "The identity of reporters is never shared with project owners.",
+    "status": {
+      "ok": "Visible as normal",
+      "held": "Held for now",
+      "hidden": "Hidden",
+      "removed": "Removed from public view"
+    },
+    "statusText": {
+      "ok": "Your project shows on public pages as usual.",
+      "held": "Your project is not on public pages while the team reviews incoming reports. Your data is safe and agreements already accepted do not change.",
+      "hidden": "Your project is hidden from public pages. Your data is safe and agreements already accepted do not change.",
+      "removed": "Your project was removed from public view. Your data is kept and agreements already accepted do not change."
+    },
+    "action": {
+      "hold": "Held for now",
+      "hide": "Hidden",
+      "remove": "Removed from public view",
+      "restore": "Restored"
+    },
+    "reasonLabel": "Reason",
+    "automaticReason": "The project was held automatically while the team reviews incoming reports. We do not share who reported.",
+    "on": "Decision on {date}",
+    "none": "There is no moderation decision for this project yet.",
+    "history": "Decision history",
+    "appeal": {
+      "title": "Appeal this decision",
+      "text": "You can appeal this decision once. Explain why it is wrong and include evidence if you have it. The ESTAFET team reviews it and tells you the outcome.",
+      "label": "Why you are appealing",
+      "hint": "20 to 1500 characters.",
+      "send": "Send appeal",
+      "sending": "Sending…",
+      "sent": "Your appeal was sent. You will be told when there is an outcome.",
+      "statusOpen": "Appeal waiting for review",
+      "statusAccepted": "Appeal accepted",
+      "statusRejected": "Appeal rejected",
+      "yours": "Your appeal",
+      "note": "Team note: {note}",
+      "once": "This decision was already appealed. A decision can be appealed only once.",
+      "noneNeeded": "This decision does not need an appeal."
+    }
+  },
+  "policyGate": {
+    "metaTitle": "Accept the update",
+    "title": "The Terms or the Privacy Policy were updated",
+    "text": "We updated the documents below. You need to accept the latest versions to continue. You can read them first.",
+    "terms": "Terms and Conditions, version {version}",
+    "privacy": "Privacy Policy, version {version}",
+    "draft": "Both documents are still drafts and have not been reviewed by the competent authority.",
+    "accept": "I have read and accept the latest versions of the Terms and the Privacy Policy.",
+    "button": "Accept and continue",
+    "signOut": "Just sign out"
+  },
+  "account": {
+    "metaTitle": "Account privacy",
+    "title": "Account privacy",
+    "lead": "You control your data. Here you can download a copy of it or ask for your account to be deleted.",
+    "export": {
+      "title": "Download your data",
+      "text": "A copy of your data as JSON: account, profile, projects, requests, access, reports you sent, appeals and notifications. Other people's data and the contents of uploaded files are not included.",
+      "button": "Download data (JSON)"
+    },
+    "delete": {
+      "title": "Delete my account",
+      "intro": "Deletion has a 30 day waiting period so you can change your mind. During that time you can still sign in and cancel it. This is what happens when the waiting period ends:",
+      "l1": "Your profile becomes “Pengguna lama” (former user): name, university, faculty and photo are removed. Your email address is released and the account can no longer sign in.",
+      "l2": "Pending requests to continue are withdrawn. Your access to other people's projects ends. Notifications and your “Notify me” list are deleted.",
+      "l3": "Draft projects that only you own are deleted together with their files.",
+      "l4": "Projects that are published, unpublished or archived stay, with the owner shown as “Pengguna lama”, so teams who continued them keep a correct attribution line. If you do not want such a project to be shown, unpublish it before the waiting period ends.",
+      "l5": "Reports you sent stay for moderation records, without a link to your account. Records of accepted terms and project lineage entries are kept.",
+      "scheduled": "Your account is scheduled for deletion on {date}. You can cancel it before then.",
+      "request": "Schedule account deletion",
+      "cancel": "Cancel the deletion",
+      "confirmTitle": "Schedule the deletion of your account?",
+      "confirmEffect": "Your account is scheduled to be deleted 30 days from now. You can still sign in and cancel until then. After that, deletion cannot be undone.",
+      "confirm": "Yes, schedule deletion",
+      "failed": "The deletion could not be scheduled. Please try again."
+    }
+  },
+  "legal": {
+    "draftTitle": "Draft, not yet reviewed by the competent authority",
+    "draftText": "This document was written by the ESTAFET team as material for campus review. It is not legal advice and must not be read as a statement of compliance with any regulation.",
+    "versionLabel": "Version {version}",
+    "otherDocs": "Other documents",
+    "docTerms": "Terms and Conditions",
+    "docPrivacy": "Privacy Policy",
+    "docGuidelines": "Community Guidelines",
+    "docAttribution": "Attribution Agreement",
+    "docContact": "Contact",
+    "terms": {
+      "metaTitle": "Terms and Conditions",
+      "title": "Terms and Conditions",
+      "lead": "ESTAFET helps student teams hand over discontinued competition and research projects to the next team. By using ESTAFET you agree to these terms.",
+      "s1": {
+        "h": "Who can use it",
+        "p": "Anyone can browse projects without an account. To share a project or take access you need an account with a confirmed email. One account can both share and continue projects. You are responsible for keeping your password safe."
+      },
+      "s2": {
+        "h": "Sharing a project",
+        "p": "You may share only a project you worked on and whose files you have the right to share. Every active team member must agree. Do not upload secrets (passwords, API keys), other people's personal data, or files you may not share. The public summary shows only what you reviewed and approved."
+      },
+      "s3": {
+        "h": "Files stay private",
+        "p": "Project files are not shown on public pages. Only the owners and people who hold access can open them. Owners choose whether access is open, by request, or paused."
+      },
+      "s4": {
+        "h": "Continuing someone else's project",
+        "p": "Anyone who takes access must accept the Attribution Agreement and credit the original owners in work built on it. Access can be revoked by the owners or the ESTAFET team with a written reason. The attribution duty stays after access is revoked."
+      },
+      "s5": {
+        "h": "Reports and moderation",
+        "p": "Anyone can report a project. The ESTAFET team can hold, hide or remove a project from public view based on the Community Guidelines. Every decision comes with a written reason, and owners can appeal once per decision. Moderation does not delete data, and agreements already accepted do not change."
+      },
+      "s6": {
+        "h": "AI assistance",
+        "p": "You can ask for an AI draft or fill everything in by hand. An AI draft is a suggestion: you review, edit or remove every item before publishing. You are responsible for what you publish."
+      },
+      "s7": {
+        "h": "No warranty",
+        "p": "ESTAFET is a student project and is provided as is. We do not guarantee that the service is always available or error free, or that the content users share is accurate."
+      },
+      "s8": {
+        "h": "Changes to these terms",
+        "p": "If the terms change, we publish a new version and ask you to accept it again before you continue. We record the version you accepted and when."
+      }
+    },
+    "privacy": {
+      "metaTitle": "Privacy Policy",
+      "title": "Privacy Policy",
+      "lead": "This page explains what data ESTAFET stores, what for, and what you can do with it.",
+      "s1": {
+        "h": "Data we store",
+        "p": "Account: name, email address, and university or faculty if you give them. Projects: the details you enter and the files you upload. Access and requests: who holds access to which project, and the messages in requests. Reports and appeals. Notifications. A record of which version of the terms and policies you accepted, and when."
+      },
+      "s2": {
+        "h": "Where data is kept",
+        "p": "Data is kept in the database and file storage service ESTAFET uses (Supabase). Project files sit in private storage and are opened only through short-lived links after a permission check."
+      },
+      "s3": {
+        "h": "AI assistance",
+        "p": "If you ask for an AI draft, the text of the files you choose is sent to the AI provider ESTAFET is configured to use. Every team member must agree first. Source code is not sent apart from the README and package manifests. You can decline: choose “Fill in by hand without AI” and nothing is sent."
+      },
+      "s4": {
+        "h": "Reports and reporters",
+        "p": "The identity of a reporter is never shown to the project owners. Reports from guests store only a hashed form of the network address to limit abuse, not the address itself."
+      },
+      "s5": {
+        "h": "Cookies",
+        "p": "We use only essential cookies: your sign-in session and your language choice. We do not use advertising or tracking cookies."
+      },
+      "s6": {
+        "h": "Your rights over your data",
+        "p": "You can download a copy of your data (JSON) and ask for your account to be deleted from the Account privacy page. Deletion has a 30 day waiting period. After it, your profile becomes “Pengguna lama” (former user). Published projects stay without your name so teams that continued them keep a correct attribution line, unless you unpublish them before the waiting period ends."
+      },
+      "s7": {
+        "h": "How long we keep data",
+        "p": "Account data is kept while your account exists. Records of accepted terms, lineage entries and moderation audit entries are kept longer because they serve as evidence. Technical logs do not contain file contents or personal data."
+      },
+      "s8": {
+        "h": "Contact us",
+        "p": "Questions about personal data? See the Contact page."
+      }
+    },
+    "guidelines": {
+      "metaTitle": "Community Guidelines",
+      "title": "Community Guidelines",
+      "lead": "The ESTAFET team uses these rules to judge reports. They keep shared projects honest, safe and owned by people who have the right to share them.",
+      "s1": {
+        "h": "Copyright",
+        "p": "Do not share work that is not yours or that you may not share, such as other people's reports, closed-license code or paid material."
+      },
+      "s2": {
+        "h": "Personal data",
+        "p": "Do not share other people's personal data without permission: ID numbers, addresses, private contacts, grades or research participant data."
+      },
+      "s3": {
+        "h": "False information",
+        "p": "Do not write summaries, results or evidence you know are untrue. Show what was really finished and what was not."
+      },
+      "s4": {
+        "h": "Inappropriate content",
+        "p": "No content that harasses, threatens, spreads hatred, or is unfit for an academic setting."
+      },
+      "s5": {
+        "h": "False ownership",
+        "p": "Do not claim to own or to have been on the team of a project that is not yours."
+      },
+      "s6": {
+        "h": "Harmful files",
+        "p": "Do not upload files that contain malware, passwords, secret keys or anything designed to cause harm."
+      },
+      "s7": {
+        "h": "Spam",
+        "p": "Do not use ESTAFET for advertising, unrelated links or pointless mass uploads."
+      },
+      "s8": {
+        "h": "How reports are handled",
+        "p": "The team reads every report. If several different reporters report something serious (copyright, personal data, harmful files), the project is held for review. A hold is not a finding that a rule was broken. Every decision (dismiss, hold, hide, remove, restore) has a written reason. Owners receive the reason and can appeal once. Reporters' identities are never shown to owners."
+      }
+    },
+    "attribution": {
+      "metaTitle": "Attribution Agreement",
+      "title": "Attribution Agreement",
+      "lead": "Everyone who takes access to a project's files accepts this agreement. It is a simple template for student projects.",
+      "s1": {
+        "h": "What you agree to",
+        "p": "You credit the original owners by name in any submission, paper or product page that builds on this project. The owners state they have the right to share the files. Ownership of the original work stays with its owners, and your new work belongs to you. ESTAFET records the handover in the lineage."
+      },
+      "s2": {
+        "h": "Credit line",
+        "p": "Every project has a credit line you can copy from the project room, with the title, the owners' names and the lineage code."
+      },
+      "s3": {
+        "h": "Versions",
+        "p": "The agreement has a version number. Your acceptance is recorded with its version. If a new version is published, projects you already took stay under the version you accepted."
+      },
+      "s4": {
+        "h": "Revoked access",
+        "p": "The owners or the ESTAFET team can revoke your access with a written reason. The attribution duty stays for work you already made with help from that project."
+      },
+      "s5": {
+        "h": "Not legal advice",
+        "p": "This is a simple template for student projects and is not legal advice. Check your university's rules for shared work."
+      }
+    },
+    "contact": {
+      "metaTitle": "Contact",
+      "title": "Contact",
+      "lead": "Questions, account problems, or questions about your personal data? Contact the ESTAFET team.",
+      "emailLabel": "Email",
+      "noEmail": "The administrators have not set a contact address yet. Meanwhile, use the Report button on a project page for content problems.",
+      "includeTitle": "Include this so we can help faster",
+      "include1": "The email address of your account (never your password).",
+      "include2": "The link to the project or the report reference code, if there is one.",
+      "include3": "What happened and what you expected.",
+      "reportTitle": "Reporting content?",
+      "reportText": "Use the “⋯” menu on the project page. The team reads reports and you can see their status under My reports."
+    }
   }
 }

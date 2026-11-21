@@ -23,13 +23,18 @@
     "account": "Menu akun {name}",
     "accountUnread": ", {count} notifikasi belum dibaca",
     "breadcrumb": "Jalur navigasi",
-    "menuTitle": "Menu"
+    "menuTitle": "Menu",
+    "myReports": "Laporan saya",
+    "accountPrivacy": "Privasi akun"
   },
   "footer": {
     "note": "Prototipe untuk STACK 2026 oleh tim Beban Server. Proyek yang tampil adalah data contoh.",
     "terms": "Syarat",
     "privacy": "Privasi",
-    "nav": "Tautan bagian bawah halaman"
+    "nav": "Tautan bagian bawah halaman",
+    "guidelines": "Pedoman",
+    "attribution": "Atribusi",
+    "contact": "Kontak"
   },
   "lang": {
     "label": "Bahasa",
@@ -214,7 +219,17 @@
       "not_primary_owner": "Hanya pemilik utama yang bisa mengalihkan kepemilikan.",
       "not_co_owner": "Kepemilikan hanya bisa diberikan ke pemilik bersama yang aktif.",
       "transfer_pending": "Ada pengalihan yang masih menunggu jawaban.",
-      "no_transfer": "Tidak ada pengalihan yang menunggu jawabanmu."
+      "no_transfer": "Tidak ada pengalihan yang menunggu jawabanmu.",
+      "appeal_short": "Jelaskan bandingmu dengan minimal 20 karakter.",
+      "appeal_long": "Bandingmu maksimal 1500 karakter.",
+      "appeal_exists": "Keputusan ini sudah pernah dibanding.",
+      "decision_outdated": "Ada keputusan yang lebih baru menggantikan ini.",
+      "not_appealable": "Keputusan ini tidak bisa dibanding.",
+      "not_due": "Penghapusan akun ini belum jatuh tempo.",
+      "details_short": "Ceritakan sedikit lebih banyak (minimal 10 karakter).",
+      "details_long": "Detailnya terlalu panjang. Maksimal 1000 karakter.",
+      "bad_link": "Tautan harus diawali http:// atau https:// dan maksimal 500 karakter.",
+      "version_not_higher": "Versi baru harus lebih tinggi dari versi yang berlaku."
     },
     "generic": "Terjadi kesalahan. Coba lagi, atau hubungi tim ESTAFET kalau berlanjut.",
     "suspended": "Akunmu ditangguhkan.",
@@ -504,8 +519,6 @@
   "report": {
     "open": "Laporkan proyek ini",
     "intro": "Gunakan ini untuk hak cipta, data pribadi, informasi yang salah, atau konten yang tidak pantas. Tim ESTAFET membaca setiap laporan dan bisa menyembunyikan proyek selagi memeriksa. Kamu tidak perlu akun.",
-    "reason": "Alasan",
-    "choose": "Pilih salah satu",
     "r": {
       "copyright": "Hak cipta",
       "personal_data": "Data pribadi",
@@ -539,7 +552,17 @@
     "badLink": "Tautan bukti harus diawali http:// atau https://.",
     "ownProject": "Kamu tidak bisa melaporkan proyekmu sendiri.",
     "sentRef": "Terima kasih. Laporanmu sudah dikirim ke tim ESTAFET. Kode referensi: {reference}",
-    "duplicate": "Kamu sudah melaporkan hal yang sama dan laporannya masih terbuka. Kode referensi: {reference}"
+    "duplicate": "Kamu sudah melaporkan hal yang sama dan laporannya masih terbuka. Kode referensi: {reference}",
+    "title": "Laporkan proyek ini",
+    "reasonLegend": "Apa masalahnya?",
+    "close": "Tutup",
+    "cancel": "Batal",
+    "botFailed": "Kami tidak bisa memastikan kamu bukan robot. Tunggu beberapa detik, lalu kirim lagi.",
+    "myReports": "Lihat laporanku",
+    "keepReference": "Simpan kode referensi ini kalau kamu ingin menanyakan laporanmu.",
+    "menu": "Menu proyek",
+    "guidelinesLink": "Pedoman Komunitas",
+    "rules": "Tim ESTAFET membaca setiap laporan dan menilainya dengan <guidelines>Pedoman Komunitas</guidelines>. Identitasmu tidak pernah ditunjukkan kepada pemilik proyek."
   },
   "agreement": {
     "title": "Perjanjian atribusi",
@@ -627,7 +650,10 @@
         "restored": "{title} dipulihkan oleh tim ESTAFET.",
         "removed": "{title} dihapus dari tampilan publik oleh tim ESTAFET.",
         "hidden": "{title} disembunyikan dari tampilan publik oleh tim ESTAFET.",
-        "detail": "Alasan: “{reason}”. Datamu dan perjanjian yang sudah disetujui tidak berubah."
+        "detail": "Alasan: “{reason}”. Datamu dan perjanjian yang sudah disetujui tidak berubah.",
+        "held": "{title} ditahan sementara oleh tim ESTAFET.",
+        "detailHeld": "Tim meninjau laporan yang masuk. Kamu bisa melihat keputusan dan mengajukan banding.",
+        "detailAppeal": "Alasan: “{reason}”. Datamu dan perjanjian yang sudah disetujui tidak berubah. Kamu bisa mengajukan banding."
       },
       "breakGlass": {
         "text": "Seorang admin membuka berkas pribadi {title} untuk peninjauan darurat.",
@@ -673,6 +699,23 @@
       "ownerDeclined": {
         "text": "Penerima menolak kepemilikan {title}.",
         "detail": "Kamu tetap pemilik utama."
+      },
+      "appeal": {
+        "accepted": "Bandingmu untuk {title} diterima.",
+        "rejected": "Bandingmu untuk {title} ditolak.",
+        "detail": "Catatan tim: “{note}”"
+      },
+      "adminHold": {
+        "text": "{title} ditahan otomatis setelah beberapa pelapor berbeda ({reason}).",
+        "detail": "Tinjau dalam waktu yang ditargetkan."
+      },
+      "adminAppeal": {
+        "text": "Ada banding baru untuk {title}.",
+        "detail": "Buka antrean banding."
+      },
+      "adminOverdue": {
+        "text": "Penahanan {title} melewati target tinjauan.",
+        "detail": "Putuskan: pulihkan, sembunyikan, atau hapus."
       }
     },
     "p": {
@@ -757,7 +800,9 @@
     "review": "Tinjau",
     "open": "Buka",
     "openWorkspace": "Buka ruang proyek",
-    "revokedReason": "Alasan dari pemilik: “{reason}”"
+    "revokedReason": "Alasan dari pemilik: “{reason}”",
+    "deletionBanner": "Akunmu dijadwalkan dihapus pada {date}.",
+    "deletionManage": "Kelola atau batalkan"
   },
   "reqForm": {
     "f1": "1. Timmu",
@@ -956,30 +1001,6 @@
     "exploreText": "Telusuri proyek terverifikasi dan temukan yang bisa kamu lanjutkan. Sebagian langsung terbuka, sebagian meminta persetujuan pemilik dulu.",
     "start": "Mulai",
     "skip": "Lewati ke dasborku"
-  },
-  "terms": {
-    "metaTitle": "Syarat",
-    "draft": "Draf, belum ditinjau pihak berwenang kampus. Ini versi 1 Syarat. Teks lengkap akan menggantikannya sebelum peluncuran.",
-    "title": "Syarat",
-    "intro": "ESTAFET membantu tim mahasiswa menyerahkan proyek lomba dan riset yang berhenti kepada tim berikutnya.",
-    "l1": "Kamu boleh membagikan proyek hanya jika kamu ikut mengerjakannya dan berhak membagikannya. Seluruh anggota tim harus setuju.",
-    "l2": "Ringkasan publik hanya menampilkan apa yang kamu setujui. Berkasmu tetap pribadi dan hanya terbuka bagi orang yang memegang akses.",
-    "l3": "Siapa pun yang mengambil akses menyetujui perjanjian atribusi dan menyebut tim asal.",
-    "l4": "Siapa pun boleh melaporkan proyek. Tim ESTAFET dapat menahan, menyembunyikan, atau menghapus proyek, dengan alasan tertulis yang bisa kamu ajukan banding.",
-    "l5": "Jangan mengunggah rahasia, data pribadi orang lain, atau berkas yang tidak boleh kamu bagikan.",
-    "note": "Perjanjian atribusi adalah templat sederhana untuk proyek mahasiswa. Ini bukan nasihat hukum."
-  },
-  "privacy": {
-    "metaTitle": "Kebijakan Privasi",
-    "draft": "Draf, belum ditinjau pihak berwenang kampus. Ini versi 1 Kebijakan Privasi. Teks lengkap akan menggantikannya sebelum peluncuran.",
-    "title": "Kebijakan Privasi",
-    "intro": "Yang disimpan dan dilakukan ESTAFET saat ini:",
-    "l1": "Akunmu: nama, alamat email, dan fakultas yang kamu pilih untuk disebutkan. Kami mencatat versi dokumen ini yang kamu setujui.",
-    "l2": "Proyekmu: rincian yang kamu isi dan berkas yang kamu unggah. Berkas disimpan secara pribadi dan tidak ditampilkan di halaman publik.",
-    "l3": "Penyusunan draf AI: saat kamu meminta draf, teks berkasmu dikirim ke penyedia AI yang diatur untuk ESTAFET. Dalam mode demo dipakai simulator bawaan dan tidak ada yang keluar dari server. Setiap anggota tim harus setuju sebelum ini terjadi.",
-    "l4": "Laporan dan moderasi: laporan disimpan bersama alasannya. Pemilik proyek tidak pernah melihat siapa yang melapor.",
-    "l5": "Keamanan: kami menyimpan bentuk hash dari sebuah alamat untuk membatasi penyalahgunaan. Kami tidak menyimpan isi berkas di log.",
-    "note": "Hak untuk mengakses, memperbaiki, mengekspor, dan menghapus datamu dijelaskan di teks lengkap. Ekspor data dan penghapusan akun belum dibuat."
   },
   "wizard": {
     "frameLabel": "Membagikan proyek: kemajuan",
@@ -1269,7 +1290,8 @@
       "republishEffect": "Ringkasan tampil lagi di Jelajahi. Syarat yang sama berlaku seperti pertama kali: persetujuan tim, semua item ditinjau, dan syarat layanan diterima.",
       "archive": "Arsipkan",
       "archiveTitle": "Arsipkan proyek ini?",
-      "archiveEffect": "Proyek menjadi hanya-baca dan hilang dari halaman publik. Orang yang sudah punya akses tetap memilikinya. Kamu tidak bisa mengubahnya lagi, dan tidak bisa menghapusnya selama masih ada akses aktif atau perjanjian."
+      "archiveEffect": "Proyek menjadi hanya-baca dan hilang dari halaman publik. Orang yang sudah punya akses tetap memilikinya. Kamu tidak bisa mengubahnya lagi, dan tidak bisa menghapusnya selama masih ada akses aktif atau perjanjian.",
+      "decisionLink": "Lihat keputusan dan ajukan banding"
     },
     "confirm": "Ya, lanjutkan",
     "confirmArchive": "Ya, arsipkan",
@@ -1348,5 +1370,273 @@
     "left": "Sisa {count} karakter",
     "send": "Kirim pesan",
     "sending": "Mengirim…"
+  },
+  "held": {
+    "title": "Proyek ini sedang ditinjau",
+    "text": "Tim ESTAFET sedang meninjau proyek ini dan sementara tidak menampilkannya. Penahanan ini bersifat sementara dan tidak berarti ada aturan yang dilanggar.",
+    "explore": "Jelajahi proyek lain",
+    "contact": "Hubungi kami"
+  },
+  "myReports": {
+    "metaTitle": "Laporan saya",
+    "title": "Laporan saya",
+    "lead": "Laporan yang kamu kirim saat masuk akun. Identitasmu tidak pernah ditunjukkan kepada pemilik proyek.",
+    "emptyTitle": "Kamu belum mengirim laporan",
+    "emptyText": "Laporan yang kamu kirim saat masuk akun akan muncul di sini beserta statusnya. Kamu bisa melaporkan proyek dari menu di halaman proyek.",
+    "reference": "Kode referensi",
+    "sent": "Dikirim {date}",
+    "status": {
+      "open": "Diterima",
+      "in_review": "Sedang ditinjau",
+      "resolved": "Sudah ditindaklanjuti",
+      "dismissed": "Tidak ditindaklanjuti"
+    },
+    "explain": {
+      "open": "Laporanmu sudah masuk dan menunggu dibaca tim.",
+      "in_review": "Tim sedang memeriksa laporanmu.",
+      "resolved": "Tim sudah mengambil tindakan atas laporan ini.",
+      "dismissed": "Tim menilai laporan ini tidak melanggar aturan, atau sudah ditangani."
+    }
+  },
+  "decision": {
+    "metaTitle": "Keputusan moderasi",
+    "title": "Keputusan tentang proyekmu",
+    "anonymity": "Identitas pelapor tidak pernah dibagikan kepada pemilik proyek.",
+    "status": {
+      "ok": "Tampil normal",
+      "held": "Ditahan sementara",
+      "hidden": "Disembunyikan",
+      "removed": "Dihapus dari tampilan publik"
+    },
+    "statusText": {
+      "ok": "Proyekmu tampil di halaman publik seperti biasa.",
+      "held": "Proyekmu tidak tampil di halaman publik selagi tim meninjau laporan yang masuk. Datamu aman dan perjanjian yang sudah disetujui tidak berubah.",
+      "hidden": "Proyekmu disembunyikan dari halaman publik. Datamu aman dan perjanjian yang sudah disetujui tidak berubah.",
+      "removed": "Proyekmu dihapus dari tampilan publik. Datamu tetap tersimpan dan perjanjian yang sudah disetujui tidak berubah."
+    },
+    "action": {
+      "hold": "Ditahan sementara",
+      "hide": "Disembunyikan",
+      "remove": "Dihapus dari tampilan publik",
+      "restore": "Dipulihkan"
+    },
+    "reasonLabel": "Alasan",
+    "automaticReason": "Proyek ditahan otomatis selagi tim meninjau laporan yang masuk. Kami tidak membagikan siapa yang melapor.",
+    "on": "Keputusan pada {date}",
+    "none": "Belum ada keputusan moderasi untuk proyek ini.",
+    "history": "Riwayat keputusan",
+    "appeal": {
+      "title": "Ajukan banding",
+      "text": "Kamu bisa mengajukan banding satu kali untuk keputusan ini. Jelaskan mengapa keputusan itu keliru dan sertakan bukti bila ada. Tim ESTAFET meninjaunya dan memberi tahu hasilnya.",
+      "label": "Alasan bandingmu",
+      "hint": "20 sampai 1500 karakter.",
+      "send": "Kirim banding",
+      "sending": "Mengirim…",
+      "sent": "Bandingmu terkirim. Kamu akan diberi tahu saat ada hasilnya.",
+      "statusOpen": "Banding menunggu ditinjau",
+      "statusAccepted": "Banding diterima",
+      "statusRejected": "Banding ditolak",
+      "yours": "Bandingmu",
+      "note": "Catatan tim: {note}",
+      "once": "Keputusan ini sudah pernah dibanding. Satu keputusan hanya bisa dibanding satu kali.",
+      "noneNeeded": "Keputusan ini tidak perlu dibanding."
+    }
+  },
+  "policyGate": {
+    "metaTitle": "Setujui pembaruan",
+    "title": "Syarat atau Kebijakan Privasi diperbarui",
+    "text": "Kami memperbarui dokumen di bawah ini. Kamu perlu menyetujui versi terbarunya untuk melanjutkan. Kamu bisa membacanya dulu.",
+    "terms": "Syarat dan Ketentuan, versi {version}",
+    "privacy": "Kebijakan Privasi, versi {version}",
+    "draft": "Kedua dokumen masih draf dan belum ditinjau pihak berwenang.",
+    "accept": "Saya sudah membaca dan menyetujui versi terbaru Syarat dan Kebijakan Privasi.",
+    "button": "Setujui dan lanjutkan",
+    "signOut": "Keluar saja"
+  },
+  "account": {
+    "metaTitle": "Privasi akun",
+    "title": "Privasi akun",
+    "lead": "Kamu mengendalikan datamu. Di sini kamu bisa mengunduh salinannya atau meminta akunmu dihapus.",
+    "export": {
+      "title": "Unduh datamu",
+      "text": "Salinan datamu dalam format JSON: akun, profil, proyek, permintaan, akses, laporan yang kamu kirim, banding, dan notifikasi. Data orang lain dan isi berkas yang diunggah tidak ikut.",
+      "button": "Unduh data (JSON)"
+    },
+    "delete": {
+      "title": "Hapus akunku",
+      "intro": "Penghapusan punya masa tunggu 30 hari supaya kamu bisa berubah pikiran. Selama masa itu kamu masih bisa masuk dan membatalkannya. Inilah yang terjadi setelah masa tunggu berakhir:",
+      "l1": "Profilmu menjadi “Pengguna lama”: nama, kampus, fakultas, dan foto dihapus. Alamat emailmu dilepas dan akun tidak bisa dipakai masuk lagi.",
+      "l2": "Permintaan melanjutkan yang masih menunggu ditarik. Aksesmu ke proyek orang lain berakhir. Notifikasi dan daftar “Beri tahu saya” dihapus.",
+      "l3": "Draf proyek yang hanya kamu miliki dihapus beserta berkasnya.",
+      "l4": "Proyek yang sudah terbit, ditarik, atau diarsipkan tetap ada, dengan pemilik tampil sebagai “Pengguna lama”, supaya tim yang melanjutkannya tetap punya garis atribusi yang benar. Kalau kamu tidak ingin proyek itu tampil, tarik dulu sebelum masa tunggu berakhir.",
+      "l5": "Laporan yang pernah kamu kirim tetap ada untuk catatan moderasi, tanpa tautan ke akunmu. Catatan persetujuan syarat dan jejak estafet proyek tetap tersimpan.",
+      "scheduled": "Penghapusan akunmu dijadwalkan pada {date}. Sebelum itu kamu masih bisa membatalkannya.",
+      "request": "Jadwalkan penghapusan akun",
+      "cancel": "Batalkan penghapusan",
+      "confirmTitle": "Jadwalkan penghapusan akunmu?",
+      "confirmEffect": "Akunmu dijadwalkan dihapus 30 hari dari sekarang. Kamu masih bisa masuk dan membatalkannya sampai saat itu. Setelah itu penghapusan tidak bisa dibatalkan.",
+      "confirm": "Ya, jadwalkan penghapusan",
+      "failed": "Penghapusan tidak bisa dijadwalkan. Coba lagi."
+    }
+  },
+  "legal": {
+    "draftTitle": "Draf, belum ditinjau pihak berwenang",
+    "draftText": "Dokumen ini ditulis oleh tim ESTAFET sebagai bahan tinjauan kampus. Ini bukan nasihat hukum dan belum boleh dianggap sebagai pernyataan kepatuhan terhadap peraturan apa pun.",
+    "versionLabel": "Versi {version}",
+    "otherDocs": "Dokumen lain",
+    "docTerms": "Syarat dan Ketentuan",
+    "docPrivacy": "Kebijakan Privasi",
+    "docGuidelines": "Pedoman Komunitas",
+    "docAttribution": "Perjanjian Atribusi",
+    "docContact": "Kontak",
+    "terms": {
+      "metaTitle": "Syarat dan Ketentuan",
+      "title": "Syarat dan Ketentuan",
+      "lead": "ESTAFET membantu tim mahasiswa menyerahkan proyek lomba dan riset yang berhenti kepada tim berikutnya. Dengan memakai ESTAFET, kamu setuju dengan syarat berikut.",
+      "s1": {
+        "h": "Siapa yang boleh memakai",
+        "p": "Siapa saja boleh menjelajahi proyek tanpa akun. Untuk membagikan proyek atau mengambil akses, kamu perlu akun dengan email yang sudah dikonfirmasi. Satu akun bisa dipakai untuk membagikan dan melanjutkan proyek. Kamu bertanggung jawab atas keamanan kata sandimu."
+      },
+      "s2": {
+        "h": "Membagikan proyek",
+        "p": "Kamu hanya boleh membagikan proyek yang kamu kerjakan dan yang berkasnya berhak kamu bagikan. Semua anggota tim aktif harus menyetujui. Jangan unggah rahasia (kata sandi, kunci API), data pribadi orang lain, atau berkas yang tidak boleh dibagikan. Ringkasan publik hanya menampilkan hal yang sudah kamu tinjau dan setujui."
+      },
+      "s3": {
+        "h": "Berkas tetap pribadi",
+        "p": "Berkas proyek tidak ditampilkan di halaman publik. Hanya pemilik proyek dan orang yang memegang akses yang bisa membukanya. Pemilik memilih apakah akses terbuka, lewat permintaan, atau dijeda."
+      },
+      "s4": {
+        "h": "Melanjutkan proyek orang lain",
+        "p": "Siapa pun yang mengambil akses harus menyetujui Perjanjian Atribusi dan mencantumkan pemilik asli pada karya yang dibangun di atasnya. Akses bisa dicabut oleh pemilik atau tim ESTAFET dengan alasan tertulis. Kewajiban atribusi tetap berlaku setelah akses dicabut."
+      },
+      "s5": {
+        "h": "Laporan dan moderasi",
+        "p": "Siapa pun bisa melaporkan proyek. Tim ESTAFET bisa menahan, menyembunyikan, atau menghapus proyek dari tampilan publik berdasarkan Pedoman Komunitas. Setiap keputusan disertai alasan tertulis, dan pemilik bisa mengajukan banding satu kali per keputusan. Data tidak dihapus oleh tindakan moderasi, dan perjanjian yang sudah disetujui tidak berubah."
+      },
+      "s6": {
+        "h": "Bantuan AI",
+        "p": "Kamu bisa meminta draf dari AI atau mengisi manual tanpa AI. Draf AI adalah usulan: kamu yang meninjau, mengubah, atau menghapus setiap butir sebelum terbit. Kamu bertanggung jawab atas isi yang kamu terbitkan."
+      },
+      "s7": {
+        "h": "Tanpa jaminan",
+        "p": "ESTAFET adalah proyek mahasiswa dan disediakan apa adanya. Kami tidak menjamin layanan selalu tersedia atau bebas kesalahan, dan tidak menjamin keakuratan isi proyek yang dibagikan pengguna."
+      },
+      "s8": {
+        "h": "Perubahan syarat",
+        "p": "Kalau syarat berubah, kami menerbitkan versi baru dan meminta kamu menyetujuinya lagi sebelum melanjutkan. Versi yang kamu setujui dan waktunya kami catat."
+      }
+    },
+    "privacy": {
+      "metaTitle": "Kebijakan Privasi",
+      "title": "Kebijakan Privasi",
+      "lead": "Halaman ini menjelaskan data apa yang disimpan ESTAFET, untuk apa, dan apa yang bisa kamu lakukan dengannya.",
+      "s1": {
+        "h": "Data yang kami simpan",
+        "p": "Akun: nama, alamat email, dan kampus atau fakultas bila kamu mengisinya. Proyek: detail yang kamu isi dan berkas yang kamu unggah. Akses dan permintaan: siapa memegang akses ke proyek mana, dan pesan dalam permintaan. Laporan dan banding. Notifikasi. Catatan versi syarat dan kebijakan yang kamu setujui beserta waktunya."
+      },
+      "s2": {
+        "h": "Di mana data disimpan",
+        "p": "Data disimpan di layanan basis data dan penyimpanan berkas yang dipakai ESTAFET (Supabase). Berkas proyek ada di penyimpanan pribadi dan hanya dibuka lewat tautan sementara setelah pemeriksaan izin."
+      },
+      "s3": {
+        "h": "Bantuan AI",
+        "p": "Kalau kamu meminta draf AI, teks berkas yang kamu pilih dikirim ke penyedia AI yang dikonfigurasi di ESTAFET. Semua anggota tim harus setuju lebih dulu. Kode sumber tidak dikirim selain README dan manifes paket. Kamu bisa menolak: pilih “Isi manual tanpa AI” dan tidak ada yang dikirim."
+      },
+      "s4": {
+        "h": "Laporan dan pelapor",
+        "p": "Identitas pelapor tidak pernah ditunjukkan kepada pemilik proyek. Laporan dari tamu menyimpan hanya bentuk acak (hash) alamat jaringan untuk membatasi penyalahgunaan, bukan alamat aslinya."
+      },
+      "s5": {
+        "h": "Cookie",
+        "p": "Kami hanya memakai cookie yang penting: sesi masuk dan pilihan bahasa. Kami tidak memakai cookie iklan atau pelacak."
+      },
+      "s6": {
+        "h": "Hakmu atas data",
+        "p": "Kamu bisa mengunduh salinan datamu (JSON) dan meminta akunmu dihapus dari halaman Privasi akun. Penghapusan punya masa tunggu 30 hari. Setelahnya profilmu menjadi “Pengguna lama”. Proyek yang sudah terbit tetap ada tanpa namamu supaya garis atribusi tim penerus tetap benar, kecuali kamu menariknya sebelum masa tunggu berakhir."
+      },
+      "s7": {
+        "h": "Berapa lama kami menyimpan",
+        "p": "Data akun disimpan selama akunmu ada. Catatan persetujuan syarat, jejak estafet, dan catatan audit moderasi disimpan lebih lama karena menjadi bukti. Log teknis tidak berisi isi berkas atau data pribadi."
+      },
+      "s8": {
+        "h": "Menghubungi kami",
+        "p": "Pertanyaan tentang data pribadi? Lihat halaman Kontak."
+      }
+    },
+    "guidelines": {
+      "metaTitle": "Pedoman Komunitas",
+      "title": "Pedoman Komunitas",
+      "lead": "Aturan ini dipakai tim ESTAFET untuk menilai laporan. Tujuannya menjaga proyek yang dibagikan jujur, aman, dan milik orang yang berhak membagikannya.",
+      "s1": {
+        "h": "Hak cipta",
+        "p": "Jangan bagikan karya yang bukan milikmu atau yang tidak berhak kamu bagikan, misalnya laporan orang lain, kode berlisensi tertutup, atau materi berbayar."
+      },
+      "s2": {
+        "h": "Data pribadi",
+        "p": "Jangan bagikan data pribadi orang lain tanpa izin: nomor identitas, alamat, kontak pribadi, nilai, atau data peserta penelitian."
+      },
+      "s3": {
+        "h": "Informasi palsu",
+        "p": "Jangan menulis ringkasan, capaian, atau bukti yang kamu tahu tidak benar. Tunjukkan apa yang sebenarnya selesai dan apa yang belum."
+      },
+      "s4": {
+        "h": "Konten tidak pantas",
+        "p": "Tidak ada konten yang melecehkan, mengancam, mengandung kebencian, atau tidak layak untuk lingkungan akademik."
+      },
+      "s5": {
+        "h": "Klaim kepemilikan palsu",
+        "p": "Jangan mengaku sebagai pemilik atau anggota tim proyek yang bukan milikmu."
+      },
+      "s6": {
+        "h": "Berkas berbahaya",
+        "p": "Jangan unggah berkas yang berisi malware, kata sandi, kunci rahasia, atau apa pun yang dirancang untuk merusak."
+      },
+      "s7": {
+        "h": "Spam",
+        "p": "Jangan memakai ESTAFET untuk iklan, tautan yang tidak berhubungan, atau unggahan massal yang tidak berguna."
+      },
+      "s8": {
+        "h": "Bagaimana laporan ditangani",
+        "p": "Setiap laporan dibaca tim. Kalau beberapa pelapor berbeda melaporkan hal serius (hak cipta, data pribadi, berkas berbahaya), proyek ditahan sementara sampai ditinjau. Penahanan bukan putusan bahwa ada pelanggaran. Setiap keputusan (tolak laporan, tahan, sembunyikan, hapus, pulihkan) punya alasan tertulis. Pemilik menerima alasannya dan bisa mengajukan banding satu kali. Identitas pelapor tidak pernah ditunjukkan kepada pemilik."
+      }
+    },
+    "attribution": {
+      "metaTitle": "Perjanjian Atribusi",
+      "title": "Perjanjian Atribusi",
+      "lead": "Perjanjian ini disetujui oleh setiap orang yang mengambil akses ke berkas sebuah proyek. Ini templat sederhana untuk proyek mahasiswa.",
+      "s1": {
+        "h": "Yang kamu setujui",
+        "p": "Kamu mencantumkan pemilik asli dengan nama pada setiap pengajuan, makalah, atau halaman produk yang dibangun di atas proyek ini. Pemilik menyatakan berhak membagikan berkas. Kepemilikan karya asli tetap pada pemiliknya, dan karya baru kamu milik kamu. ESTAFET mencatat serah terima di jejak estafet."
+      },
+      "s2": {
+        "h": "Kalimat atribusi",
+        "p": "Setiap proyek punya kalimat atribusi yang bisa disalin di ruang proyek, berisi judul, nama pemilik, dan kode jejak estafet."
+      },
+      "s3": {
+        "h": "Versi",
+        "p": "Perjanjian punya nomor versi. Persetujuanmu dicatat bersama versinya. Kalau versi baru terbit, proyek yang sudah kamu ambil tetap memakai versi yang kamu setujui."
+      },
+      "s4": {
+        "h": "Pencabutan akses",
+        "p": "Pemilik atau tim ESTAFET bisa mencabut aksesmu dengan alasan tertulis. Kewajiban atribusi tetap berlaku untuk karya yang sudah kamu buat dengan bantuan proyek itu."
+      },
+      "s5": {
+        "h": "Bukan nasihat hukum",
+        "p": "Ini templat sederhana untuk proyek mahasiswa dan bukan nasihat hukum. Periksa aturan kampusmu tentang karya bersama."
+      }
+    },
+    "contact": {
+      "metaTitle": "Kontak",
+      "title": "Kontak",
+      "lead": "Ada pertanyaan, masalah akun, atau pertanyaan tentang data pribadimu? Hubungi tim ESTAFET.",
+      "emailLabel": "Email",
+      "noEmail": "Alamat kontak belum diatur oleh pengelola. Sementara itu, gunakan tombol Laporkan di halaman proyek untuk masalah konten.",
+      "includeTitle": "Sertakan ini supaya kami bisa membantu lebih cepat",
+      "include1": "Alamat email akunmu (bukan kata sandi).",
+      "include2": "Tautan proyek atau kode referensi laporan, jika ada.",
+      "include3": "Apa yang terjadi dan apa yang kamu harapkan.",
+      "reportTitle": "Melaporkan konten?",
+      "reportText": "Pakai menu “⋯” di halaman proyek. Laporan dibaca tim dan statusnya bisa kamu lihat di Laporan saya."
+    }
   }
 }

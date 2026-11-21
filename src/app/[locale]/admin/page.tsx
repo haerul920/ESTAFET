@@ -12,7 +12,6 @@ interface Overview {
   open_reports: number;
   hidden_projects: number;
   failed_runs_24h: number;
-  expired_consents: number;
   stale_requests: number;
   projects_by_status: Record<string, number>;
   requests_by_status: Record<string, number>;

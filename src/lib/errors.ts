@@ -1,3 +1,4 @@
+import en from "../../messages/en.json";
 import type { TFn } from "@/lib/labels";
 
 /** The shape of a Supabase or PostgREST error. SQL functions put a short code in `hint`. */
@@ -18,41 +19,5 @@ export function dbErrorMessage(t: TFn, error: DbError | null | undefined): strin
   return t("generic");
 }
 
-export const KNOWN_HINTS = new Set([
-  "sign_in",
-  "email_unverified",
-  "not_owner",
-  "not_editable",
-  "no_account",
-  "already_member",
-  "no_invitation",
-  "owner_protected",
-  "team_consent",
-  "items_pending",
-  "no_kept_item",
-  "policies_required",
-  "already_published",
-  "archived",
-  "moderated",
-  "not_published",
-  "not_archivable",
-  "bad_limit",
-  "not_available",
-  "own_project",
-  "paused",
-  "needs_request",
-  "open_mode",
-  "agreement_version",
-  "already_has_access",
-  "access_revoked",
-  "quota_full",
-  "open_request",
-  "reapply_cooldown",
-  "no_task",
-  "already_decided",
-  "expired",
-  "not_approved",
-  "not_in_request",
-  "already_revoked",
-  "reason_short",
-]);
+/** Every hint that has a message. Derived from the message file, so a new message is picked up without a second list. */
+export const KNOWN_HINTS: ReadonlySet<string> = new Set(Object.keys(en.errors.hints));

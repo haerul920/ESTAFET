@@ -11,6 +11,8 @@ export const SETTING_KEYS = [
   "contact_email",
   "request_expiry_days",
   "reapply_cooldown_days",
+  "report_hold_threshold",
+  "hold_review_days",
 ] as const;
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
@@ -35,6 +37,12 @@ export const SETTING_SCHEMAS = {
     .int("Use a whole number.")
     .min(0, "Zero turns the cooldown off.")
     .max(90, "At most 90 days."),
+  report_hold_threshold: z
+    .number()
+    .int("Use a whole number.")
+    .min(2, "At least 2 different reporters, so one person cannot hold a project alone.")
+    .max(20, "At most 20 reporters."),
+  hold_review_days: z.number().int("Use a whole number.").min(1, "At least 1 day.").max(30, "At most 30 days."),
 } satisfies Record<SettingKey, z.ZodType>;
 
 export interface SettingValues {
@@ -46,6 +54,8 @@ export interface SettingValues {
   contact_email: string;
   request_expiry_days: number;
   reapply_cooldown_days: number;
+  report_hold_threshold: number;
+  hold_review_days: number;
 }
 
 export interface EffectiveSetting<T> {
@@ -86,6 +96,8 @@ function envDefaults(env: Record<string, string | undefined>): {
           : 7,
       fromEnv: Boolean(env.REAPPLY_COOLDOWN_DAYS),
     },
+    report_hold_threshold: { value: num(env.REPORT_HOLD_THRESHOLD, 3), fromEnv: Boolean(env.REPORT_HOLD_THRESHOLD) },
+    hold_review_days: { value: num(env.HOLD_REVIEW_DAYS, 3), fromEnv: Boolean(env.HOLD_REVIEW_DAYS) },
   };
 }
 

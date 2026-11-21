@@ -3,7 +3,17 @@ import { NextResponse, type NextRequest } from "next/server";
 import { routing, type Locale } from "@/i18n/routing";
 import { SUPABASE_PUBLIC_KEY, SUPABASE_URL } from "./keys";
 
-const PROTECTED_PREFIXES = ["/dasbor", "/dashboard", "/mulai", "/bagikan", "/proyek", "/requests"];
+const PROTECTED_PREFIXES = [
+  "/dasbor",
+  "/dashboard",
+  "/mulai",
+  "/bagikan",
+  "/proyek",
+  "/requests",
+  "/laporan-saya",
+  "/akun",
+  "/kebijakan",
+];
 
 function needsSession(pathname: string) {
   if (PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) return true;

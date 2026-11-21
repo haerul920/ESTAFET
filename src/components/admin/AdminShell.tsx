@@ -20,6 +20,7 @@ const GROUPS: { label: string; items: { href: string; label: string; exact?: boo
     items: [
       { href: "/admin/projects", label: "Projects" },
       { href: "/admin/reports", label: "Reports" },
+      { href: "/admin/appeals", label: "Appeals" },
     ],
   },
   { label: "People", items: [{ href: "/admin/users", label: "Users" }] },
@@ -27,7 +28,6 @@ const GROUPS: { label: string; items: { href: string; label: string; exact?: boo
     label: "Operations",
     items: [
       { href: "/admin/pipeline", label: "Pipeline" },
-      { href: "/admin/consents", label: "Consents" },
       { href: "/admin/requests", label: "Requests" },
     ],
   },
