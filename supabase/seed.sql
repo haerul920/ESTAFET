@@ -77,19 +77,27 @@ values
    array['ESP32', 'Humidity sensors', 'Data logging'], 3),
   ('b0000000-0000-4000-8000-000000000007', 'coral-reef-photo-counter', 'Coral Reef Photo Counter',
    'Counts coral colonies in reef photos to speed up survey work.',
-   'research', 'Marine Science and Fisheries', 2025, 'funding_not_granted', 'verifying', 'Dr. Laila Demo (fictional)', 'advisor.demo@example.invalid',
+   'research', 'Marine Science and Fisheries', 2025, 'funding_not_granted', 'draft', 'Dr. Laila Demo (fictional)', 'advisor.demo@example.invalid',
    'c0000000-0000-4000-8000-000000000001', true, null,
    'The survey grant was not renewed after the first season.',
    array['Python', 'Object detection'], 3),
   ('b0000000-0000-4000-8000-000000000008', 'solar-dryer-controller', 'Solar Dryer Controller',
    'Controls vents on a solar dryer based on temperature and humidity.',
-   'student_program', 'Engineering', 2024, 'team_graduated', 'awaiting_advisor', 'Dr. Budi Demo (fictional)', 'advisor.demo@example.invalid',
+   'student_program', 'Engineering', 2024, 'team_graduated', 'draft', 'Dr. Budi Demo (fictional)', 'advisor.demo@example.invalid',
    'c0000000-0000-4000-8000-000000000001', true, null,
    '', array[]::text[], 3);
 
--- Team consent for projects that passed that step.
+-- Team consent for projects that passed that step (published, plus the two drafts that are past the consent step).
 update public.project_members set consented_at = now()
-  where project_id in (select id from public.projects where status <> 'draft');
+  where project_id in (select id from public.projects where status <> 'draft' or slug in ('coral-reef-photo-counter', 'solar-dryer-controller'));
+
+-- One demo project opens without approval (access_mode = open) so both access modes can be tried. The rest need a request.
+update public.projects set access_mode = 'open' where slug = 'campus-waste-sorting-assistant';
+
+-- The demo accounts accepted the current Terms and Privacy Policy (synthetic, demo accounts only).
+insert into public.policy_acceptances (profile_id, kind, version)
+select u.id, k.kind, 1 from auth.users u cross join (select distinct kind from public.policies) k
+where u.email like '%@estafet.demo';
 
 -- ---------------------------------------------------------------------------
 -- Private file records (objects are uploaded by `pnpm seed:storage`)
@@ -232,7 +240,7 @@ join public.project_files f on f.project_id = p.id and f.original_name = s.fname
 insert into public.advisor_consents (project_id, token_hash, status, comment, expires_at, decided_at)
 select id, encode(extensions.digest('demo-approved-' || slug, 'sha256'), 'hex'), 'approved',
        'Happy to see this continue (demo).', now() + interval '14 days', now() - interval '2 days'
-from public.projects where status in ('published', 'verifying');
+from public.projects where status = 'published' or slug = 'coral-reef-photo-counter';
 
 insert into public.advisor_consents (project_id, token_hash, status, expires_at)
 select id, encode(extensions.digest('demo-advisor-token-solar', 'sha256'), 'hex'), 'pending', now() + interval '14 days'
@@ -241,7 +249,7 @@ from public.projects where slug = 'solar-dryer-controller';
 -- ---------------------------------------------------------------------------
 -- Lineage for published projects (created is logged by the insert trigger)
 -- ---------------------------------------------------------------------------
-select public.log_lineage(id, 'advisor_approved', null, null, '{}'::jsonb) from public.projects where status in ('published', 'verifying');
+select public.log_lineage(id, 'advisor_approved', null, null, '{}'::jsonb) from public.projects where status = 'published' or slug = 'coral-reef-photo-counter';
 select public.log_lineage(id, 'published', created_by, null, '{}'::jsonb) from public.projects where status = 'published';
 
 -- ---------------------------------------------------------------------------
