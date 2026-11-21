@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, usePathname } from "@/i18n/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bell, LogOut, Menu, X, LayoutDashboard } from "lucide-react";
 import { LogoMark } from "./Logo";
 import { ButtonLink } from "./Button";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { signOut } from "@/app/actions/auth";
 import { cn } from "@/lib/cn";
 
@@ -17,15 +18,16 @@ export interface NavUser {
 }
 
 const LINKS = [
-  { href: "/explore", label: "Explore" },
-  { href: "/dasbor", label: "Dashboard" },
-];
+  { href: "/explore", key: "explore" },
+  { href: "/dasbor", key: "dashboard" },
+] as const;
 
 /**
  * Liquid glass navigation pill. `hero` sits on the saturated sky (white text),
  * `strip` sits on the light sky strip of inner pages (ink text).
  */
 export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "strip"; user: NavUser | null }) {
+  const t = useTranslations("nav");
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
@@ -55,11 +57,12 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
   }, [userOpen]);
 
   const textColor = hero ? "text-white" : "text-ink";
-  const links = hero ? [...LINKS.slice(0, 1), { href: "/#how", label: "How it works" }, ...LINKS.slice(1)] : LINKS;
+  const base = LINKS.map((l) => ({ href: l.href as string, label: t(l.key) }));
+  const links = hero ? [base[0], { href: "/#how", label: t("how") }, base[1]] : base;
 
   return (
     <motion.nav
-      aria-label="Main"
+      aria-label={t("main")}
       initial={{ opacity: 0, y: -16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -68,7 +71,7 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
         hero ? "glass" : "glass glass-strong",
       )}
     >
-      <Link href="/" aria-label="ESTAFET home" className={cn("flex items-center gap-2.5 no-underline", textColor)}>
+      <Link href="/" aria-label={t("home")} className={cn("flex items-center gap-2.5 no-underline", textColor)}>
         <LogoMark size={30} onSky={hero} />
         <span className="text-[19px] font-semibold tracking-[0.02em]">ESTAFET</span>
       </Link>
@@ -101,8 +104,9 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
       </ul>
 
       <div className="flex items-center gap-2">
+        <LanguageSwitcher tone={hero ? "light" : "dark"} className="hidden sm:flex" />
         <ButtonLink href="/share" size="sm" arrow className="hidden sm:inline-flex">
-          Share a project
+          {t("share")}
         </ButtonLink>
 
         {user ? (
@@ -115,8 +119,8 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
               className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-black text-[13px] font-semibold text-lime"
             >
               <span className="sr-only">
-                Account menu for {user.name}
-                {user.unread > 0 ? `, ${user.unread} unread notifications` : ""}
+                {t("account", { name: user.name })}
+                {user.unread > 0 ? t("accountUnread", { count: user.unread }) : ""}
               </span>
               <span aria-hidden="true">{user.initials}</span>
               {user.unread > 0 ? (
@@ -144,14 +148,14 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
                     href="/dasbor"
                     className="flex min-h-[44px] items-center gap-2.5 rounded-2xl px-3 text-[15px] text-ink no-underline hover:bg-surface"
                   >
-                    <LayoutDashboard size={18} aria-hidden="true" /> Dashboard
+                    <LayoutDashboard size={18} aria-hidden="true" /> {t("dashboard")}
                   </Link>
                   <Link
                     role="menuitem"
                     href="/dasbor#notifikasi"
                     className="flex min-h-[44px] items-center gap-2.5 rounded-2xl px-3 text-[15px] text-ink no-underline hover:bg-surface"
                   >
-                    <Bell size={18} aria-hidden="true" /> Notifications
+                    <Bell size={18} aria-hidden="true" /> {t("notifications")}
                     {user.unread > 0 ? (
                       <span className="ml-auto rounded-full bg-lime px-2 text-xs font-semibold">{user.unread}</span>
                     ) : null}
@@ -162,7 +166,7 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
                       type="submit"
                       className="flex min-h-[44px] w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 text-left text-[15px] hover:bg-surface"
                     >
-                      <LogOut size={18} aria-hidden="true" /> Sign out
+                      <LogOut size={18} aria-hidden="true" /> {t("signOut")}
                     </button>
                   </form>
                 </motion.div>
@@ -177,13 +181,13 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
               textColor,
             )}
           >
-            Sign in
+            {t("signIn")}
           </Link>
         )}
 
         <button
           type="button"
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-label={menuOpen ? t("menuClose") : t("menuOpen")}
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((v) => !v)}
           className={cn("flex h-11 w-11 cursor-pointer items-center justify-center rounded-full md:hidden", textColor)}
@@ -202,7 +206,7 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
             className="absolute inset-x-0 top-[calc(100%+10px)] rounded-[28px] border border-line bg-white p-3 text-ink shadow-[0_20px_50px_rgba(10,60,150,0.2)] md:hidden"
           >
             <ul className="m-0 flex list-none flex-col p-0">
-              {[...links, { href: "/share", label: "Share a project" }, ...(user ? [] : [{ href: "/login", label: "Sign in" }])].map((l) => (
+              {[...links, { href: "/share", label: t("share") }, ...(user ? [] : [{ href: "/login", label: t("signIn") }])].map((l) => (
                 <li key={l.href}>
                   <Link
                     href={l.href}
@@ -213,6 +217,9 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
                 </li>
               ))}
             </ul>
+            <div className="mt-1 flex justify-center border-t border-line pt-2">
+              <LanguageSwitcher />
+            </div>
           </motion.div>
         ) : null}
       </AnimatePresence>

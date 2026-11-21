@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
-import { addNote } from "@/app/admin/actions";
+import { addNote } from "@/app/[locale]/admin/actions";
 import { useToast } from "./Toast";
 
 /** Admin-only note. It is stored as an audit entry, so it cannot be edited or deleted. */

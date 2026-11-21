@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { TFn } from "@/lib/labels";
 
 export interface FormState {
   ok?: boolean;
@@ -48,4 +49,5 @@ export function isEmailAllowed(email: string): boolean {
   return domains.some((d) => domain === d || domain.endsWith("." + d));
 }
 
-export const emailSchema = z.string().trim().toLowerCase().email("Enter a valid email address.");
+/** `t` is the translator for the `validation` namespace. */
+export const emailSchema = (t: TFn) => z.string().trim().toLowerCase().email(t("email"));

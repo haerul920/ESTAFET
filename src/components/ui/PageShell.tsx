@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { SiteNav } from "./SiteHeader";
 import { SkyStrip } from "./SkyStrip";
 import { Footer } from "./Footer";
@@ -27,8 +28,9 @@ export function PageShell({
 }
 
 export function Breadcrumb({ items }: { items: { label: string; href?: string }[] }) {
+  const t = useTranslations("nav");
   return (
-    <nav aria-label="Breadcrumb" className="mb-4 text-sm text-text-2">
+    <nav aria-label={t("breadcrumb")} className="mb-4 text-sm text-text-2">
       {items.map((it, i) => (
         <span key={it.label}>
           {i > 0 ? " / " : null}

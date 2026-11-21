@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
-import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
+import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/db/types";
 
@@ -34,8 +35,9 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 /** Redirects guests to the login page, then back to `next` after sign in. */
 export async function requireUser(next: string): Promise<CurrentUser> {
   const user = await getCurrentUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(next)}`);
-  if (user.suspended) redirect("/suspended");
+  const locale = await getLocale();
+  if (!user) redirect({ href: `/login?next=${encodeURIComponent(next)}`, locale });
+  if (user.suspended) redirect({ href: "/suspended", locale });
   return user;
 }
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, Download, FolderOpen, PartyPopper } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -10,8 +11,8 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { CheckboxField, FormMessage } from "@/components/ui/Field";
 import { acceptAgreement, askQuestion, decideRequest, withdrawRequest } from "@/app/actions/requests";
 import { revokeAccess } from "@/app/actions/access";
-import { AGREEMENT_DISCLAIMER, AGREEMENT_TERMS, AGREEMENT_VERSION } from "@/lib/agreement/terms";
-import { formatDate } from "@/lib/labels";
+import { AGREEMENT_TERM_KEYS, AGREEMENT_VERSION } from "@/lib/agreement/terms";
+import { formatDate } from "@/lib/format";
 import type { RequestStatus } from "@/lib/db/types";
 import type { AccessHolder } from "@/lib/db/requests";
 
@@ -35,6 +36,8 @@ export interface ReviewProps {
 }
 
 export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote, decidedAt, expiresAt }: ReviewProps) {
+  const t = useTranslations("review");
+  const locale = useLocale();
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -55,22 +58,21 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
     });
 
   if (status !== "pending") {
+    const state =
+      status === "approved"
+        ? t("stateApproved")
+        : status === "declined"
+          ? t("stateDeclined")
+          : status === "expired"
+            ? t("stateExpired")
+            : t("stateWithdrawn");
     return (
       <Card as="section">
-        <h2 className="mb-2 mt-0 text-[22px]">Decision</h2>
-        <p className="m-0">
-          {status === "approved"
-            ? "Approved"
-            : status === "declined"
-              ? "Declined"
-              : status === "expired"
-                ? "Expired without a decision"
-                : "Withdrawn by the requesting team"}
-          {decidedAt ? ` on ${formatDate(decidedAt)}` : ""}.
-        </p>
-        {decisionNote ? <p className="mb-0 mt-2 text-text-2">Message: &ldquo;{decisionNote}&rdquo;</p> : null}
-        {status === "declined" ? <p className="mb-0 mt-2 text-sm text-text-2">The project stays published on ESTAFET.</p> : null}
-        {status === "expired" ? <p className="mb-0 mt-2 text-sm text-text-2">The team can send a new request.</p> : null}
+        <h2 className="mb-2 mt-0 text-[22px]">{t("decisionTitle")}</h2>
+        <p className="m-0">{decidedAt ? t("stateOn", { state, date: formatDate(decidedAt, locale) }) : t("stateNoDate", { state })}</p>
+        {decisionNote ? <p className="mb-0 mt-2 text-text-2">{t("decisionMessage", { note: decisionNote })}</p> : null}
+        {status === "declined" ? <p className="mb-0 mt-2 text-sm text-text-2">{t("declinedNote")}</p> : null}
+        {status === "expired" ? <p className="mb-0 mt-2 text-sm text-text-2">{t("expiredNote")}</p> : null}
       </Card>
     );
   }
@@ -78,26 +80,26 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
   if (!isOwner) {
     return (
       <Card as="section" className="flex flex-col gap-3">
-        <h2 className="m-0 text-[22px]">Waiting for the owners</h2>
+        <h2 className="m-0 text-[22px]">{t("waitingTitle")}</h2>
         <p className="m-0 text-text-2">
-          The owners have your plan. You will get a notification when they decide.
-          {expiresAt ? ` If nobody answers, the request expires on ${formatDate(expiresAt)}.` : ""}
+          {t("waitingText")}
+          {expiresAt ? t("expiresIfNone", { date: formatDate(expiresAt, locale) }) : ""}
         </p>
         {isTeam ? (
           <>
             {confirmDecline ? (
               <div className="flex flex-wrap items-center gap-3">
-                <span>Withdraw this request?</span>
+                <span>{t("withdrawAsk")}</span>
                 <Button variant="danger" size="md" disabled={pending} onClick={() => run(() => withdrawRequest(requestId))}>
-                  Yes, withdraw
+                  {t("withdrawYes")}
                 </Button>
                 <Button variant="outline" size="md" onClick={() => setConfirmDecline(false)}>
-                  Keep it
+                  {t("keep")}
                 </Button>
               </div>
             ) : (
               <Button variant="outline" size="md" className="self-start" onClick={() => setConfirmDecline(true)}>
-                Withdraw request
+                {t("withdraw")}
               </Button>
             )}
           </>
@@ -109,10 +111,10 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
 
   return (
     <Card as="section" className="flex flex-col gap-4">
-      <h2 className="m-0 text-[22px]">Your decision</h2>
+      <h2 className="m-0 text-[22px]">{t("yourDecision")}</h2>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="msg" className="text-sm font-semibold">
-          Message to the team (optional)
+          {t("msgLabel")}
         </label>
         <textarea
           id="msg"
@@ -120,13 +122,13 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
           value={message}
           maxLength={1000}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Share advice, or ask a question."
+          placeholder={t("msgPh")}
           className="w-full resize-y rounded-[14px] border border-line-strong bg-white px-3.5 py-3 text-base"
         />
       </div>
       <div className="flex flex-wrap gap-3">
         <Button size="md" disabled={pending} onClick={() => run(() => decideRequest(requestId, "approved", message))}>
-          Approve request
+          {t("approve")}
         </Button>
         <Button
           variant="outline"
@@ -134,32 +136,32 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
           disabled={pending}
           onClick={() => {
             if (!message.trim()) {
-              setError("Write your question in the message box first.");
+              setError(t("questionFirst"));
               return;
             }
-            run(() => askQuestion(requestId, message), "Your question was sent. The request stays open.");
+            run(() => askQuestion(requestId, message), t("questionSent"));
           }}
         >
-          Ask a question
+          {t("ask")}
         </Button>
         {confirmDecline ? (
           <span className="flex flex-wrap items-center gap-2">
             <Button variant="danger" size="md" disabled={pending} onClick={() => run(() => decideRequest(requestId, "declined", message))}>
-              Yes, decline
+              {t("declineYes")}
             </Button>
             <Button variant="outline" size="md" onClick={() => setConfirmDecline(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
           </span>
         ) : (
           <Button variant="danger" size="md" disabled={pending} onClick={() => setConfirmDecline(true)}>
-            Decline
+            {t("decline")}
           </Button>
         )}
       </div>
       <p className="m-0 text-sm text-text-2">
-        Declining does not remove your project from ESTAFET. The team can apply again after a few days.
-        {expiresAt ? ` Without an answer this request expires on ${formatDate(expiresAt)}.` : ""}
+        {t("declineNote")}
+        {expiresAt ? t("expiresNote", { date: formatDate(expiresAt, locale) }) : ""}
       </p>
       {error ? <FormMessage tone="error">{error}</FormMessage> : null}
       {info ? <FormMessage tone="success">{info}</FormMessage> : null}
@@ -169,6 +171,9 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
 
 /** Per-person agreement. Each person who wants access accepts once, and that acceptance is their access. */
 export function AgreementCard(p: ReviewProps) {
+  const t = useTranslations("review");
+  const ag = useTranslations("agreement");
+  const locale = useLocale();
   const router = useRouter();
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
@@ -191,31 +196,28 @@ export function AgreementCard(p: ReviewProps) {
   return (
     <Card tone="lime" as="section" className="flex flex-col gap-4">
       <div>
-        <h2 className="mb-1 mt-0 text-xl">Attribution agreement</h2>
+        <h2 className="mb-1 mt-0 text-xl">{ag("title")}</h2>
         <span className="text-[13px] text-text-2">
-          Version {AGREEMENT_VERSION}
-          {p.status === "approved" ? "" : ", opens after the request is approved"}
+          {p.status === "approved" ? ag("version", { version: AGREEMENT_VERSION }) : ag("opensAfter", { version: AGREEMENT_VERSION })}
         </span>
       </div>
       <ul className="m-0 flex flex-col gap-2 pl-5 text-[15px]">
-        {AGREEMENT_TERMS.map((t) => (
-          <li key={t}>{t}</li>
+        {AGREEMENT_TERM_KEYS.map((k) => (
+          <li key={k}>{ag(k)}</li>
         ))}
       </ul>
 
       <div className="flex flex-col gap-2.5">
-        <h3 className="m-0 text-sm font-semibold">People with access</h3>
+        <h3 className="m-0 text-sm font-semibold">{t("peopleWithAccess")}</h3>
         {p.holders.length === 0 ? (
-          <span className="text-sm text-text-2">Nobody has accepted yet. Each teammate accepts for themselves.</span>
+          <span className="text-sm text-text-2">{t("nobody")}</span>
         ) : (
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {p.holders.map((h) => (
               <li key={h.accessId} className="flex flex-col gap-2 text-sm">
                 <span className="flex flex-wrap items-center justify-between gap-2">
-                  <span>
-                    {h.name} · accepted {formatDate(h.acceptedAt)}
-                  </span>
-                  {h.status === "active" ? <Badge tone="ok">Has access</Badge> : <Badge tone="neutral">Access revoked</Badge>}
+                  <span>{t("acceptedOn", { name: h.name, date: formatDate(h.acceptedAt, locale) })}</span>
+                  {h.status === "active" ? <Badge tone="ok">{t("hasAccess")}</Badge> : <Badge tone="neutral">{t("accessRevoked")}</Badge>}
                 </span>
                 {p.isOwner && h.status === "active" ? <RevokeControl accessId={h.accessId} requestId={p.requestId} name={h.name} /> : null}
               </li>
@@ -226,21 +228,15 @@ export function AgreementCard(p: ReviewProps) {
 
       {canAccept ? (
         <div className="flex flex-col gap-3">
-          {!p.verified ? (
-            <FormMessage tone="error">Verify your email address first. Taking access needs a confirmed email.</FormMessage>
-          ) : null}
-          <CheckboxField
-            checked={accepted}
-            onChange={(e) => setAccepted(e.target.checked)}
-            label="I accept these terms for myself, and I will credit the original team."
-          />
+          {!p.verified ? <FormMessage tone="error">{t("verifyFirst")}</FormMessage> : null}
+          <CheckboxField checked={accepted} onChange={(e) => setAccepted(e.target.checked)} label={t("acceptLabel")} />
           <Button size="md" disabled={!accepted || pending || !p.verified} onClick={accept} className="self-start">
-            {pending ? "Saving…" : "Accept and get access"}
+            {pending ? t("saving") : t("acceptBtn")}
           </Button>
         </div>
       ) : p.mineAccepted ? (
         <p className="m-0 flex items-center gap-2 text-sm font-semibold text-ok">
-          <Check size={16} aria-hidden="true" /> You accepted version {AGREEMENT_VERSION}.
+          <Check size={16} aria-hidden="true" /> {t("youAccepted", { version: AGREEMENT_VERSION })}
         </p>
       ) : null}
       {error ? <FormMessage tone="error">{error}</FormMessage> : null}
@@ -255,26 +251,27 @@ export function AgreementCard(p: ReviewProps) {
           >
             <span className="flex items-center gap-2 font-semibold">
               <PartyPopper size={18} aria-hidden="true" />
-              {justAccepted ? "Accepted. Your access is active." : p.isOwner ? "A team holds access to the private files." : "Access to the private files is active."}
+              {justAccepted ? t("justAccepted") : p.isOwner ? t("ownerHolds") : t("holderActive")}
             </span>
             <div className="flex flex-wrap gap-2">
               <ButtonLink href={p.workspaceHref} size="md">
-                <FolderOpen size={18} aria-hidden="true" /> Open workspace
+                <FolderOpen size={18} aria-hidden="true" /> {t("openWorkspace")}
               </ButtonLink>
-              <ButtonLink href={`/api/requests/${p.requestId}/agreement`} variant="outline" size="md" download>
-                <Download size={18} aria-hidden="true" /> Agreement PDF
+              <ButtonLink href={`/api/requests/${p.requestId}/agreement?lang=${locale}`} variant="outline" size="md" download>
+                <Download size={18} aria-hidden="true" /> {t("pdf")}
               </ButtonLink>
             </div>
           </motion.div>
         ) : null}
       </AnimatePresence>
-      <p className="m-0 text-[13px] text-text-2">{AGREEMENT_DISCLAIMER}</p>
+      <p className="m-0 text-[13px] text-text-2">{ag("disclaimer")}</p>
     </Card>
   );
 }
 
 /** Owners take access away with a written reason. The holder is told the reason. */
 function RevokeControl({ accessId, requestId, name }: { accessId: string; requestId: string; name: string }) {
+  const t = useTranslations("review");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -283,14 +280,14 @@ function RevokeControl({ accessId, requestId, name }: { accessId: string; reques
   if (!open) {
     return (
       <Button variant="outline" size="md" className="self-start" onClick={() => setOpen(true)}>
-        Revoke access
+        {t("revoke")}
       </Button>
     );
   }
   return (
     <div className="flex flex-col gap-2 rounded-[14px] bg-white p-3">
       <label htmlFor={`revoke-${accessId}`} className="text-sm font-semibold">
-        Why are you revoking access for {name}? They will read this.
+        {t("revokeWhy", { name })}
       </label>
       <textarea
         id={`revoke-${accessId}`}
@@ -299,7 +296,7 @@ function RevokeControl({ accessId, requestId, name }: { accessId: string; reques
         onChange={(e) => setReason(e.target.value)}
         className="w-full resize-y rounded-[14px] border border-line-strong bg-white px-3.5 py-3 text-base"
       />
-      <span className="text-[13px] text-text-2">At least 15 characters. They keep the duty to credit the original team.</span>
+      <span className="text-[13px] text-text-2">{t("revokeMin")}</span>
       {error ? <FormMessage tone="error">{error}</FormMessage> : null}
       <div className="flex flex-wrap gap-2">
         <Button
@@ -315,10 +312,10 @@ function RevokeControl({ accessId, requestId, name }: { accessId: string; reques
             })
           }
         >
-          Revoke access
+          {t("revoke")}
         </Button>
         <Button variant="outline" size="md" onClick={() => setOpen(false)}>
-          Cancel
+          {t("cancel")}
         </Button>
       </div>
     </div>
@@ -326,10 +323,11 @@ function RevokeControl({ accessId, requestId, name }: { accessId: string; reques
 }
 
 export function CreditLineCard({ creditLine }: { creditLine: string }) {
+  const t = useTranslations("review");
   const [copied, setCopied] = useState(false);
   return (
     <Card as="section" className="flex flex-col gap-3">
-      <h2 className="m-0 text-base">Credit line for future submissions</h2>
+      <h2 className="m-0 text-base">{t("creditTitle")}</h2>
       <div className="rounded-[14px] border border-line-soft bg-white p-3.5 font-code text-[13px] leading-[1.6] text-text-3">{creditLine}</div>
       <Button
         variant="outlineBlue"
@@ -346,7 +344,7 @@ export function CreditLineCard({ creditLine }: { creditLine: string }) {
         }}
       >
         {copied ? <Check size={18} aria-hidden="true" /> : <Copy size={18} aria-hidden="true" />}
-        {copied ? "Copied" : "Copy credit line"}
+        {copied ? t("copied") : t("copyCredit")}
       </Button>
     </Card>
   );

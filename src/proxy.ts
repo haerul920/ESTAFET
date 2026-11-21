@@ -1,10 +1,21 @@
+import createIntlMiddleware from "next-intl/middleware";
 import type { NextRequest } from "next/server";
+import { routing } from "@/i18n/routing";
 import { updateSession } from "@/lib/supabase/middleware";
 
+const intl = createIntlMiddleware(routing);
+
+/** First the language layer (rewrites and redirects by locale), then the session and the access checks. */
 export async function proxy(request: NextRequest) {
-  return updateSession(request);
+  // The admin API keeps its guard (a plain 404 for non-admins) but is never localized.
+  if (request.nextUrl.pathname.startsWith("/api/")) return updateSession(request);
+  const response = intl(request);
+  // A locale redirect (for example a visitor with an English cookie opening "/") is final.
+  if (response.headers.has("location")) return response;
+  return updateSession(request, response);
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  // Pages, plus the admin API (guard only). Other API routes, Next internals and static files are untouched.
+  matcher: ["/((?!api/(?!admin/)|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
 };

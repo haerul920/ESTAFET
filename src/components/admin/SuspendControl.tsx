@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ReasonAction } from "./ReasonDialog";
-import { restoreUser, suspendUser } from "@/app/admin/actions";
+import { restoreUser, suspendUser } from "@/app/[locale]/admin/actions";
 
 export function SuspendControl({ userId, suspended, self, isAdmin }: { userId: string; suspended: boolean; self: boolean; isAdmin: boolean }) {
   const [until, setUntil] = useState("");

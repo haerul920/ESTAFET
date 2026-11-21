@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { FileText, FileCode2, Loader2, ShieldCheck, Trash2, UploadCloud, FileArchive } from "lucide-react";
 import { Card } from "@/components/ui/Card";

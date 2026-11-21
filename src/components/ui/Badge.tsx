@@ -1,4 +1,5 @@
 import { CheckCircle2, FileSearch, ShieldCheck, FlaskConical } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
 
 type Tone = "ok" | "info" | "warn" | "neutral" | "danger" | "lime";
@@ -39,41 +40,45 @@ export function Chip({ children, className }: { children: React.ReactNode; class
   return <span className={cn("rounded-full bg-chip px-2.5 py-[3px] text-[13px]", className)}>{children}</span>;
 }
 
-export function CreatorVerified() {
+export function OwnerVerified() {
+  const t = useTranslations("badge");
   return (
     <Badge tone="ok">
       <ShieldCheck size={14} aria-hidden="true" />
-      Creator-verified
+      {t("ownerVerified")}
     </Badge>
   );
 }
 
-export function AdvisorConsented() {
+export function AdvisorApproved() {
+  const t = useTranslations("badge");
   return (
     <Badge tone="info">
       <CheckCircle2 size={14} aria-hidden="true" />
-      Advisor-consented
+      {t("advisorApproved")}
     </Badge>
   );
 }
 
-export function DemoBadge({ children = "Demo data" }: { children?: React.ReactNode }) {
+export function DemoBadge({ children }: { children?: React.ReactNode }) {
+  const t = useTranslations("badge");
   return (
     <Badge tone="warn">
       <FlaskConical size={14} aria-hidden="true" />
-      {children}
+      {children ?? t("demo")}
     </Badge>
   );
 }
 
 export function EvidenceChip({ status, detail }: { status: "matched" | "not_found" | "partial"; detail?: string }) {
+  const t = useTranslations("badge");
   const ok = status === "matched";
   const partial = status === "partial";
   return (
     <Badge tone={ok ? "ok" : "warn"} className="self-start">
       <FileSearch size={14} aria-hidden="true" />
-      {ok ? "Evidence matched" : partial ? "Evidence partly matched" : "Evidence not found"}
-      {detail ? <span className="font-normal">{ok || partial ? " · " : " in "}{detail}</span> : null}
+      {ok ? t("evidenceMatched") : partial ? t("evidencePartial") : t("evidenceNotFound")}
+      {detail ? <span className="font-normal">{ok || partial ? " · " : t("evidenceIn")}{detail}</span> : null}
     </Badge>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { Check, FlaskConical, Pencil, Plus, Sparkles, Trash2, Undo2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";

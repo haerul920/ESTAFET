@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { Bell, FolderPlus, Inbox, KeyRound, Send, UserPlus } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge, DemoBadge } from "@/components/ui/Badge";
@@ -12,7 +13,7 @@ import { FormMessage } from "@/components/ui/Field";
 import { CountUp, Stagger, StaggerItem } from "@/components/ui/motion";
 import { markNotificationsRead } from "@/app/actions/requests";
 import { respondToInvite } from "@/app/actions/projects";
-import { REQUEST_STATUS_LABEL } from "@/lib/labels";
+import { useLabels } from "@/lib/use-labels";
 import { cn } from "@/lib/cn";
 import type { DashboardAccess, DashboardData, DashboardInvitation, DashboardProject, DashboardRequest } from "@/lib/db/dashboard";
 
@@ -46,15 +47,17 @@ function ProjectRow({ p }: { p: DashboardProject }) {
 }
 
 function RequestRow({ r, incoming }: { r: DashboardRequest; incoming: boolean }) {
+  const t = useTranslations("dashboard");
+  const L = useLabels();
   const tone = r.status === "approved" ? "ok" : r.status === "pending" ? "warn" : "neutral";
   const label =
     incoming && r.status === "pending"
-      ? "Waiting for your decision"
+      ? t("waitingDecision")
       : r.status === "approved" && r.unlocked
-        ? "Access active"
+        ? t("accessActive")
         : r.status === "approved" && !incoming
-          ? "Approved"
-          : REQUEST_STATUS_LABEL[r.status];
+          ? t("approvedLabel")
+          : L.requestStatus[r.status];
   return (
     <StaggerItem>
       <Card className="flex flex-wrap items-center justify-between gap-3">
@@ -68,9 +71,9 @@ function RequestRow({ r, incoming }: { r: DashboardRequest; incoming: boolean })
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Badge tone={r.unlocked ? "ok" : tone}>{label}</Badge>
-          {r.needsAgreement && !incoming ? <Badge tone="lime">Accept the agreement</Badge> : null}
+          {r.needsAgreement && !incoming ? <Badge tone="lime">{t("acceptAgreement")}</Badge> : null}
           <ButtonLink href={`/requests/${r.id}`} variant="outline" size="md">
-            {incoming && r.status === "pending" ? "Review" : "Open"}
+            {incoming && r.status === "pending" ? t("review") : t("open")}
           </ButtonLink>
         </div>
       </Card>
@@ -79,6 +82,7 @@ function RequestRow({ r, incoming }: { r: DashboardRequest; incoming: boolean })
 }
 
 function AccessRow({ a }: { a: DashboardAccess }) {
+  const t = useTranslations("dashboard");
   return (
     <StaggerItem>
       <Card className="flex flex-wrap items-center justify-between gap-3">
@@ -86,13 +90,13 @@ function AccessRow({ a }: { a: DashboardAccess }) {
           <strong>{a.projectTitle}</strong>
           <br />
           <span className="text-sm text-text-2">{a.meta}</span>
-          {!a.active && a.revokedReason ? <div className="mt-1 text-sm text-text-2">Reason from the owners: &ldquo;{a.revokedReason}&rdquo;</div> : null}
+          {!a.active && a.revokedReason ? <div className="mt-1 text-sm text-text-2">{t("revokedReason", { reason: a.revokedReason })}</div> : null}
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Badge tone={a.active ? "ok" : "neutral"}>{a.active ? "Access active" : "Access revoked"}</Badge>
+          <Badge tone={a.active ? "ok" : "neutral"}>{a.active ? t("accessActive") : t("accessRevoked")}</Badge>
           {a.active ? (
             <ButtonLink href={`/projects/${a.projectSlug}/workspace`} variant="outline" size="md">
-              Open workspace
+              {t("openWorkspace")}
             </ButtonLink>
           ) : null}
         </div>
@@ -102,6 +106,7 @@ function AccessRow({ a }: { a: DashboardAccess }) {
 }
 
 function InvitationRow({ i }: { i: DashboardInvitation }) {
+  const t = useTranslations("dashboard");
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
@@ -119,14 +124,14 @@ function InvitationRow({ i }: { i: DashboardInvitation }) {
           <div>
             <strong>{i.title}</strong>
             <br />
-            <span className="text-sm text-text-2">You were invited to co-own this project and confirm that it can be shared.</span>
+            <span className="text-sm text-text-2">{t("inviteText")}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button size="md" disabled={pending} onClick={() => answer(true)}>
-              Accept
+              {t("accept")}
             </Button>
             <Button variant="outline" size="md" disabled={pending} onClick={() => answer(false)}>
-              Decline
+              {t("decline")}
             </Button>
           </div>
         </div>
@@ -149,14 +154,15 @@ function Empty({ icon, title, text, action }: { icon: React.ReactNode; title: st
 
 /** One view, two sections. Nothing here depends on an account type: the same person can share and continue. */
 export function Dashboard({ data }: { data: DashboardData }) {
+  const t = useTranslations("dashboard");
   const router = useRouter();
   const [, start] = useTransition();
   const unread = data.notifications.filter((n) => n.unread).length;
 
   const tiles = [
-    { n: data.tiles.decisions, label: data.tiles.decisions === 1 ? "Request waiting for your decision" : "Requests waiting for your decision", cls: "bg-warn-bg text-warn" },
-    { n: data.tiles.drafts, label: data.tiles.drafts === 1 ? "Draft waiting for your review" : "Drafts waiting for your review", cls: "bg-blue-tint text-blue-dark" },
-    { n: data.tiles.sentPending, label: data.tiles.sentPending === 1 ? "Request you sent, still pending" : "Requests you sent, still pending", cls: "bg-surface text-ink" },
+    { n: data.tiles.decisions, label: t("tileDecisions", { count: data.tiles.decisions }), cls: "bg-warn-bg text-warn" },
+    { n: data.tiles.drafts, label: t("tileDrafts", { count: data.tiles.drafts }), cls: "bg-blue-tint text-blue-dark" },
+    { n: data.tiles.sentPending, label: t("tileSent", { count: data.tiles.sentPending }), cls: "bg-surface text-ink" },
   ];
 
   return (
@@ -175,7 +181,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
       {data.invitations.length > 0 ? (
         <section id="undangan" className="flex scroll-mt-6 flex-col gap-3" aria-labelledby="invites-h">
           <h2 id="invites-h" className="m-0 flex items-center gap-2 text-[26px]">
-            <UserPlus size={22} aria-hidden="true" /> Invitations
+            <UserPlus size={22} aria-hidden="true" /> {t("invitations")}
           </h2>
           <Stagger className="flex flex-col gap-3">
             {data.invitations.map((i) => (
@@ -188,22 +194,22 @@ export function Dashboard({ data }: { data: DashboardData }) {
       <section id="proyek-saya" className="flex scroll-mt-6 flex-col gap-4" aria-labelledby="mine-h">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="mine-h" className="m-0 text-[26px]">
-            Projects I share
+            {t("mineTitle")}
           </h2>
           {data.mine.length > 0 ? (
             <ButtonLink href="/share" variant="outline" size="md">
-              Share another project
+              {t("shareAnother")}
             </ButtonLink>
           ) : null}
         </div>
         {data.mine.length === 0 ? (
           <Empty
             icon={<FolderPlus size={36} className="text-blue" aria-hidden="true" />}
-            title="You have not shared a project yet"
-            text="Finished or paused a project? Give it a second life, with your team and advisor on board."
+            title={t("mineEmptyTitle")}
+            text={t("mineEmptyText")}
             action={
               <ButtonLink href="/share" arrow>
-                Share a project
+                {t("shareCta")}
               </ButtonLink>
             }
           />
@@ -217,7 +223,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
         {data.incoming.length > 0 ? (
           <div className="mt-2 flex flex-col gap-3">
             <h3 className="m-0 flex items-center gap-2 text-lg">
-              <Inbox size={18} aria-hidden="true" /> Requests for your projects
+              <Inbox size={18} aria-hidden="true" /> {t("incomingTitle")}
             </h3>
             <Stagger className="flex flex-col gap-3">
               {data.incoming.map((r) => (
@@ -231,22 +237,22 @@ export function Dashboard({ data }: { data: DashboardData }) {
       <section id="proyek-lanjutan" className="flex scroll-mt-6 flex-col gap-4" aria-labelledby="cont-h">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="cont-h" className="m-0 text-[26px]">
-            Projects I am continuing
+            {t("contTitle")}
           </h2>
           {data.access.length + data.sent.length > 0 ? (
             <ButtonLink href="/explore" variant="outline" size="md">
-              Explore projects
+              {t("explore")}
             </ButtonLink>
           ) : null}
         </div>
         {data.access.length + data.sent.length === 0 ? (
           <Empty
             icon={<Send size={36} className="text-blue" aria-hidden="true" />}
-            title="You are not continuing a project yet"
-            text="Browse verified projects. Some open right away with an agreement, others ask the owners first."
+            title={t("contEmptyTitle")}
+            text={t("contEmptyText")}
             action={
               <ButtonLink href="/explore" arrow>
-                Explore projects
+                {t("explore")}
               </ButtonLink>
             }
           />
@@ -255,7 +261,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
             {data.access.length > 0 ? (
               <div className="flex flex-col gap-3">
                 <h3 className="m-0 flex items-center gap-2 text-lg">
-                  <KeyRound size={18} aria-hidden="true" /> Access I hold
+                  <KeyRound size={18} aria-hidden="true" /> {t("accessHeld")}
                 </h3>
                 <Stagger className="flex flex-col gap-3">
                   {data.access.map((a) => (
@@ -267,7 +273,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
             {data.sent.length > 0 ? (
               <div className="flex flex-col gap-3">
                 <h3 className="m-0 flex items-center gap-2 text-lg">
-                  <Send size={18} aria-hidden="true" /> Requests I sent
+                  <Send size={18} aria-hidden="true" /> {t("requestsSent")}
                 </h3>
                 <Stagger className="flex flex-col gap-3">
                   {data.sent.map((r) => (
@@ -283,8 +289,8 @@ export function Dashboard({ data }: { data: DashboardData }) {
       <section id="notifikasi" className="flex scroll-mt-6 flex-col gap-3" aria-labelledby="notif-h">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="notif-h" className="m-0 flex items-center gap-2 text-[26px]">
-            <Bell size={22} aria-hidden="true" /> Notifications
-            {unread > 0 ? <Badge tone="lime">{unread} new</Badge> : null}
+            <Bell size={22} aria-hidden="true" /> {t("notifications")}
+            {unread > 0 ? <Badge tone="lime">{t("unreadCount", { count: unread })}</Badge> : null}
           </h2>
           {unread > 0 ? (
             <Button
@@ -297,12 +303,12 @@ export function Dashboard({ data }: { data: DashboardData }) {
                 })
               }
             >
-              Mark all as read
+              {t("markAll")}
             </Button>
           ) : null}
         </div>
         {data.notifications.length === 0 ? (
-          <Empty icon={<Bell size={32} className="text-text-2" aria-hidden="true" />} title="You are all caught up" text="Advisor decisions, new requests, access changes and agreement updates show up here." />
+          <Empty icon={<Bell size={32} className="text-text-2" aria-hidden="true" />} title={t("caughtUpTitle")} text={t("caughtUpText")} />
         ) : (
           <Stagger as="ul" className="m-0 flex list-none flex-col gap-3 p-0">
             {data.notifications.slice(0, 20).map((n) => (
@@ -320,7 +326,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
                     <span className="whitespace-nowrap text-[13px] text-text-2">{n.when}</span>
                   </span>
                   {n.detail ? <span className="text-sm text-text-2">{n.detail}</span> : null}
-                  {n.unread ? <Badge tone="lime" className="mt-1 self-start">New</Badge> : null}
+                  {n.unread ? <Badge tone="lime" className="mt-1 self-start">{t("new")}</Badge> : null}
                 </Link>
               </StaggerItem>
             ))}

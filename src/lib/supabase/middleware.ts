@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { routing, type Locale } from "@/i18n/routing";
 
 const PROTECTED_PREFIXES = ["/dasbor", "/dashboard", "/mulai", "/share", "/requests"];
 
@@ -9,9 +10,21 @@ function needsSession(pathname: string) {
   return false;
 }
 
-/** Refreshes the Supabase session cookie and redirects guests away from protected routes. */
-export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+/** Splits "/en/dasbor" into the locale ("en") and the path without a prefix ("/dasbor"). Indonesian has no prefix. */
+export function splitLocale(pathname: string): { locale: Locale; path: string } {
+  const m = /^\/(en)(\/.*)?$/.exec(pathname);
+  if (m) return { locale: "en", path: m[2] ?? "/" };
+  return { locale: routing.defaultLocale, path: pathname };
+}
+
+const withLocale = (locale: Locale, path: string) => (locale === routing.defaultLocale ? path : `/${locale}${path === "/" ? "" : path}`);
+
+/**
+ * Refreshes the Supabase session cookie and redirects guests away from protected routes.
+ * `base` is the response the language layer (next-intl) already prepared, so its rewrite and cookie survive.
+ */
+export async function updateSession(request: NextRequest, base?: NextResponse) {
+  const response = base ?? NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +36,6 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
-          response = NextResponse.next({ request });
           for (const { name, value, options } of cookiesToSet) response.cookies.set(name, value, options);
         },
       },
@@ -33,9 +45,10 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims);
   const { pathname, search } = request.nextUrl;
+  const { locale, path } = splitLocale(pathname);
 
   // Admin area: guests and non-admins get a plain 404 so the area is not advertised.
-  if (pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/api/admin/")) {
+  if (path === "/admin" || path.startsWith("/admin/") || path.startsWith("/api/admin/")) {
     let isAdmin = false;
     if (signedIn) {
       const { data: ok } = await supabase.rpc("is_admin");
@@ -43,21 +56,21 @@ export async function updateSession(request: NextRequest) {
     }
     if (!isAdmin) {
       const url = request.nextUrl.clone();
-      url.pathname = "/__not_found";
+      url.pathname = `/${locale}/__not_found`;
       url.search = "";
       return NextResponse.rewrite(url);
     }
   }
 
-  if (!signedIn && needsSession(pathname)) {
+  if (!signedIn && needsSession(path)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.search = `?next=${encodeURIComponent(pathname + search)}`;
+    url.pathname = withLocale(locale, "/login");
+    url.search = `?next=${encodeURIComponent(path + search)}`;
     return NextResponse.redirect(url);
   }
-  if (signedIn && (pathname === "/login" || pathname === "/signup")) {
+  if (signedIn && (path === "/login" || path === "/signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dasbor";
+    url.pathname = withLocale(locale, "/dasbor");
     url.search = "";
     return NextResponse.redirect(url);
   }

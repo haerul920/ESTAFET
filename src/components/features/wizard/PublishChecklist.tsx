@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { motion } from "framer-motion";
 import { Check, Circle, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ReasonAction } from "./ReasonDialog";
 import { StatusPill } from "./ui";
-import { updateSetting } from "@/app/admin/actions";
+import { updateSetting } from "@/app/[locale]/admin/actions";
 
 const SOURCE = { setting: ["Set here", "info"], env: ["From env default", "neutral"], default: ["Built-in default", "neutral"] } as const;
 

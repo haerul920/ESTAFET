@@ -1,7 +1,7 @@
 "use client";
 
 import { ReasonAction } from "./ReasonDialog";
-import { purgeDemoData } from "@/app/admin/actions";
+import { purgeDemoData } from "@/app/[locale]/admin/actions";
 
 export function PurgeControl({ blocked, env }: { blocked: boolean; env: string }) {
   if (blocked) {

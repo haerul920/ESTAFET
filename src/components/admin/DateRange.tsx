@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 
 /** From/to date filter. Dates are interpreted in WITA. Saved in the URL. */
 export function DateRange({ from, to }: { from?: string; to?: string }) {

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { TriangleAlert } from "lucide-react";
 import { ReasonAction } from "./ReasonDialog";
-import { openBreakGlass } from "@/app/admin/actions";
+import { openBreakGlass } from "@/app/[locale]/admin/actions";
 
 interface FileMeta {
   id: string;

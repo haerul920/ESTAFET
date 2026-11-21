@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Inbox } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatWita, relativeTime } from "@/lib/admin/time";

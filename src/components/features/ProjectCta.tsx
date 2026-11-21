@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/Card";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { CheckboxField, FormMessage } from "@/components/ui/Field";
 import { VerifyEmailNotice } from "@/components/features/VerifyEmailNotice";
 import { takeAccess } from "@/app/actions/access";
-import { AGREEMENT_DISCLAIMER, AGREEMENT_TERMS, AGREEMENT_VERSION } from "@/lib/agreement/terms";
+import { AGREEMENT_TERM_KEYS, AGREEMENT_VERSION } from "@/lib/agreement/terms";
 import type { AccessMode } from "@/lib/db/types";
 
 /** What this visitor can do with the project right now. Decided on the server from relationships, never from an account type. */
@@ -22,76 +23,71 @@ export type CtaState =
   | { kind: "by_request"; verified: boolean; email: string };
 
 export function ProjectCta({ state, projectId, slug }: { state: CtaState; projectId: string; slug: string }) {
+  const t = useTranslations("cta");
   const workspace = `/projects/${slug}/workspace`;
   switch (state.kind) {
     case "owner":
       return (
         <Card tone="lime" className="flex flex-col gap-3">
-          <h2 className="m-0 text-xl">This is your project</h2>
-          <p className="m-0 text-[15px] text-text-2">Requests and new access appear on your dashboard.</p>
+          <h2 className="m-0 text-xl">{t("ownerTitle")}</h2>
+          <p className="m-0 text-[15px] text-text-2">{t("ownerText")}</p>
           <ButtonLink href="/dasbor" variant="outline">
-            Open dashboard
+            {t("openDashboard")}
           </ButtonLink>
         </Card>
       );
     case "holder":
       return (
         <Card tone="lime" className="flex flex-col gap-3">
-          <h2 className="m-0 text-xl">You have access</h2>
-          <p className="m-0 text-[15px] text-text-2">Remember to credit the original team in anything that builds on this project.</p>
+          <h2 className="m-0 text-xl">{t("holderTitle")}</h2>
+          <p className="m-0 text-[15px] text-text-2">{t("holderText")}</p>
           <ButtonLink href={workspace} arrow>
-            Open workspace
+            {t("openWorkspace")}
           </ButtonLink>
         </Card>
       );
     case "revoked":
       return (
         <Card tone="lime" className="flex flex-col gap-2">
-          <h2 className="m-0 text-xl">Your access was revoked</h2>
-          <p className="m-0 text-[15px] text-text-2">The owners ended your access and told you why. The duty to credit the original team still applies.</p>
+          <h2 className="m-0 text-xl">{t("revokedTitle")}</h2>
+          <p className="m-0 text-[15px] text-text-2">{t("revokedText")}</p>
         </Card>
       );
     case "request":
       return (
         <Card tone="lime" className="flex flex-col gap-3">
-          <h2 className="m-0 text-xl">{state.status === "approved" ? "Your request was approved" : "Your request is with the owners"}</h2>
-          <p className="m-0 text-[15px] text-text-2">
-            {state.status === "approved" ? "Accept the attribution agreement to get access to the files." : "You will be notified when they decide."}
-          </p>
-          <ButtonLink href={`/requests/${state.requestId}`}>{state.status === "approved" ? "Accept the agreement" : "View your request"}</ButtonLink>
+          <h2 className="m-0 text-xl">{state.status === "approved" ? t("approvedTitle") : t("pendingTitle")}</h2>
+          <p className="m-0 text-[15px] text-text-2">{state.status === "approved" ? t("approvedText") : t("pendingText")}</p>
+          <ButtonLink href={`/requests/${state.requestId}`}>{state.status === "approved" ? t("acceptAgreement") : t("viewRequest")}</ButtonLink>
         </Card>
       );
     case "paused":
       return (
         <Card tone="lime" className="flex flex-col gap-2">
-          <h2 className="m-0 text-xl">New access is paused</h2>
-          <p className="m-0 text-[15px] text-text-2">The owners paused new requests for now. You can still read this teaser, and teams that already have access keep it.</p>
+          <h2 className="m-0 text-xl">{t("pausedTitle")}</h2>
+          <p className="m-0 text-[15px] text-text-2">{t("pausedText")}</p>
         </Card>
       );
     case "quota_full":
       return (
         <Card tone="lime" className="flex flex-col gap-2">
-          <h2 className="m-0 text-xl">Team quota is full</h2>
-          <p className="m-0 text-[15px] text-text-2">The owners set a limit on how many teams can continue this project at once, and it is reached. You can still read this teaser.</p>
+          <h2 className="m-0 text-xl">{t("quotaTitle")}</h2>
+          <p className="m-0 text-[15px] text-text-2">{t("quotaText")}</p>
         </Card>
       );
     case "guest":
       return (
         <Card tone="lime" className="flex flex-col gap-3">
-          <h2 className="m-0 text-xl">Want to continue this project?</h2>
+          <h2 className="m-0 text-xl">{t("guestTitle")}</h2>
           {state.mode === "paused" ? (
-            <p className="m-0 text-[15px] text-text-2">The owners paused new access for now.</p>
+            <p className="m-0 text-[15px] text-text-2">{t("guestPaused")}</p>
           ) : state.quotaFull ? (
-            <p className="m-0 text-[15px] text-text-2">The team quota for this project is full.</p>
+            <p className="m-0 text-[15px] text-text-2">{t("guestFull")}</p>
           ) : (
             <>
-              <p className="m-0 text-[15px] text-text-2">
-                {state.mode === "open"
-                  ? "Sign in, accept the attribution agreement, and the files open right away."
-                  : "Sign in and send a short plan. It takes about 5 minutes. The owners reply through ESTAFET."}
-              </p>
+              <p className="m-0 text-[15px] text-text-2">{state.mode === "open" ? t("guestOpen") : t("guestRequest")}</p>
               <ButtonLink href={`/login?next=${encodeURIComponent(`/projects/${slug}`)}`} className="justify-center">
-                Sign in to continue
+                {t("signInContinue")}
               </ButtonLink>
             </>
           )}
@@ -100,15 +96,15 @@ export function ProjectCta({ state, projectId, slug }: { state: CtaState; projec
     case "by_request":
       return (
         <Card tone="lime" className="flex flex-col gap-3">
-          <h2 className="m-0 text-xl">Want to continue this project?</h2>
-          <p className="m-0 text-[15px] text-text-2">Send a short plan. It takes about 5 minutes. The owners reply through ESTAFET.</p>
+          <h2 className="m-0 text-xl">{t("guestTitle")}</h2>
+          <p className="m-0 text-[15px] text-text-2">{t("byRequestText")}</p>
           {!state.verified ? <VerifyEmailNotice email={state.email} compact /> : null}
           {state.verified ? (
             <ButtonLink href={`/projects/${slug}/request`} className="justify-center">
-              Ask to continue
+              {t("ask")}
             </ButtonLink>
           ) : null}
-          <p className="m-0 text-[13px] text-text-2">Continuing means crediting the original team in your future submissions.</p>
+          <p className="m-0 text-[13px] text-text-2">{t("creditNote")}</p>
         </Card>
       );
     case "open":
@@ -118,31 +114,26 @@ export function ProjectCta({ state, projectId, slug }: { state: CtaState; projec
 
 /** Open mode: read the agreement, tick one box, and the files open. Owners are told, no approval needed. */
 function OpenAccessCard({ projectId, slug, verified, email }: { projectId: string; slug: string; verified: boolean; email: string }) {
+  const t = useTranslations("cta");
+  const ag = useTranslations("agreement");
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
   return (
     <Card tone="lime" className="flex flex-col gap-3">
-      <h2 className="m-0 text-xl">Continue this project</h2>
-      <p className="m-0 text-[15px] text-text-2">
-        This project opens right away with an attribution agreement. No approval is needed, and the owners are told when you take access.
-      </p>
+      <h2 className="m-0 text-xl">{t("openTitle")}</h2>
+      <p className="m-0 text-[15px] text-text-2">{t("openText")}</p>
       {!verified ? <VerifyEmailNotice email={email} compact /> : null}
       <details className="rounded-[14px] bg-white/70 p-3 text-[14px]">
-        <summary className="cursor-pointer font-semibold">Read the agreement (version {AGREEMENT_VERSION})</summary>
+        <summary className="cursor-pointer font-semibold">{t("readAgreement", { version: AGREEMENT_VERSION })}</summary>
         <ul className="mb-2 mt-2 flex flex-col gap-1.5 pl-5">
-          {AGREEMENT_TERMS.map((t) => (
-            <li key={t}>{t}</li>
+          {AGREEMENT_TERM_KEYS.map((k) => (
+            <li key={k}>{ag(k)}</li>
           ))}
         </ul>
-        <p className="m-0 text-[12.5px] text-text-2">{AGREEMENT_DISCLAIMER}</p>
+        <p className="m-0 text-[12.5px] text-text-2">{ag("disclaimer")}</p>
       </details>
-      <CheckboxField
-        checked={accepted}
-        onChange={(e) => setAccepted(e.target.checked)}
-        disabled={!verified}
-        label="I accept these terms for myself, and I will credit the original team."
-      />
+      <CheckboxField checked={accepted} onChange={(e) => setAccepted(e.target.checked)} disabled={!verified} label={t("accept")} />
       {error ? <FormMessage tone="error">{error}</FormMessage> : null}
       <Button
         className="justify-center"
@@ -155,7 +146,7 @@ function OpenAccessCard({ projectId, slug, verified, email }: { projectId: strin
           })
         }
       >
-        {pending ? "Saving…" : "Continue this project"}
+        {pending ? t("saving") : t("continue")}
       </Button>
     </Card>
   );

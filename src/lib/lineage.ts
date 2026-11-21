@@ -1,68 +1,44 @@
-import { formatDate, formatMonthYear } from "@/lib/labels";
+import { formatDate, formatMonthYear } from "@/lib/format";
+import type { TFn } from "@/lib/labels";
 import type { LineageEvent, TeaserLineageEvent } from "@/lib/db/types";
 import type { LineageStep } from "@/components/features/Lineage";
 
-/** Public lineage: original team, published, and who continued it (if anyone). */
+/** Public lineage: original team, published, and who continued it (if anyone). `t` is the `lineage` namespace. */
 export function buildPublicLineage(
   project: { year: number; is_demo: boolean },
   events: TeaserLineageEvent[],
+  t: TFn,
+  locale: string,
 ): LineageStep[] {
   const published = events.find((e) => e.type === "published");
   const continued = events.filter((e) => e.type === "continued");
-  const steps: LineageStep[] = [
-    { id: "origin", title: "Original team", sub: `Started ${project.year}`, state: "done" },
-  ];
+  const steps: LineageStep[] = [{ id: "origin", title: t("origin"), sub: t("originSub", { year: project.year }), state: "done" }];
   if (published) {
     steps.push({
       id: "published",
-      title: "Published on ESTAFET",
-      sub: `${formatMonthYear(published.created_at)}${project.is_demo ? " (demo)" : ""}`,
+      title: t("published"),
+      sub: `${formatMonthYear(published.created_at, locale)}${project.is_demo ? t("demoSuffix") : ""}`,
       state: "done",
     });
   }
   for (const c of continued) {
     steps.push({
       id: c.id,
-      title: "Continued by another team",
-      sub: `${c.team ? c.team + " · " : ""}${formatMonthYear(c.created_at)}`,
+      title: t("continued"),
+      sub: `${c.team ? c.team + " · " : ""}${formatMonthYear(c.created_at, locale)}`,
       state: "done",
     });
   }
-  steps.push({
-    id: "next",
-    title: "Next team",
-    sub: continued.length ? "Open to another continuation after this one" : "Waiting for a continuation",
-    state: "next",
-  });
+  steps.push({ id: "next", title: t("next"), sub: continued.length ? t("nextAfter") : t("nextWaiting"), state: "next" });
   return steps;
 }
 
-const EVENT_TITLE: Record<string, string> = {
-  created: "Project created",
-  advisor_approved: "Advisor approved publishing",
-  advisor_withdrawn: "Advisor withdrew approval",
-  published: "Published on ESTAFET",
-  requested: "Continuation requested",
-  approved: "Request approved by the creators",
-  declined: "Request declined or withdrawn",
-  agreement_signed: "Attribution agreement accepted",
-  continued: "Handed over: files unlocked",
-  resubmitted: "Resubmitted",
-  access_taken: "A team took access",
-  access_revoked: "Access was revoked by the owners",
-  request_expired: "Request expired without a decision",
-  unpublished: "Teaser unpublished by the owners",
-  republished: "Teaser published again",
-  archived: "Project archived by the owners",
-  access_settings_changed: "Access settings changed by the owners",
-};
-
-/** Full lineage for creators and approved adopters (private workspace). */
-export function buildFullLineage(events: LineageEvent[]): LineageStep[] {
+/** Full lineage for owners and people with access (private workspace). */
+export function buildFullLineage(events: LineageEvent[], t: TFn, locale: string): LineageStep[] {
   return events.map((e) => ({
     id: e.id,
-    title: EVENT_TITLE[e.type] ?? e.type,
-    sub: formatDate(e.created_at) + (typeof e.payload?.team === "string" ? ` · ${e.payload.team}` : ""),
+    title: t(`events.${e.type}`),
+    sub: formatDate(e.created_at, locale) + (typeof e.payload?.team === "string" ? ` · ${e.payload.team}` : ""),
     state: "done" as const,
   }));
 }
