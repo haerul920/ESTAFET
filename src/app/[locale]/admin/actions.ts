@@ -10,10 +10,9 @@ import { REAUTH_COOKIE, REAUTH_MINUTES, signReauth } from "@/lib/admin/reauth";
 import { isProduction } from "@/lib/admin/env";
 import { setAuthBan } from "@/lib/admin/ban";
 import { removeDemoObjects } from "@/lib/admin/purge";
-import { generateToken, hashToken, tokenExpiry } from "@/lib/token";
 import { runSynthesis } from "@/lib/synthesis";
 import { trialSchema } from "@/lib/admin/trial-schema";
-import { getSettings, SETTING_KEYS, SETTING_SCHEMAS, type SettingKey } from "@/lib/settings";
+import { SETTING_KEYS, SETTING_SCHEMAS, type SettingKey } from "@/lib/settings";
 
 /**
  * Every admin mutation goes through an `admin_*` SQL function that writes the change and the audit row
@@ -123,25 +122,10 @@ export async function retryRun(runId: string, reason: string): Promise<ActionRes
   });
 }
 
-/** Creates a new link for the advisor and invalidates the old one. The token is returned once and never stored. */
-export async function regenerateConsent(projectId: string, reason: string): Promise<ActionResult> {
-  return run(false, async (db) => {
-    const token = generateToken();
-    const settings = await getSettings();
-    const { error } = await db.rpc("admin_regenerate_consent", {
-      p_project: projectId, p_token_hash: hashToken(token),
-      p_expires: tokenExpiry(new Date(), settings.advisor_token_ttl_days.value).toISOString(), p_reason: reason,
-    });
-    if (error) return { error: error.message };
-    return { data: { url: `${process.env.APP_URL ?? "http://localhost:3000"}/consent/${token}` } };
-  });
-}
-
 const SETTING_INPUT: Record<SettingKey, (raw: string | boolean) => unknown> = {
   allowed_email_domains: (r) => String(r).split(/[\s,;]+/).map((d) => d.trim().toLowerCase()).filter(Boolean),
   max_upload_mb: (r) => Number(r),
   synthesis_daily_cap: (r) => Number(r),
-  advisor_token_ttl_days: (r) => Number(r),
   show_demo_banner: (r) => r === true || r === "true",
   registrations_open: (r) => r === true || r === "true",
   contact_email: (r) => String(r).trim(),

@@ -6,7 +6,7 @@ const PASSWORD = "Demo-Pass-2026!";
 
 async function login(page: Page, email: string) {
   await page.goto("/en/login");
-  await page.getByLabel("University email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForURL(/\/(dasbor|dashboard|admin|mulai)/);

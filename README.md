@@ -11,10 +11,10 @@ Built by team **Beban Server** for STACK 2026 (GDGoC ITB), Case 1 "Smarter Campu
 
 There is **one account type**. "Owner" (shares a project) and "adopter" (continues one) are relationships per project, so the same account can do both. Admin is an extra flag.
 
-1. An owner fills the basics, the team confirms, and the advisor approves through a private link (no account). A project with no advisor can declare that instead.
+1. An owner fills the basics and the team confirms. There is no advisor or lecturer step: ESTAFET is for students.
 2. The owner uploads PDF reports, Markdown notes or a ZIP of the code folder (tree only).
 3. A synthesis step drafts a summary, objectives, completed work, candidate next tasks and lessons. Every item carries evidence (file, page, quote), and the server checks that the quote exists on the cited page. It runs only after every team member consented.
-4. The owner keeps, edits or removes every item. Publishing is blocked until all items are reviewed, the advisor step is done and the current Terms and Privacy Policy are accepted.
+4. The owner keeps, edits or removes every item. Publishing is blocked until all items are reviewed, every active team member has confirmed and the current Terms and Privacy Policy are accepted.
 5. A public teaser is published. Files stay private.
 6. Someone who wants to continue gets access in one of two ways, set per project: **open** (accept the Attribution Agreement and the files open, owners are told) or **by request** (a team sends a plan, the owners approve, each teammate accepts the agreement for themselves). Owners can pause new access and limit how many teams continue at once. Owners can revoke access with a reason. The lineage is logged.
 
@@ -79,12 +79,11 @@ All demo accounts are ordinary accounts. What they can do depends on the project
 
 | Account | In the demo |
 |---|---|
-| `creator@estafet.demo` | Owns *Mangrove Cover Classifier* (published, one pending request), *Coral Reef Photo Counter* (at the Verify step, 4 of 6 items reviewed, one with "Evidence not found") and *Solar Dryer Controller* (waiting for the advisor). Can also continue other people's projects. |
+| `creator@estafet.demo` | Owns *Mangrove Cover Classifier* (published, one pending request), *Coral Reef Photo Counter* (at the Verify step, 4 of 6 items reviewed, one with "Evidence not found") and *Solar Dryer Controller*. Can also continue other people's projects. |
 | `adopter@estafet.demo` | Team Laut Biru, with pending requests for Mangrove and Fish Freshness |
 | `alumni@estafet.demo` | Owns the other four published demo projects. *Campus Waste Sorting Assistant* is **open**: any signed-in, verified account can take access after accepting the agreement. The rest are **by request**. |
 | `admin@estafet.demo` | **Demo admin** (only seeded when `SEED_DEMO=true`, never in production). Opens `/admin` |
 
-Advisor demo link (single decision, demo token only): `http://localhost:3000/consent/demo-advisor-token-solar`
 
 See `docs/demo-script.md` for a 5-minute walkthrough.
 
@@ -107,10 +106,10 @@ select public.promote_admin('person@student.unhas.ac.id');   -- demote_admin(...
 |---|---|---|
 | Design system v2: layering, Radix, motion, overlap audit (R3) | **Done, except the settings page and a native-reviewed copy** | Z-index token scale (checked by a unit test), Radix dialog, drawer, dropdown menu, tooltip, tabs and toast in portals (hand-written overlays removed), CSS motion system (floating cards, drifting clouds, word-by-word headline, count-up, reveals, parallax, swaying flowers, hover and press, focus ring), reduced-motion mode, phone drawer with focus trap. Overlap audit (Playwright) passes on 38 routes at 6 viewports and runs in CI (the CI workflow has not run on GitHub yet). Numbers in `docs/performance.md` (Home LCP 1.34 s, Explore 1.08 s, CLS 0, emulated phone, local server, not a real device). Screenshots in `docs/design/`. **Not re-run after R3:** the older Playwright specs (core flow, admin, axe, Indonesian smoke) were not run again after the Radix and button changes, because the machine ran out of memory; the owner chose to merge anyway. Treat those flows as unverified until they are run. **Not done:** `/proyek/[slug]/pengaturan` does not exist until R4, so it is not audited; form `<select>` stays the native element on purpose. |
 | Home, Explore (URL filters), Project teaser | **Done** | Reads from Supabase through public views. Survey numbers carry the "indicative only" note. |
-| Auth (email + password, optional domain check) | **Done** | `ALLOWED_EMAIL_DOMAINS` enforced in the sign-up action. |
+| Auth (email + password, any email address) | **Done** | Sign up and sign in work with any email. `ALLOWED_EMAIL_DOMAINS` is an optional admin restriction and is empty (off) by default. Sharing a project or taking access needs a confirmed email. |
 | Database, RLS, state rules | **Done** | 12 tables, all with RLS. Rules live in SQL functions. Verified by `pnpm test:db`. |
 | Creator wizard (Basics, Consent, Files, Verify, Publish) | **Done** | Autosaves a draft per step, resume from the dashboard. |
-| Advisor consent (tokenized link, no account) | **Done** | 32-byte token, only the hash stored, 14-day expiry, one decision, DB-backed rate limit. |
+| Advisor consent | **Removed (R5)** | The owner decided that ESTAFET has no advisor role. The page, the token endpoint and the database functions are gone. Old columns stay in the database, marked deprecated, until a cleanup migration. |
 | Upload + ingestion (PDF, Markdown, ZIP tree) | **Done** | Magic bytes, size limit, ZIP safety, secrets scan. Unit tested. |
 | Synthesis, **mock** provider | **Done** | Deterministic, labeled, one unsupported item on purpose. |
 | Synthesis, **live** providers (Gemini, Anthropic) | **Partial: not tested live** | Adapters, Zod validation, retry-once and chunking are implemented and unit-tested with a stubbed model. They have **not** been run against a real API with real data. |
@@ -126,10 +125,10 @@ select public.promote_admin('person@student.unhas.ac.id');   -- demote_admin(...
 | Accessibility pass (axe/Lighthouse) | **Planned** | Semantic HTML, labels, focus ring, 44 px targets and reduced motion are built in, but no axe or Lighthouse run has been done yet. |
 | Admin area: roles, audit log, shell, overview (8A) | **Done** | `is_admin()`, append-only `audit_log`, `admin_*` functions, 404 for non-admins, password re-check for sensitive actions. Tests: unit, `pnpm test:db`, Playwright. |
 | Admin moderation: reports, hide/remove, users, break glass (8B) | **Done** | Public "Report this project", reports queue, reversible hide/remove with creator notifications, suspend/restore, 5-minute break glass with red banner. |
-| Admin operations: pipeline, consents, requests, settings (8C) | **Done** | Retry/cancel runs, regenerate advisor link, read-only requests with admin notes, settings that override env and apply immediately, purge demo data (never in PRODUCTION). |
+| Admin operations: pipeline, consents, requests, settings (8C) | **Done** | Retry/cancel runs, read-only requests with admin notes, settings that override env and apply immediately, purge demo data (never in PRODUCTION). |
 | Admin trials and metrics (8D) | **Done (tool)** | Record sessions, per-cohort summary with n, chart, CSV, methods paragraph. **No real trial has been recorded**: the only rows are labeled demo and excluded by default. |
 | Admin audit viewer, shortcuts, polish (8E) | **Done** | Filters, diff, CSV export, global search, keyboard shortcuts, axe with no serious issues at 900/1280/1440 px. A screen-reader pass by a person is still **Planned**. |
-| Email delivery | **Planned (phase R7)** | The owner copies the advisor link and sends it. Hosted projects must turn on email confirmation for the verification gate to mean anything: local Supabase confirms every email automatically. |
+| Email delivery | **Planned (phase R7)** | Hosted projects must turn on email confirmation for the verification gate to mean anything: local Supabase confirms every email automatically. |
 | Deployment (Vercel + Supabase cloud) | **Planned** | Only the local stack has been run. |
 | `/styleguide` route | **Planned** | Not built. |
 
@@ -154,7 +153,7 @@ select public.promote_admin('person@student.unhas.ac.id');   -- demote_admin(...
 
 ## Simulated or unfinished functionality
 
-- All sample projects, people, advisors, requests and files are synthetic (`is_demo = true`). Names are fictional.
+- All sample projects, people, requests and files are synthetic (`is_demo = true`). Names are fictional.
 - Mock synthesis is rule-based text extraction, not AI.
 - Demo PDFs are generated programmatically and contain placeholder text.
 

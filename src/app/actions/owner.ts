@@ -6,7 +6,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { dbErrorMessage } from "@/lib/errors";
-import { fieldErrorsFrom, emailSchema } from "@/lib/validation";
+import { fieldErrorsFrom } from "@/lib/validation";
 import type { TFn } from "@/lib/labels";
 
 async function tr() {
@@ -36,8 +36,6 @@ function basicsSchema(v: TFn) {
     year: z.coerce.number().int().min(2015, v("yearMin")).max(new Date().getFullYear() + 1, v("yearMax")),
     stop_reason: z.enum(["funding_not_granted", "team_graduated", "time_or_people", "other"], { message: v("stopReason") }),
     stopped_note: z.string().trim().max(400, v("stoppedNoteMax")).optional(),
-    advisor_name: z.string().trim().max(120, v("advisorNameMax")).optional(),
-    advisor_email: z.union([z.literal(""), emailSchema(v)]).optional(),
   });
 }
 
@@ -54,8 +52,6 @@ export async function autosaveBasics(projectId: string, values: Record<string, s
   const input = {
     ...parsed.data,
     stopped_note: parsed.data.stopped_note ?? "",
-    advisor_name: parsed.data.advisor_name ?? "",
-    advisor_email: parsed.data.advisor_email ?? "",
   };
   const { data, error } = await supabase.from("projects").update(input).eq("id", projectId).select("id");
   if (error || !data || data.length === 0) return { saved: false };

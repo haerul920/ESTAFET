@@ -5,7 +5,6 @@ export type StopReason = "funding_not_granted" | "team_graduated" | "time_or_peo
 export type ProjectStatus = "draft" | "published" | "unpublished" | "archived";
 export type ModerationStatus = "ok" | "hidden" | "removed";
 export type AccessMode = "open" | "by_request" | "paused";
-export type AdvisorMode = "advisor" | "none";
 export type MemberRole = "owner" | "co_owner";
 export type MemberStatus = "invited" | "active" | "left";
 export type AccessSource = "open" | "approved_request";
@@ -63,7 +62,6 @@ export interface TeaserProject {
   year: number;
   stop_reason: StopReason;
   status: ProjectStatus;
-  advisor_name: string;
   is_demo: boolean;
   published_at: string | null;
   stopped_note: string;
@@ -76,7 +74,6 @@ export interface TeaserProject {
   /** null means unlimited */
   max_active_adopters: number | null;
   active_adopters: number;
-  no_advisor: boolean;
 }
 
 export interface TeaserItem {
@@ -110,8 +107,6 @@ export interface Project {
   year: number;
   stop_reason: StopReason;
   status: ProjectStatus;
-  advisor_name: string;
-  advisor_email: string;
   created_by: string;
   is_demo: boolean;
   published_at: string | null;
@@ -122,8 +117,6 @@ export interface Project {
   moderation_reason?: string | null;
   access_mode: AccessMode;
   max_active_adopters: number | null;
-  advisor_mode: AdvisorMode;
-  no_advisor_declared_at: string | null;
   /** null = not chosen yet. manual = the owners write the items by hand and nothing goes to AI. */
   fill_mode?: "ai" | "manual" | null;
   created_at: string;
@@ -137,16 +130,6 @@ export interface ProjectMember {
   status: MemberStatus;
   consented_at: string | null;
   profiles?: Pick<Profile, "full_name"> | null;
-}
-
-export interface AdvisorConsent {
-  id: string;
-  project_id: string;
-  status: ConsentStatus;
-  comment: string | null;
-  expires_at: string;
-  decided_at: string | null;
-  created_at: string;
 }
 
 export interface EvidenceRef {

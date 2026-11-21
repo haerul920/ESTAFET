@@ -71,7 +71,7 @@ export function VerifyBoard({
   const reviewed = items.filter((i) => i.review_status !== "pending").length;
   const keptCount = items.filter((i) => i.review_status === "kept").length;
   const allReviewed = total > 0 && reviewed === total && keptCount > 0;
-  // Review only needs the items. Team consent and the advisor come on the next step ("Team and access").
+  // Review only needs the items. Team consent comes on the next step ("Team and access").
   const ready = allReviewed;
   const visible = items.filter((i) => filter === "all" || i.kind === filter);
   const sel = items.find((i) => i.id === selected) ?? null;

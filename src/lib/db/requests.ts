@@ -7,7 +7,6 @@ export interface RequestProject {
   id: string;
   slug: string;
   title: string;
-  advisor_name: string;
   is_demo: boolean;
   status: ProjectStatus;
 }
@@ -59,7 +58,7 @@ export async function getRequestDetail(id: string, userId: string): Promise<Requ
 
   const admin = createAdminClient();
   const [{ data: project }, { data: tasks }, { data: owners }, { data: access }] = await Promise.all([
-    admin.from("projects").select("id, slug, title, advisor_name, is_demo, status").eq("id", req.project_id).maybeSingle(),
+    admin.from("projects").select("id, slug, title, is_demo, status").eq("id", req.project_id).maybeSingle(),
     admin
       .from("draft_items")
       .select("id, title")

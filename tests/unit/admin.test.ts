@@ -48,7 +48,6 @@ describe("settings override env defaults", () => {
   it("uses env when nothing is stored, and built-in defaults otherwise", () => {
     const s = resolveSettings([], env);
     expect(s.max_upload_mb).toMatchObject({ value: 30, source: "env" });
-    expect(s.advisor_token_ttl_days).toMatchObject({ value: 14, source: "default" });
     expect(s.allowed_email_domains.value).toEqual(["student.unhas.ac.id"]);
     expect(resolveSettings([], {}).max_upload_mb.value).toBe(25);
   });

@@ -1,4 +1,4 @@
-import { CheckCircle2, FileSearch, ShieldCheck, FlaskConical } from "lucide-react";
+import { FileSearch, ShieldCheck, FlaskConical } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
 
@@ -46,16 +46,6 @@ export function OwnerVerified() {
     <Badge tone="ok">
       <ShieldCheck size={14} aria-hidden="true" />
       {t("ownerVerified")}
-    </Badge>
-  );
-}
-
-export function AdvisorApproved() {
-  const t = useTranslations("badge");
-  return (
-    <Badge tone="info">
-      <CheckCircle2 size={14} aria-hidden="true" />
-      {t("advisorApproved")}
     </Badge>
   );
 }

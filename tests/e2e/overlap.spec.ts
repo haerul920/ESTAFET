@@ -1,7 +1,5 @@
 import "../../scripts/lib/env";
 import { expect, test, type Browser, type Page } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
-import { generateToken, hashToken, tokenExpiry } from "../../src/lib/token";
 
 /**
  * Overlap audit (CLAUDE.md 14.9). For every key route at every test viewport it checks that
@@ -89,7 +87,7 @@ async function contextFor(browser: Browser, role: Role) {
     const ctx = await browser.newContext({ reducedMotion: "reduce" });
     const page = await ctx.newPage();
     await page.goto("/login");
-    await page.getByLabel("Email kampus").fill(EMAIL[role]);
+    await page.getByLabel("Email", { exact: true }).fill(EMAIL[role]);
     await page.getByLabel("Kata sandi").fill(PASSWORD);
     await page.getByRole("button", { name: "Masuk" }).last().click();
     await page.waitForURL(/\/(dasbor|admin|mulai)/);
@@ -245,28 +243,6 @@ for (const group of [
     });
   }
 }
-
-test("overlap audit: advisor consent page (valid link)", async ({ browser }) => {
-  test.setTimeout(240_000);
-  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
-  const token = generateToken();
-  const { error } = await admin
-    .from("advisor_consents")
-    .insert({ project_id: DRAFT_ID, token_hash: hashToken(token), status: "pending", expires_at: tokenExpiry().toISOString() });
-  expect(error).toBeNull();
-  const ctx = await contextFor(browser, "guest");
-  const page = await ctx.newPage();
-  const problems: string[] = [];
-  for (const vp of VIEWPORTS) {
-    await page.setViewportSize(vp);
-    await page.goto(`/consent/${token}`);
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    problems.push(...summarize("advisor page", vp, await audit(page)));
-  }
-  await ctx.close();
-  await admin.from("advisor_consents").delete().eq("token_hash", hashToken(token));
-  expect(problems).toEqual([]);
-});
 
 test("overlap audit: Home hero floating cards never touch the headline, the lead or the calls to action", async ({ browser }) => {
   test.setTimeout(240_000);

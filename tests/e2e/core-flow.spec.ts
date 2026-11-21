@@ -13,7 +13,7 @@ const title = `E2E Reef Counter ${stamp}`;
 async function signUp(page: Page, name: string, email: string) {
   await page.goto("/en/signup");
   await page.getByLabel("Full name").fill(name);
-  await page.getByLabel("University email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByLabel(/I accept the Terms and the Privacy Policy/).check();
   await page.getByRole("button", { name: "Create account" }).click();
@@ -40,8 +40,6 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
   await page.getByLabel("Type of work").selectOption("research");
   await page.getByLabel("Faculty or field").selectOption("Marine Science and Fisheries");
   await page.getByLabel("Why did it stop?").selectOption("funding_not_granted");
-  await page.getByLabel("Advisor name").fill("Dr. Test Advisor");
-  await page.getByLabel("Advisor email").fill("advisor@example.test");
   await page.getByRole("button", { name: "Save and continue" }).click();
   await page.waitForURL("**/berkas");
 
@@ -96,22 +94,7 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
   await page.getByRole("link", { name: "Continue to team and access" }).click();
   await page.waitForURL("**/tim");
 
-  // ---- Team and access: the advisor link (approved in a separate, signed-out browser context) and the access rules
-  await page.getByRole("button", { name: "Create consent link" }).click();
-  const link = await page.getByLabel(/Private link for/).inputValue();
-  expect(link).toContain("/consent/");
-
-  const advisor = await newUserPage(browser);
-  await advisor.page.goto(link);
-  await expect(advisor.page.getByRole("heading", { name: /wants to share a project/ })).toBeVisible();
-  await advisor.page.getByRole("button", { name: "Approve publishing" }).click();
-  await expect(advisor.page.getByText(/approval is recorded/)).toBeVisible();
-  // a second attempt on the same link is refused (single decision)
-  await advisor.page.reload();
-  await expect(advisor.page.getByText(/This link allows one decision/)).toBeVisible();
-  await advisor.context.close();
-
-  await page.reload();
+  // ---- Team and access: the owner already confirmed on the Files step, so the preview is next
   await page.getByRole("link", { name: "Continue to the preview" }).click();
   await page.waitForURL("**/terbit");
 
@@ -147,7 +130,7 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
 
   await ap.goto(`/en/projects/${slug}/request`);
   await ap.getByLabel("Team name").fill("Team E2E");
-  await ap.getByLabel("Teammates' university emails").fill("mate.one@example.test, mate.two@example.test");
+  await ap.getByLabel("Teammates' emails").fill("mate.one@example.test, mate.two@example.test");
   await ap.locator("input[name='task_ids']").first().check();
   await ap.getByLabel("What will you do in your first month?").fill("We will start with the first verified task and report back with a revised evaluation.");
   await ap.getByLabel("What is this for?").selectOption("competition");
@@ -198,7 +181,7 @@ test("a declined request leaves the project published", async ({ browser }) => {
 
   const creator = await newUserPage(browser);
   await creator.page.goto("/en/login");
-  await creator.page.getByLabel("University email").fill("creator@estafet.demo");
+  await creator.page.getByLabel("Email", { exact: true }).fill("creator@estafet.demo");
   await creator.page.getByLabel("Password").fill("Demo-Pass-2026!");
   await creator.page.getByRole("button", { name: "Sign in" }).click();
   await creator.page.waitForURL("**/dasbor");
@@ -220,7 +203,7 @@ test("the same account shares projects and continues another one, through open m
   const person = await newUserPage(browser);
   const p = person.page;
   await p.goto("/en/login");
-  await p.getByLabel("University email").fill("creator@estafet.demo");
+  await p.getByLabel("Email", { exact: true }).fill("creator@estafet.demo");
   await p.getByLabel("Password").fill("Demo-Pass-2026!");
   await p.getByRole("button", { name: "Sign in" }).click();
   await p.waitForURL("**/dasbor");

@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 
 /**
  * R4 flows (run in English: the other specs do too).
- *  1. Manual mode, the "no advisor" path and open access: share, publish, unpublish, publish again. No AI is involved.
+ *  1. Manual mode and open access: share, publish, unpublish, publish again. No AI is involved.
  *  2. A project that is paused, then full, then open again, with "Notify me". Uses seeded demo data and restores it.
  * The by-request approval, the declined request and "the same account shares and continues" are in core-flow.spec.ts.
  */
@@ -21,7 +21,7 @@ async function newPage(browser: Browser) {
 
 async function signIn(page: Page, email: string, password = DEMO_PASSWORD) {
   await page.goto("/en/login");
-  await page.getByLabel("University email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForURL(/\/(dasbor|mulai)/);
@@ -30,14 +30,14 @@ async function signIn(page: Page, email: string, password = DEMO_PASSWORD) {
 async function signUp(page: Page, name: string, email: string) {
   await page.goto("/en/signup");
   await page.getByLabel("Full name").fill(name);
-  await page.getByLabel("University email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByLabel(/I accept the Terms and the Privacy Policy/).check();
   await page.getByRole("button", { name: "Create account" }).click();
   await page.waitForURL("**/mulai");
 }
 
-test("manual mode, no advisor and open access: share, publish, unpublish and publish again", async ({ browser, page }) => {
+test("manual mode and open access: share, publish, unpublish and publish again", async ({ browser, page }) => {
   const title = `E2E Manual Notes ${stamp}`;
   await signUp(page, "E2E Manual Owner", `e2e.manual.${stamp}@example.test`);
 
@@ -64,9 +64,7 @@ test("manual mode, no advisor and open access: share, publish, unpublish and pub
   await page.getByRole("link", { name: "Continue to team and access" }).click();
   await page.waitForURL("**/tim");
 
-  // ---- Step 4: no advisor, team consent, open access with one team at a time
-  await page.getByRole("button", { name: "This project has no advisor" }).click();
-  await expect(page.getByText(/Declared: no advisor/)).toBeVisible();
+  // ---- Step 4: team consent (there is no advisor step), open access with one team at a time
   await page.getByRole("button", { name: "I confirm" }).click();
   await page.getByRole("radio", { name: /^Open with an agreement/ }).check();
   await page.getByLabel("How many continuing teams at once").selectOption("1");

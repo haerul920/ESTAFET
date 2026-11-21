@@ -1,7 +1,7 @@
 import { Link } from "@/i18n/navigation";
 import { Lock } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { AdvisorApproved, Badge, Chip, OwnerVerified, DemoBadge } from "@/components/ui/Badge";
+import { Badge, Chip, OwnerVerified, DemoBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { AnimatedBar, Reveal, Stagger, StaggerItem } from "@/components/ui/motion";
 import { Lineage, type LineageStep } from "@/components/features/Lineage";
@@ -46,13 +46,12 @@ export function TeaserContent({
       <header className="mb-8">
         <div className="mb-3 flex flex-wrap gap-2">
           <OwnerVerified />
-          {project.no_advisor ? <Badge tone="neutral">{t("noAdvisorBadge")}</Badge> : <AdvisorApproved />}
           {project.is_demo ? <DemoBadge /> : null}
         </div>
         <h1 className="mb-3 mt-0 text-[44px] font-medium leading-[1.1] max-sm:text-[32px]">{project.title}</h1>
         <p className="m-0 text-text-2">
           {L.kind[project.kind]} · {project.year} · {L.faculty(project.field)} · {t("byTeam", { count: project.team_size })} ·{" "}
-          {t("advisor", { name: project.advisor_name || t("advisorNone") })} · {t("readTime", { minutes })}
+          {t("readTime", { minutes })}
         </p>
       </header>
 

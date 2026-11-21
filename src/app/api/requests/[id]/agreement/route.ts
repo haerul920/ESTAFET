@@ -42,13 +42,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       data: {
         projectTitle: d.project.title,
         owners: d.ownerNames,
-        advisor: d.project.advisor_name,
         adopterTeam: d.request.adopter_team_name,
         adopters,
         tasks: d.tasks.map((t) => t.title),
         accepted: d.holders.map((h) => ({ name: h.name, at: formatDate(h.acceptedAt, locale) })),
         lineageId,
-        creditLine: creditLine({ title: d.project.title, creators: d.ownerNames, advisor: d.project.advisor_name, lineageId }, ag),
+        creditLine: creditLine({ title: d.project.title, creators: d.ownerNames, lineageId }, ag),
         isDemo: d.project.is_demo,
         labels: {
           title: pdf("title"),
@@ -56,7 +55,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
           demoNote: pdf("demoNote"),
           project: pdf("project"),
           owners: pdf("owners"),
-          advisor: pdf("advisor"),
           notListed: pdf("notListed"),
           team: pdf("team"),
           members: pdf("members"),

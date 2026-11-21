@@ -11,7 +11,7 @@ async function main() {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const p = await ctx.newPage();
   await p.goto(`${base}/login`);
-  await p.getByLabel("University email").fill("admin@estafet.demo");
+  await p.getByLabel("Email", { exact: true }).fill("admin@estafet.demo");
   await p.getByLabel("Password").fill("Demo-Pass-2026!");
   await p.getByRole("button", { name: "Sign in" }).click();
   await p.waitForURL(/\/(dashboard|admin)/);
@@ -36,7 +36,7 @@ async function main() {
   await p.screenshot({ path: path.join(out, "a7-project-detail.png"), fullPage: true });
   const m = await (await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   await m.goto(`${base}/login`);
-  await m.getByLabel("University email").fill("admin@estafet.demo");
+  await m.getByLabel("Email", { exact: true }).fill("admin@estafet.demo");
   await m.getByLabel("Password").fill("Demo-Pass-2026!");
   await m.getByRole("button", { name: "Sign in" }).click();
   await m.waitForURL(/\/(dashboard|admin)/);

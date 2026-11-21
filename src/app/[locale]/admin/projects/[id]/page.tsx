@@ -13,13 +13,12 @@ import { formatWita } from "@/lib/admin/time";
 export const metadata: Metadata = { title: "Project" };
 
 interface Detail {
-  project: { id: string; slug: string; title: string; summary: string; kind: keyof typeof EN.kind; field: string; year: number; status: string; moderation_status: string; moderation_reason: string | null; moderated_at: string | null; is_demo: boolean; advisor_name: string; published_at: string | null; created_at: string; stopped_note: string; tech: string[] };
+  project: { id: string; slug: string; title: string; summary: string; kind: keyof typeof EN.kind; field: string; year: number; status: string; moderation_status: string; moderation_reason: string | null; moderated_at: string | null; is_demo: boolean; published_at: string | null; created_at: string; stopped_note: string; tech: string[] };
   creators: { id: string; name: string }[];
   items: { id: string; kind: string; title: string; effort: string | null; objective_status: string | null }[];
   evidence: { matched: number; partial: number; not_found: number };
   files: { id: string; name: string; kind: string; size_bytes: number; page_count: number | null; skipped: number; status: string; stored: boolean }[];
   requests: { id: string; team: string; status: string; created_at: string }[];
-  consent: { status: string; expires_at: string; decided_at: string | null } | null;
   lineage: { id: string; type: string; created_at: string }[];
   audit: { id: string; action: string; reason: string | null; created_at: string; actor_name: string }[];
 }
@@ -58,7 +57,6 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
               items={[
                 { label: "Slug", value: <code className="font-code">{p.slug}</code> },
                 { label: "Owners", value: d.creators.map((c) => c.name).join(", ") || "—" },
-                { label: "Advisor", value: p.advisor_name || "—" },
                 { label: "Published", value: p.published_at ? formatWita(p.published_at) : "Not published" },
                 { label: "Created", value: formatWita(p.created_at) },
                 { label: "Built with", value: p.tech.join(", ") || "—" },
@@ -145,11 +143,7 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
             </div>
           </Panel>
 
-          <Panel title="Advisor consent">
-            {d.consent ? (
-              <KeyValueList items={[{ label: "Status", value: <StatusPill tone={toneFor(d.consent.status)}>{d.consent.status}</StatusPill> }, { label: "Expires", value: formatWita(d.consent.expires_at) }, { label: "Decided", value: d.consent.decided_at ? formatWita(d.consent.decided_at) : "—" }]} />
-            ) : <p className="m-0 text-sm text-text-2">No consent requested yet.</p>}
-          </Panel>
+
 
           <Panel title="Lifecycle (lineage)">
             <Timeline items={d.lineage.map((e) => ({ id: e.id, title: e.type.replace(/_/g, " "), when: e.created_at }))} />

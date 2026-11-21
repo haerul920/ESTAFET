@@ -1,8 +1,8 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getLatestConsent, getTeam } from "@/lib/db/owner";
-import type { AdvisorConsent, LineageEvent, Project, ProjectMember } from "@/lib/db/types";
+import { getTeam } from "@/lib/db/owner";
+import type { LineageEvent, Project, ProjectMember } from "@/lib/db/types";
 
 export interface SettingsRequest {
   id: string;
@@ -28,7 +28,6 @@ export interface SettingsData {
   team: (ProjectMember & { full_name: string })[];
   isPrimaryOwner: boolean;
   transfer: { from_profile: string; to_profile: string; from_name: string; to_name: string } | null;
-  consent: AdvisorConsent | null;
   requests: SettingsRequest[];
   holders: SettingsHolder[];
   watchers: number;
@@ -48,9 +47,8 @@ export async function loadSettings(slug: string, userId: string): Promise<Settin
   if (owns !== true) return null;
 
   const admin = createAdminClient();
-  const [team, consent, requests, access, transfers, watchers, notifications, events] = await Promise.all([
+  const [team, requests, access, transfers, watchers, notifications, events] = await Promise.all([
     getTeam(project.id),
-    getLatestConsent(project.id),
     supabase
       .from("continuation_requests")
       .select("id, adopter_team_name, status, purpose, created_at, expires_at, decided_at")
@@ -92,7 +90,6 @@ export async function loadSettings(slug: string, userId: string): Promise<Settin
           to_name: nameOf.get(transfers.data.to_profile as string) ?? "",
         }
       : null,
-    consent,
     requests: (requests.data ?? []) as SettingsRequest[],
     holders: (access.data ?? []).map((a) => ({
       id: a.id as string,

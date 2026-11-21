@@ -123,19 +123,6 @@ export function BasicsForm({ project }: { project: Project | null }) {
         error={fe.stopped_note}
         hint={t("stoppedHint")}
       />
-      <fieldset className="m-0 grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-4 rounded-[28px] border-0 bg-surface p-6">
-        <legend className="px-2 text-lg font-semibold">{t("advisorLegend")}</legend>
-        <TextField label={t("advisorName")} name="advisor_name" defaultValue={v("advisor_name", project?.advisor_name)} error={fe.advisor_name} />
-        <TextField
-          label={t("advisorEmail")}
-          name="advisor_email"
-          type="email"
-          defaultValue={v("advisor_email", project?.advisor_email)}
-          error={fe.advisor_email}
-          hint={t("advisorHint")}
-        />
-      </fieldset>
-
       <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" arrow size="lg" disabled={pending}>
           {pending ? t("saving") : t("save")}

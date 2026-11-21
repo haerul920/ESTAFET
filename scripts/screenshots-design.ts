@@ -45,7 +45,7 @@ async function login(browser: Browser, role: Exclude<Role, "guest">, width: numb
   const ctx = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: "reduce" });
   const page = await ctx.newPage();
   await page.goto(`${base}/login`);
-  await page.getByLabel("Email kampus").fill(EMAIL[role]);
+  await page.getByLabel("Email", { exact: true }).fill(EMAIL[role]);
   await page.getByLabel("Kata sandi").fill(PASSWORD);
   await page.getByRole("button", { name: "Masuk" }).last().click();
   await page.waitForURL(/\/(dasbor|admin|mulai)/);

@@ -53,7 +53,6 @@ export async function runSynthesis(projectId: string, requestedBy: string | null
   }
 
   // Consent gate: never send private data to a model before every active team member consented.
-  // The advisor's approval holds back PUBLISHING, not reading (CLAUDE.md 14.5), so waiting for a lecturer does not block the work.
   const { data: members } = await admin.from("project_members").select("consented_at").eq("project_id", projectId).eq("status", "active");
   const teamDone = (members ?? []).length > 0 && (members ?? []).every((m) => m.consented_at);
   if (!teamDone) {

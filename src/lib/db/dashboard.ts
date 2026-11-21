@@ -97,12 +97,6 @@ export function describeNotification(n: NotificationRow, t: TFn): { text: string
       return { text: t("n.accessRevoked.text", { title }), detail: t("n.accessRevoked.detail", { reason: p.reason ?? "" }), href: "/dasbor" };
     case "files_unlocked":
       return { text: t("n.filesUnlocked.text", { title }), detail: t("n.filesUnlocked.detail"), href: `/requests/${p.request_id}` };
-    case "advisor_decision":
-      return {
-        text: t(p.decision === "approved" ? "n.advisor.approved" : p.decision === "withdrawn" ? "n.advisor.withdrawn" : "n.advisor.declined", { title }),
-        detail: p.comment ? t("n.advisor.detailComment", { comment: p.comment }) : p.decision === "approved" ? t("n.advisor.detailApproved") : t("n.advisor.detailDeclined"),
-        href: `/bagikan/${p.project_id}/tim`,
-      };
     case "moderation":
       return {
         text: t(p.action === "restored" ? "n.moderation.restored" : p.action === "removed" ? "n.moderation.removed" : "n.moderation.hidden", { title }),

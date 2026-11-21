@@ -34,8 +34,12 @@ export function buildPublicLineage(
 }
 
 /** Full lineage for owners and people with access (private workspace). */
+/** Events of the retired advisor flow (before R5) stay in the database but are not shown. */
+const RETIRED = new Set<string>(["advisor_approved", "advisor_withdrawn"]);
+export const visibleEvents = <T extends { type: string }>(events: T[]): T[] => events.filter((e) => !RETIRED.has(e.type));
+
 export function buildFullLineage(events: LineageEvent[], t: TFn, locale: string): LineageStep[] {
-  return events.map((e) => ({
+  return visibleEvents(events).map((e) => ({
     id: e.id,
     title: t(`events.${e.type}`),
     sub: formatDate(e.created_at, locale) + (typeof e.payload?.team === "string" ? ` · ${e.payload.team}` : ""),

@@ -48,7 +48,6 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
         <StatCard label="Open reports" value={o.open_reports} href="/admin/reports?status=open" tone={o.open_reports ? "warn" : "grey"} />
         <StatCard label="Hidden or removed" value={o.hidden_projects} href="/admin/projects?moderation=hidden" tone={o.hidden_projects ? "warn" : "grey"} />
         <StatCard label="Failed runs, 24 h" value={o.failed_runs_24h} href="/admin/pipeline?status=failed" tone={o.failed_runs_24h ? "danger" : "grey"} />
-        <StatCard label="Expired advisor consents" value={o.expired_consents} href="/admin/consents?state=expired" tone={o.expired_consents ? "warn" : "grey"} />
         <StatCard label="Requests pending 7+ days" value={o.stale_requests} href="/admin/requests?state=stale" tone={o.stale_requests ? "warn" : "grey"} />
       </div>
 

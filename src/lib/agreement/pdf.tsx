@@ -21,7 +21,6 @@ export interface AgreementPdfLabels {
   demoNote: string;
   project: string;
   owners: string;
-  advisor: string;
   notListed: string;
   team: string;
   members: string;
@@ -37,7 +36,6 @@ export interface AgreementPdfLabels {
 export interface AgreementPdfData {
   projectTitle: string;
   owners: string[];
-  advisor: string;
   adopterTeam: string;
   adopters: string[];
   tasks: string[];
@@ -68,10 +66,6 @@ export function AgreementDocument({ data }: { data: AgreementPdfData }) {
         <View style={s.row}>
           <Text style={s.label}>{l.owners}</Text>
           <Text>{data.owners.join(", ") || l.notListed}</Text>
-        </View>
-        <View style={s.row}>
-          <Text style={s.label}>{l.advisor}</Text>
-          <Text>{data.advisor || l.notListed}</Text>
         </View>
         <View style={s.row}>
           <Text style={s.label}>{l.team}</Text>

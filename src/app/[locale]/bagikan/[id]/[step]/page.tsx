@@ -10,8 +10,7 @@ import {
   getOwnedProject,
   getFiles,
   getItems,
-  getLatestConsent,
-  getLatestRun,
+    getLatestRun,
   getTeam,
 } from "@/lib/db/owner";
 import { getConfig } from "@/lib/llm";
@@ -55,19 +54,14 @@ export default async function WizardStepPage({ params }: Params) {
   const project = await getOwnedProject(id);
   if (!project) notFound();
 
-  const [team, consent, files, items, run, policiesAccepted] = await Promise.all([
+  const [team, files, items, run, policiesAccepted] = await Promise.all([
     getTeam(id),
-    getLatestConsent(id),
     getFiles(id),
     getItems(id),
     getLatestRun(id),
     hasAcceptedPolicies(),
   ]);
-  const checklist = buildChecklist(team, consent, items, {
-    advisorMode: project.advisor_mode,
-    noAdvisorDeclared: project.no_advisor_declared_at !== null,
-    policiesAccepted,
-  });
+  const checklist = buildChecklist(team, items, { policiesAccepted });
   const config = getConfig();
   const me = team.find((m) => m.profile_id === user.id);
   const selfConsented = !!me?.consented_at;
@@ -89,15 +83,11 @@ export default async function WizardStepPage({ params }: Params) {
         <StepHeader title={t("teamTitle")} intro={t("teamIntro")} />
         <div className="flex flex-wrap items-start gap-8">
           <div className="flex min-w-0 flex-[1_1_600px] flex-col gap-6">
-            <ConsentStep project={project} team={team} currentUserId={user.id} consent={consent} />
+            <ConsentStep project={project} team={team} currentUserId={user.id} />
             <AccessSettings projectId={id} mode={project.access_mode} max={project.max_active_adopters} />
           </div>
           <div className="flex min-w-[260px] flex-[0_1_340px] flex-col gap-4">
-            <PublishChecklist projectId={id} checklist={checklist} advisorEmail={project.advisor_email} step="tim" />
-            <Card tone="blue">
-              <h2 className="mb-2 mt-0 text-base">{t("advisorSees")}</h2>
-              <p className="m-0 text-[15px] text-text-3">{t("advisorSeesText")}</p>
-            </Card>
+            <PublishChecklist projectId={id} checklist={checklist} step="tim" />
           </div>
         </div>
       </WizardFrame>
@@ -128,7 +118,7 @@ export default async function WizardStepPage({ params }: Params) {
             />
           </div>
           <div className="mt-[88px] flex min-w-[260px] flex-[0_1_340px] flex-col gap-4 max-lg:mt-0">
-            <PublishChecklist projectId={id} checklist={checklist} advisorEmail={project.advisor_email} step="berkas" />
+            <PublishChecklist projectId={id} checklist={checklist} step="berkas" />
             <Card tone="blue">
               <h2 className="mb-2 mt-0 text-base">{t("publicTitle")}</h2>
               <p className="m-0 text-[15px] text-text-3">{t("publicText")}</p>
@@ -187,7 +177,6 @@ export default async function WizardStepPage({ params }: Params) {
     year: project.year,
     stop_reason: project.stop_reason,
     status: project.status,
-    advisor_name: project.advisor_name,
     is_demo: project.is_demo,
     published_at: project.published_at,
     stopped_note: project.stopped_note,
@@ -199,15 +188,12 @@ export default async function WizardStepPage({ params }: Params) {
     access_mode: project.access_mode,
     max_active_adopters: project.max_active_adopters,
     active_adopters: 0,
-    no_advisor: project.advisor_mode === "none",
   };
   const reason = !checklist.team.done
     ? t("reasonTeam")
-    : !checklist.advisor.done
-      ? t("reasonAdvisor")
-      : !checklist.review.done
-        ? t("reasonReview")
-        : "";
+    : !checklist.review.done
+      ? t("reasonReview")
+      : "";
 
   return (
     <WizardFrame projectId={id} current="terbit">
@@ -266,13 +252,13 @@ export default async function WizardStepPage({ params }: Params) {
       </Card>
       {published ? null : (
         <div className="mt-6">
-          <PublishChecklist projectId={id} checklist={checklist} advisorEmail={project.advisor_email} step="terbit" />
+          <PublishChecklist projectId={id} checklist={checklist} step="terbit" />
         </div>
       )}
       {published ? null : (
         <PublishBar
           projectId={id}
-          ready={checklist.team.done && checklist.advisor.done && checklist.review.done}
+          ready={checklist.team.done && checklist.review.done}
           reason={reason}
           policiesAccepted={policiesAccepted}
           verified={user.verified}

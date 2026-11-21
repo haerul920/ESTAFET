@@ -41,7 +41,7 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
   // Basic project facts come from the server (an unpublished project is not in the public view, but its access holders keep working).
   const { data: teaser } = await createAdminClient()
     .from("projects")
-    .select("id, slug, title, advisor_name, is_demo, status")
+    .select("id, slug, title, is_demo, status")
     .eq("slug", slug)
     .maybeSingle();
   if (!teaser) notFound();
@@ -197,7 +197,6 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
               creditLine={creditLine({
                 title: teaser.title,
                 creators: creatorNames,
-                advisor: teaser.advisor_name,
                 lineageId: events.find((e) => e.type === "continued")?.id.slice(0, 8) ?? teaser.id.slice(0, 8),
               }, ag as unknown as TFn)}
             />

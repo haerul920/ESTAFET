@@ -43,7 +43,7 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
         supabase.rpc("admin_project_detail", { p_id: report.project_id }),
         supabase.from("admin_reports_v").select("id, reason, status, created_at").eq("project_id", report.project_id).neq("id", openId).order("created_at", { ascending: false }).limit(10),
       ]);
-      const d = detail as { project: { summary: string; advisor_name: string }; creators: { name: string }[] } | null;
+      const d = detail as { project: { summary: string }; creators: { name: string }[] } | null;
       const closed = report.status === "resolved" || report.status === "dismissed";
       panel = (
         <aside aria-label="Report details" className="mb-6 rounded-3xl border-2 border-blue bg-white p-5">
@@ -78,7 +78,6 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
                 <KeyValueList items={[
                   { label: "Moderation", value: <StatusPill tone={toneFor(report.moderation_status)}>{report.moderation_status}</StatusPill> },
                   { label: "Owners", value: d?.creators.map((c) => c.name).join(", ") || "—" },
-                  { label: "Advisor", value: d?.project.advisor_name || "—" },
                   { label: "Teaser summary", value: d?.project.summary || "—" },
                 ]} />
                 <p className="mb-0 mt-3 text-sm"><Link href={`/admin/projects/${report.project_id}`}>Open the project page</Link></p>

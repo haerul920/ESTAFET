@@ -6,7 +6,7 @@ const REASON = "Checked by the e2e test with a clear reason.";
 
 async function login(page: Page, email: string) {
   await page.goto("/en/login");
-  await page.getByLabel("University email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForURL(/\/(dasbor|dashboard|admin|mulai)/);
@@ -121,7 +121,7 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   // Every page opens with its heading and the shell.
   const pages: [string, string][] = [
     ["/admin", "Overview"], ["/admin/projects", "Projects"], ["/admin/reports", "Reports"], ["/admin/users", "Users"],
-    ["/admin/pipeline", "Pipeline"], ["/admin/consents", "Advisor consents"], ["/admin/requests", "Requests"],
+    ["/admin/pipeline", "Pipeline"], ["/admin/requests", "Requests"],
     ["/admin/trials", "Onboarding trials"], ["/admin/audit", "Audit log"], ["/admin/settings", "Settings"],
   ];
   for (const [path, heading] of pages) {
@@ -202,7 +202,7 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   await expect(a.getByText("suspended").first()).toBeVisible();
   const blocked = await fresh(browser);
   await blocked.page.goto("/en/login");
-  await blocked.page.getByLabel("University email").fill("adopter@estafet.demo");
+  await blocked.page.getByLabel("Email", { exact: true }).fill("adopter@estafet.demo");
   await blocked.page.getByLabel("Password").fill(PASSWORD);
   await blocked.page.getByRole("button", { name: "Sign in" }).click();
   await expect(blocked.page.getByText(/Your account is suspended/)).toBeVisible();

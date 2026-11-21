@@ -46,7 +46,7 @@ export default async function RequestReviewPage({ params }: { params: Promise<{ 
     decidedAt: r.decided_at,
     expiresAt: r.status === "pending" ? r.expires_at : null,
     workspaceHref: `/projects/${project.slug}/workspace`,
-    creditLine: creditLine({ title: project.title, creators: d.ownerNames, advisor: project.advisor_name, lineageId: r.id.slice(0, 8) }, ag as unknown as TFn),
+    creditLine: creditLine({ title: project.title, creators: d.ownerNames, lineageId: r.id.slice(0, 8) }, ag as unknown as TFn),
   };
 
   const statusBadge =

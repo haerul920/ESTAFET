@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { Check, Circle, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { CopyLinkButton } from "./CopyLinkButton";
 import type { PublishChecklist as Checklist } from "@/lib/db/owner";
 import { cn } from "@/lib/cn";
 
@@ -30,29 +29,14 @@ function Mark({ state }: { state: "done" | "warn" | "todo" }) {
 export function PublishChecklist({
   projectId,
   checklist,
-  advisorEmail,
   step,
 }: {
   projectId: string;
   checklist: Checklist;
-  advisorEmail: string;
   step: string;
 }) {
   const t = useTranslations("checklist");
-  const { team, advisor, review, policies } = checklist;
-  const advisorText =
-    advisor.status === "not_needed"
-      ? t("notNeeded")
-      : advisor.status === "approved"
-        ? t("approved")
-        : advisor.status === "declined"
-          ? t("declined")
-          : advisor.status === "withdrawn"
-            ? t("withdrawn")
-            : advisor.status === "pending"
-              ? t("pending")
-              : t("none");
-
+  const { team, review, policies } = checklist;
   return (
     <Card as="aside" aria-label={t("title")}>
       <h2 className="mb-4 mt-0 text-lg">{t("title")}</h2>
@@ -71,26 +55,6 @@ export function PublishChecklist({
                 <Link href={`/bagikan/${projectId}/tim`} className="text-sm font-semibold">
                   {t("goConsent")}
                 </Link>
-              </>
-            ) : null}
-          </span>
-        </li>
-        <li className="flex gap-3">
-          <Mark state={advisor.done ? "done" : "warn"} />
-          <span>
-            <strong>{advisorText}</strong>
-            <br />
-            <span className="text-sm text-text-2">
-              {advisor.done
-                ? t("advisorDone")
-                : advisor.status === "pending"
-                  ? t("advisorPending", { email: advisorEmail || t("advisorDefault") })
-                  : t("advisorLocked")}
-            </span>
-            {!advisor.done ? (
-              <>
-                <br />
-                {step === "consent" ? null : <CopyLinkButton projectId={projectId} label={t("copyLink")} />}
               </>
             ) : null}
           </span>
