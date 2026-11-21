@@ -710,7 +710,8 @@
       "joinedLate": "You joined this team. Confirm that you agree to share it.",
       "reviewed": "{reviewed} of {total} drafted items reviewed. Publishing unlocks when all are reviewed.",
       "filesUploaded": "Files are uploaded. Draft the summary and tasks, then review them.",
-      "draftDefault": "Finish the steps to publish your teaser."
+      "draftDefault": "Finish the steps to publish your teaser.",
+      "settings": "Settings"
     },
     "r": {
       "projectDefault": "Project",
@@ -1040,7 +1041,7 @@
     "shareMeta": "Share a project",
     "basicsTitle": "Tell us about your project",
     "newIntro": "Start with the basics. ESTAFET saves a private draft when you continue, and you can come back from your dashboard at any time.",
-    "editIntro": "Change anything here. Saving moves you on to the consent step.",
+    "editIntro": "Change anything here. Saving moves you on to the files step.",
     "advisorSees": "What the advisor sees",
     "advisorSeesText": "The title and summary, what becomes public, and what stays private. They can approve, say “Not now”, and add a comment.",
     "filesTitle": "Add your project files",
@@ -1079,7 +1080,8 @@
     "limit1": "1 team at a time",
     "limit3": "3 teams at a time",
     "limitNone": "no limit",
-    "effectPrivate": "Your files, code and notes stay private."
+    "effectPrivate": "Your files, code and notes stay private.",
+    "breadcrumbDashboard": "Dashboard"
   },
   "copyLink": {
     "label": "Copy consent link",

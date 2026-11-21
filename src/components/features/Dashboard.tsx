@@ -17,6 +17,7 @@ import { cn } from "@/lib/cn";
 import type { DashboardAccess, DashboardData, DashboardInvitation, DashboardProject, DashboardRequest } from "@/lib/db/dashboard";
 
 function ProjectRow({ p }: { p: DashboardProject }) {
+  const t = useTranslations("dashboard");
   return (
     <StaggerItem>
       <div>
@@ -38,6 +39,11 @@ function ProjectRow({ p }: { p: DashboardProject }) {
               {p.cta}
             </ButtonLink>
           </div>
+          {p.status !== "draft" ? (
+            <Link href={`/proyek/${p.slug}/pengaturan`} className="link-anim self-start text-sm font-semibold text-blue">
+              {t("p.settings")}
+            </Link>
+          ) : null}
           <div className={cn("rounded-[14px] px-4 py-3 text-[15px] text-text-3", p.noteTone === "warn" ? "bg-warn-bg" : p.noteTone === "blue" ? "bg-blue-tint" : "bg-chip")}>{p.note}</div>
         </Card>
       </div>

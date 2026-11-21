@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { PageShell } from "@/components/ui/PageShell";
+import { Breadcrumb, PageShell } from "@/components/ui/PageShell";
 import { Stepper } from "@/components/ui/Stepper";
 
 // Order (R4): info, files, review the AI draft, team and access, preview and publish.
@@ -20,6 +20,7 @@ export function WizardFrame({
   const index = WIZARD_STEPS.indexOf(current);
   return (
     <PageShell>
+      <Breadcrumb items={[{ label: t("breadcrumbDashboard"), href: "/dasbor" }, { label: t("shareMeta") }]} />
       <Stepper
         label={t("frameLabel")}
         current={index}

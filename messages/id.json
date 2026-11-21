@@ -710,7 +710,8 @@
       "joinedLate": "Kamu bergabung di tim ini. Konfirmasi bahwa kamu setuju proyek ini dibagikan.",
       "reviewed": "{reviewed} dari {total} item draf sudah ditinjau. Penerbitan terbuka saat semuanya ditinjau.",
       "filesUploaded": "Berkas sudah diunggah. Susun ringkasan dan tugas, lalu tinjau.",
-      "draftDefault": "Selesaikan langkah-langkahnya untuk menerbitkan ringkasan publik."
+      "draftDefault": "Selesaikan langkah-langkahnya untuk menerbitkan ringkasan publik.",
+      "settings": "Pengaturan"
     },
     "r": {
       "projectDefault": "Proyek",
@@ -1040,7 +1041,7 @@
     "shareMeta": "Bagikan proyek",
     "basicsTitle": "Ceritakan tentang proyekmu",
     "newIntro": "Mulai dari info dasar. ESTAFET menyimpan draf pribadi saat kamu lanjut, dan kamu bisa kembali dari dasbor kapan saja.",
-    "editIntro": "Ubah apa saja di sini. Menyimpan akan membawamu ke langkah persetujuan.",
+    "editIntro": "Ubah apa saja di sini. Menyimpan akan membawamu ke langkah Berkas.",
     "advisorSees": "Yang dilihat dosen pembimbing",
     "advisorSeesText": "Judul dan ringkasan, apa yang menjadi publik, dan apa yang tetap pribadi. Beliau bisa menyetujui, menjawab “Belum sekarang”, dan menulis komentar.",
     "filesTitle": "Tambahkan berkas proyekmu",
@@ -1079,7 +1080,8 @@
     "limit1": "1 tim sekaligus",
     "limit3": "3 tim sekaligus",
     "limitNone": "tanpa batas",
-    "effectPrivate": "Berkas, kode, dan catatanmu tetap pribadi."
+    "effectPrivate": "Berkas, kode, dan catatanmu tetap pribadi.",
+    "breadcrumbDashboard": "Dasbor"
   },
   "copyLink": {
     "label": "Salin tautan persetujuan",

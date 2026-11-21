@@ -32,7 +32,7 @@ async function newUserPage(browser: Browser) {
 test("core flow: share, verify, publish, request, approve, accept, access", async ({ browser, page }) => {
   // ---- Creator signs up and fills the basics
   await signUp(page, "E2E Creator", creatorEmail);
-  await page.goto("/en/share");
+  await page.goto("/en/bagikan");
   await page.getByLabel("Project title").fill(title);
   await page
     .getByLabel("Short summary")
@@ -43,27 +43,13 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
   await page.getByLabel("Advisor name").fill("Dr. Test Advisor");
   await page.getByLabel("Advisor email").fill("advisor@example.test");
   await page.getByRole("button", { name: "Save and continue" }).click();
-  await page.waitForURL("**/consent");
+  await page.waitForURL("**/berkas");
 
-  // ---- Consent: team + advisor link (approved in a separate, signed-out browser context)
-  await page.getByRole("button", { name: "I confirm" }).click();
-  await expect(page.getByText("Confirmed", { exact: true }).first()).toBeVisible();
-  await page.getByRole("button", { name: "Create consent link" }).click();
-  const link = await page.getByLabel(/Private link for/).inputValue();
-  expect(link).toContain("/consent/");
-
-  const advisor = await newUserPage(browser);
-  await advisor.page.goto(link);
-  await expect(advisor.page.getByRole("heading", { name: /wants to share a project/ })).toBeVisible();
-  await advisor.page.getByRole("button", { name: "Approve publishing" }).click();
-  await expect(advisor.page.getByText(/approval is recorded/)).toBeVisible();
-  // a second attempt on the same link is refused (single decision)
-  await advisor.page.reload();
-  await expect(advisor.page.getByText(/This link allows one decision/)).toBeVisible();
-  await advisor.context.close();
-
-  // ---- Files: PDF, Markdown, ZIP with a .env inside
-  await page.goto(page.url().replace("/consent", "/files"));
+  // ---- Files. Nothing is read by AI before the team agreed: the AI path needs this consent first.
+  await expect(page.getByRole("button", { name: "Draft with AI and continue" })).toBeDisabled();
+  await page.getByRole("button", { name: "My team and I agree that AI reads the files" }).click();
+  await expect(page.getByText("Your consent is recorded.")).toBeVisible();
+  // PDF, Markdown, ZIP with a .env inside
   const zip = new JSZip();
   zip.file("README.md", "# Reef counter\nCounts coral.");
   zip.file("package.json", '{"name":"reef"}');
@@ -90,12 +76,12 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
 
   // ---- Draft in mock mode, then verify every item
   await page.getByRole("button", { name: "Draft with AI and continue" }).click();
-  await page.waitForURL("**/verify");
+  await page.waitForURL("**/tinjau");
   await expect(page.getByText("Simulated AI output (mock mode).")).toBeVisible();
   await expect(page.getByText("Evidence not found").first()).toBeVisible();
 
   // publishing is blocked while items are pending
-  await expect(page.getByRole("button", { name: "Continue to publish" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Continue to team and access" })).toBeDisabled();
 
   const keepButtons = page.getByRole("button", { name: "Keep", exact: true });
   const total = await keepButtons.count();
@@ -107,8 +93,27 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
     await card.getByRole("button", { name: unsupported ? "Remove" : "Keep", exact: true }).click();
   }
   await expect(page.getByText(`${total} of ${total} reviewed`)).toBeVisible();
-  await page.getByRole("link", { name: "Continue to publish" }).click();
-  await page.waitForURL("**/publish");
+  await page.getByRole("link", { name: "Continue to team and access" }).click();
+  await page.waitForURL("**/tim");
+
+  // ---- Team and access: the advisor link (approved in a separate, signed-out browser context) and the access rules
+  await page.getByRole("button", { name: "Create consent link" }).click();
+  const link = await page.getByLabel(/Private link for/).inputValue();
+  expect(link).toContain("/consent/");
+
+  const advisor = await newUserPage(browser);
+  await advisor.page.goto(link);
+  await expect(advisor.page.getByRole("heading", { name: /wants to share a project/ })).toBeVisible();
+  await advisor.page.getByRole("button", { name: "Approve publishing" }).click();
+  await expect(advisor.page.getByText(/approval is recorded/)).toBeVisible();
+  // a second attempt on the same link is refused (single decision)
+  await advisor.page.reload();
+  await expect(advisor.page.getByText(/This link allows one decision/)).toBeVisible();
+  await advisor.context.close();
+
+  await page.reload();
+  await page.getByRole("link", { name: "Continue to the preview" }).click();
+  await page.waitForURL("**/terbit");
 
   // ---- Publish (the Terms and Privacy Policy were accepted at sign up, so there is nothing more to tick)
   await page.getByLabel(/The preview above is what I want to make public/).check();

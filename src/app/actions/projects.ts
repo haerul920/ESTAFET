@@ -59,7 +59,7 @@ export async function saveBasics(_prev: FormState, formData: FormData): Promise<
     const { error } = await supabase.from("projects").update(input).eq("id", id);
     if (error) return { error: t.a("saveLocked"), values };
     revalidatePath(`/bagikan/${id}`, "layout");
-    redirect({ href: `/bagikan/${id}/tim`, locale });
+    redirect({ href: `/bagikan/${id}/berkas`, locale });
   }
 
   const { data, error } = await supabase
@@ -71,7 +71,7 @@ export async function saveBasics(_prev: FormState, formData: FormData): Promise<
     if (!user.verified) return { error: t.a("verifyFirst"), values };
     return { error: t.a("draftFailed"), values };
   }
-  redirect({ href: `/bagikan/${data.id}/tim`, locale });
+  redirect({ href: `/bagikan/${data.id}/berkas`, locale });
 }
 
 /** Invite a co-owner by the email of an existing ESTAFET account. They become a member only when they accept. */
