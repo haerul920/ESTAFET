@@ -88,6 +88,7 @@ export function Button({ variant = "primary", size = "md", arrow, className, chi
 }
 
 const MotionLink = motion.create(Link);
+const MotionAnchor = motion.create("a");
 
 type ButtonLinkProps = Shared & {
   href: string;
@@ -102,6 +103,26 @@ type ButtonLinkProps = Shared & {
 
 export function ButtonLink({ variant = "primary", size = "md", arrow, className, children, ...rest }: ButtonLinkProps) {
   const showArrow = arrow ?? false;
+  // API routes (downloads, PDFs) are not pages: they must not get a language prefix, so they use a plain anchor.
+  if (rest.href.startsWith("/api/")) {
+    const { href, download, target, rel, "aria-label": ariaLabel } = rest;
+    return (
+      <MotionAnchor
+        initial="rest"
+        whileHover="hover"
+        whileTap={{ scale: 0.97 }}
+        className={cn(styles(variant, size, showArrow), className)}
+        href={href}
+        download={download}
+        target={target}
+        rel={rel}
+        aria-label={ariaLabel}
+      >
+        {children}
+        {showArrow ? <ArrowCircle variant={variant} size={size} /> : null}
+      </MotionAnchor>
+    );
+  }
   return (
     <MotionLink
       initial="rest"

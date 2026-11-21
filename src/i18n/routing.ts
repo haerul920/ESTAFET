@@ -9,6 +9,8 @@ export const routing = defineRouting({
   locales: ["id", "en"],
   defaultLocale: "id",
   localePrefix: "as-needed",
+  // Indonesian is the default for everyone. The browser language is not used to pick English; the visitor's own choice is (cookie).
+  localeDetection: false,
   localeCookie: { maxAge: 60 * 60 * 24 * 365, sameSite: "lax" },
 });
 

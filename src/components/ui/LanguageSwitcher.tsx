@@ -7,6 +7,10 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { cn } from "@/lib/cn";
 
+function rememberLocale(next: Locale) {
+  document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=31536000; samesite=lax`;
+}
+
 /** "ID | EN". Keeps the current page and its query, and remembers the choice in a cookie (next-intl). */
 export function LanguageSwitcher({ tone = "dark", className }: { tone?: "dark" | "light"; className?: string }) {
   const t = useTranslations("lang");
@@ -19,6 +23,8 @@ export function LanguageSwitcher({ tone = "dark", className }: { tone?: "dark" |
   function go(next: Locale) {
     if (next === locale) return;
     const qs = params.toString();
+    // Remember the choice first, so the page that opens does not bounce back to the old language.
+    rememberLocale(next);
     start(() => router.replace(qs ? `${pathname}?${qs}` : pathname, { locale: next }));
   }
 
@@ -34,7 +40,6 @@ export function LanguageSwitcher({ tone = "dark", className }: { tone?: "dark" |
           <button
             type="button"
             lang={l}
-            aria-label={t(l)}
             aria-pressed={l === locale}
             disabled={pending}
             onClick={() => go(l)}
@@ -44,7 +49,8 @@ export function LanguageSwitcher({ tone = "dark", className }: { tone?: "dark" |
               l === locale ? "underline decoration-2 underline-offset-4" : "opacity-70",
             )}
           >
-            {l.toUpperCase()}
+            <span aria-hidden="true">{l.toUpperCase()}</span>
+            <span className="sr-only">{t(l)}</span>
           </button>
         </span>
       ))}
