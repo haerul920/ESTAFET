@@ -1,7 +1,8 @@
 import { Link } from "@/i18n/navigation";
 import { Inbox } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { formatWita, relativeTime } from "@/lib/admin/time";
+import { useLocale, useTranslations } from "next-intl";
+import { formatWita, relativeTime, type AdminLocale } from "@/lib/admin/time";
 
 export function StatCard({
   label,
@@ -103,7 +104,8 @@ export function KeyValueList({ items }: { items: { label: string; value: React.R
 }
 
 export function Timeline({ items }: { items: { id: string; title: string; sub?: string; when?: string | null }[] }) {
-  if (items.length === 0) return <p className="m-0 text-sm text-text-2">Nothing recorded yet.</p>;
+  const t = useTranslations("admin.common");
+  if (items.length === 0) return <p className="m-0 text-sm text-text-2">{t("nothingRecorded")}</p>;
   return (
     <ol className="m-0 flex list-none flex-col gap-3 p-0">
       {items.map((it) => (
@@ -122,10 +124,11 @@ export function Timeline({ items }: { items: { id: string; title: string; sub?: 
 
 /** Relative time with the absolute WITA time in the tooltip. */
 export function Time({ iso, className }: { iso: string | null | undefined; className?: string }) {
+  const locale = useLocale() as AdminLocale;
   if (!iso) return <span className={className}>—</span>;
   return (
-    <time dateTime={iso} title={formatWita(iso)} className={cn("block text-[13px] text-text-2", className)}>
-      {relativeTime(iso)}
+    <time dateTime={iso} title={formatWita(iso, locale)} className={cn("block text-[13px] text-text-2", className)}>
+      {relativeTime(iso, undefined, locale)}
     </time>
   );
 }

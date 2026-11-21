@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -42,8 +43,9 @@ export function DataTable<Row extends { id: string }>({
   empty?: { title: string; text?: string };
   selectedId?: string | null;
 }) {
+  const t = useTranslations("admin.common");
   if (rows.length === 0) {
-    return <EmptyState title={empty?.title ?? "Nothing here"} text={empty?.text ?? "Try clearing a filter."} />;
+    return <EmptyState title={empty?.title ?? t("nothingHere")} text={empty?.text ?? t("tryClearing")} />;
   }
   const pages = Math.max(1, Math.ceil(total / params.pageSize));
   const sortHref = (key: string) =>
@@ -144,26 +146,24 @@ export function DataTable<Row extends { id: string }>({
       </ul>
 
       <nav
-        aria-label="Pagination"
+        aria-label={t("pagination")}
         className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-text-2"
       >
-        <span>
-          {total} {total === 1 ? "row" : "rows"} · page {params.page} of {pages}
-        </span>
+        <span>{t("rows", { count: total, page: params.page, pages })}</span>
         <span className="flex gap-2">
           <PageLink
             disabled={params.page <= 1}
             href={basePath + withParams(sp, { page: String(params.page - 1) })}
-            label="Previous page"
+            label={t("previousPage")}
           >
-            <ChevronLeft size={16} aria-hidden="true" /> Previous
+            <ChevronLeft size={16} aria-hidden="true" /> {t("previous")}
           </PageLink>
           <PageLink
             disabled={params.page >= pages}
             href={basePath + withParams(sp, { page: String(params.page + 1) })}
-            label="Next page"
+            label={t("nextPage")}
           >
-            Next <ChevronRight size={16} aria-hidden="true" />
+            {t("next")} <ChevronRight size={16} aria-hidden="true" />
           </PageLink>
         </span>
       </nav>

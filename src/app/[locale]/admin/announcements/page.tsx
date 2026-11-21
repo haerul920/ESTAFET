@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/guard";
 import { toWitaInput } from "@/lib/admin/time";
+import { statusText, type StatusTranslator } from "@/lib/admin/labels";
 import { AnnouncementEditor } from "@/components/admin/AnnouncementEditor";
 import { ReasonAction } from "@/components/admin/ReasonDialog";
 import { EmptyState, PageHeader, Panel, StatusPill, Time, toneFor } from "@/components/admin/ui";
 import { endAnnouncement } from "@/app/[locale]/admin/actions";
 
-export const metadata: Metadata = { title: "Announcements" };
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.announce" });
+  return { title: t("title") };
+}
 
 interface Row {
   id: string;
@@ -27,6 +33,8 @@ interface Row {
 export default async function AdminAnnouncementsPage({ searchParams }: { searchParams: Promise<{ edit?: string }> }) {
   const { edit } = await searchParams;
   await requireAdmin();
+  const [t, ts] = await Promise.all([getTranslations("admin.announce"), getTranslations("admin.status")]);
+  const status = (k: string) => statusText(ts as unknown as StatusTranslator, k);
   const supabase = await createClient();
   const { data } = await supabase
     .from("admin_announcements_v")
@@ -38,11 +46,8 @@ export default async function AdminAnnouncementsPage({ searchParams }: { searchP
 
   return (
     <>
-      <PageHeader
-        title="Announcements"
-        intro="A short notice at the top of every public page, for example planned maintenance. It sits in the page flow: it never covers content."
-      />
-      <Panel title={editing ? "Edit announcement" : "New announcement"} className="mb-6">
+      <PageHeader title={t("title")} intro={t("intro")} />
+      <Panel title={editing ? t("editTitle") : t("newTitle")} className="mb-6">
         <AnnouncementEditor
           key={editing?.id ?? "new"}
           initial={
@@ -61,43 +66,43 @@ export default async function AdminAnnouncementsPage({ searchParams }: { searchP
         />
         {editing ? (
           <p className="mb-0 mt-3 text-sm">
-            <Link href="/admin/announcements">Cancel editing</Link>
+            <Link href="/admin/announcements">{t("cancelEdit")}</Link>
           </p>
         ) : null}
       </Panel>
 
-      <Panel title={`History (${rows.length})`}>
+      <Panel title={t("history", { count: rows.length })}>
         {rows.length === 0 ? (
-          <EmptyState title="No announcements yet" text="Published announcements appear here, with their state." />
+          <EmptyState title={t("emptyTitle")} text={t("emptyText")} />
         ) : (
           <ul className="m-0 flex list-none flex-col divide-y divide-line p-0">
             {rows.map((r) => (
               <li key={r.id} className="flex flex-wrap items-start justify-between gap-3 py-3 text-sm">
                 <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-1">
                   <span className="flex flex-wrap items-center gap-2">
-                    <StatusPill tone={toneFor(r.state)}>{r.state}</StatusPill>
+                    <StatusPill tone={toneFor(r.state)}>{status(r.state)}</StatusPill>
                     <StatusPill
                       tone={r.severity === "critical" ? "danger" : r.severity === "warning" ? "warn" : "neutral"}
                     >
-                      {r.severity}
+                      {status(r.severity)}
                     </StatusPill>
-                    {r.dismissible ? null : <span className="text-text-2">cannot be dismissed</span>}
+                    {r.dismissible ? null : <span className="text-text-2">{t("noDismiss")}</span>}
                   </span>
                   <span lang="id">{r.text_id}</span>
                   <span lang="en" className="text-text-2">
                     {r.text_en}
                   </span>
                   <span className="text-text-2">
-                    From <Time iso={r.starts_at} className="inline" />
+                    {t("range")} <Time iso={r.starts_at} className="inline" />
                     {r.ends_at ? (
                       <>
                         {" "}
-                        to <Time iso={r.ends_at} className="inline" />
+                        {t("rangeTo")} <Time iso={r.ends_at} className="inline" />
                       </>
                     ) : (
-                      " until ended"
+                      ` ${t("untilEnded")}`
                     )}
-                    {r.author_name ? ` · by ${r.author_name}` : ""}
+                    {r.author_name ? ` · ${t("by", { name: r.author_name })}` : ""}
                   </span>
                 </div>
                 {r.state === "live" || r.state === "scheduled" ? (
@@ -106,15 +111,15 @@ export default async function AdminAnnouncementsPage({ searchParams }: { searchP
                       href={`/admin/announcements?edit=${r.id}`}
                       className="inline-flex min-h-[36px] items-center rounded-full border-[1.5px] border-line-strong bg-white px-3.5 text-[13px] font-semibold no-underline hover:bg-surface"
                     >
-                      Edit
+                      {t("edit")}
                     </Link>
                     <ReasonAction
                       small
-                      label="End now"
-                      consequence={<>The banner disappears from public pages at once. The record stays in this list.</>}
-                      reasonLabel="Why you are ending it (kept in the audit log)"
+                      label={t("endNow")}
+                      consequence={t("endEffect")}
+                      reasonLabel={t("endReason")}
                       action={endAnnouncement.bind(null, r.id)}
-                      successMessage="Announcement ended."
+                      successMessage={t("ended")}
                     />
                   </div>
                 ) : null}

@@ -1,10 +1,12 @@
 /** Times are stored in UTC and shown in WITA (Asia/Makassar). */
 const TZ = "Asia/Makassar";
 
-export function formatWita(iso: string | null | undefined): string {
+export type AdminLocale = "id" | "en";
+
+export function formatWita(iso: string | null | undefined, locale: AdminLocale = "en"): string {
   if (!iso) return "";
   return (
-    new Date(iso).toLocaleString("en-GB", {
+    new Date(iso).toLocaleString(locale === "id" ? "id-ID" : "en-GB", {
       timeZone: TZ,
       day: "numeric",
       month: "short",
@@ -15,18 +17,42 @@ export function formatWita(iso: string | null | undefined): string {
   );
 }
 
-export function relativeTime(iso: string | null | undefined, now: number = Date.now()): string {
+const UNITS = {
+  en: {
+    now: "just now",
+    min: ["min", "mins"],
+    hour: ["hour", "hours"],
+    day: ["day", "days"],
+    ago: (t: string) => `${t} ago`,
+    in: (t: string) => `in ${t}`,
+  },
+  id: {
+    now: "baru saja",
+    min: ["menit", "menit"],
+    hour: ["jam", "jam"],
+    day: ["hari", "hari"],
+    ago: (t: string) => `${t} yang lalu`,
+    in: (t: string) => `dalam ${t}`,
+  },
+} as const;
+
+export function relativeTime(
+  iso: string | null | undefined,
+  now: number = Date.now(),
+  locale: AdminLocale = "en",
+): string {
   if (!iso) return "";
+  const u = UNITS[locale];
   const diff = now - new Date(iso).getTime();
   const future = diff < 0;
   const m = Math.floor(Math.abs(diff) / 60000);
-  const unit = (n: number, s: string) => `${n} ${s}${n === 1 ? "" : "s"}`;
+  const unit = (n: number, [one, many]: readonly [string, string]) => `${n} ${n === 1 ? one : many}`;
   let text: string;
-  if (m < 1) return "just now";
-  if (m < 60) text = unit(m, "min");
-  else if (m < 1440) text = unit(Math.floor(m / 60), "hour");
-  else text = unit(Math.floor(m / 1440), "day");
-  return future ? `in ${text}` : `${text} ago`;
+  if (m < 1) return u.now;
+  if (m < 60) text = unit(m, u.min);
+  else if (m < 1440) text = unit(Math.floor(m / 60), u.hour);
+  else text = unit(Math.floor(m / 1440), u.day);
+  return future ? u.in(text) : u.ago(text);
 }
 
 /** ISO timestamp for "N hours ago". A function (not inline Date.now) so server pages stay pure-looking. */

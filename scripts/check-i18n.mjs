@@ -70,6 +70,19 @@ const DYNAMIC_PREFIXES = [
   "report.r.",
   "auth.demo",
   "legal.",
+  "admin.status.",
+  "admin.shell.nav",
+  "admin.shell.group",
+  "admin.reasons.",
+  "admin.kinds.",
+  "admin.modes.",
+  "admin.actionsName.",
+  "admin.targets.",
+  "admin.errors.",
+  "admin.reports.tpl.",
+  "admin.settings.row.source",
+  "admin.policies.terms",
+  "admin.policies.privacy",
   "decision.status",
   "decision.action.",
   "myReports.status.",
@@ -199,13 +212,8 @@ for (const k of idMap.keys()) {
   fail(`unused message key: ${k}`);
 }
 
-// 4. hard-coded strings in components (admin area exempt until R6)
-const EXEMPT = [
-  /^src\/app\/\[locale\]\/admin\//,
-  /^src\/components\/admin\//,
-  /^src\/lib\/admin\//,
-  /^src\/app\/api\//,
-];
+// 4. hard-coded strings in components
+const EXEMPT = [/^src\/app\/api\//];
 const ALLOW_WORDS = new Set([
   "ESTAFET",
   "STACK",
@@ -230,7 +238,7 @@ for (const file of files) {
     if (l.startsWith("//") || l.startsWith("*") || l.startsWith("/*") || l.startsWith("import ")) return;
     const text = [...l.matchAll(/>\s*([^<>{}\n]*[A-Za-z]{3,}[^<>{}\n]*)\s*</g)]
       .map((m) => m[1].trim())
-      .filter((s) => !/^(=>|\)|&&|\|\|)/.test(s) && !/[;=]/.test(s));
+      .filter((s) => !/^(=>|\)|&&|\|\|)/.test(s) && !/[;=?]/.test(s));
     const attrs = [...l.matchAll(/\b(placeholder|aria-label|title|alt)="([^"{}]{3,})"/g)].map((m) => m[2]);
     for (const s of [...text, ...attrs]) {
       const words = s.split(/\s+/).filter((w) => /[A-Za-z]{3,}/.test(w) && !ALLOW_WORDS.has(w.replace(/[^\w]/g, "")));

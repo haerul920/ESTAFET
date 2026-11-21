@@ -59,7 +59,7 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
   const admin = await fresh(browser);
   const a = admin.page;
   await login(a, "admin@estafet.demo");
-  await a.goto("/admin/reports?status=open");
+  await a.goto("/en/admin/reports?status=open");
   await a.locator("tbody tr").first().getByRole("link").click();
   await expect(a.getByRole("complementary", { name: "Report details" })).toBeVisible();
   await expect(a.getByText("E2E: the summary says more than the files support.")).toBeVisible();
@@ -87,7 +87,7 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
   await creator.context.close();
 
   // 5. The admin restores it from the project page; it reappears.
-  await a.goto("/admin/projects?q=Freshness&moderation=hidden&demo=1");
+  await a.goto("/en/admin/projects?q=Freshness&moderation=hidden&demo=1");
   await a.locator("tbody tr").first().getByRole("link").click();
   await a.getByRole("button", { name: "Restore", exact: true }).click();
   await confirmDialog(a, "Restore");
@@ -98,11 +98,11 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
   await again.context.close();
 
   // 6. Every step is in the audit log with the reason.
-  await a.goto("/admin/audit?action=project.");
+  await a.goto("/en/admin/audit?action=project.");
   await expect(a.getByText("project.hidden").first()).toBeVisible();
   await expect(a.getByText("project.restored").first()).toBeVisible();
   await expect(a.getByText(REASON).first()).toBeVisible();
-  await a.goto("/admin/audit?action=report.");
+  await a.goto("/en/admin/audit?action=report.");
   await expect(a.getByText("report.hide").first()).toBeVisible();
   await admin.context.close();
 });
@@ -110,16 +110,16 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
 test("the admin area is invisible to guests and normal users (404)", async ({ browser }) => {
   const guest = await fresh(browser);
   for (const path of [
-    "/admin",
-    "/admin/projects",
-    "/admin/reports",
-    "/admin/users",
-    "/admin/pipeline",
-    "/admin/appeals",
-    "/admin/requests",
-    "/admin/trials",
-    "/admin/audit",
-    "/admin/settings",
+    "/en/admin",
+    "/en/admin/projects",
+    "/en/admin/reports",
+    "/en/admin/users",
+    "/en/admin/pipeline",
+    "/en/admin/appeals",
+    "/en/admin/requests",
+    "/en/admin/trials",
+    "/en/admin/audit",
+    "/en/admin/settings",
   ]) {
     expect((await guest.page.goto(path))?.status(), path).toBe(404);
   }
@@ -128,7 +128,7 @@ test("the admin area is invisible to guests and normal users (404)", async ({ br
 
   const user = await fresh(browser);
   await login(user.page, "creator@estafet.demo");
-  for (const path of ["/admin", "/admin/audit", "/admin/settings"]) {
+  for (const path of ["/en/admin", "/en/admin/audit", "/en/admin/settings"]) {
     expect((await user.page.goto(path))?.status(), path).toBe(404);
   }
   expect((await user.page.request.get("/api/admin/audit/export")).status()).toBe(404);
@@ -142,15 +142,15 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
 
   // Every page opens with its heading and the shell.
   const pages: [string, string][] = [
-    ["/admin", "Overview"],
-    ["/admin/projects", "Projects"],
-    ["/admin/reports", "Reports"],
-    ["/admin/users", "Users"],
-    ["/admin/pipeline", "Pipeline"],
-    ["/admin/requests", "Requests"],
-    ["/admin/trials", "Onboarding trials"],
-    ["/admin/audit", "Audit log"],
-    ["/admin/settings", "Settings"],
+    ["/en/admin", "Overview"],
+    ["/en/admin/projects", "Projects"],
+    ["/en/admin/reports", "Reports"],
+    ["/en/admin/users", "Users"],
+    ["/en/admin/pipeline", "Pipeline"],
+    ["/en/admin/requests", "Requests"],
+    ["/en/admin/trials", "Onboarding trials"],
+    ["/en/admin/audit", "Audit log"],
+    ["/en/admin/settings", "Settings"],
   ];
   for (const [path, heading] of pages) {
     expect((await a.goto(path))?.status(), path).toBe(200);
@@ -163,7 +163,7 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   }
 
   // Keyboard: g then p goes to Projects, ? shows the shortcuts.
-  await a.goto("/admin");
+  await a.goto("/en/admin");
   await a.waitForLoadState("networkidle"); // let the page hydrate so the key handler is attached
   await a.keyboard.press("g");
   await a.keyboard.press("p");
@@ -173,25 +173,25 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   await a.keyboard.press("Escape");
 
   // A setting change: reason + password check, then it shows as "Set here" and is audited with before and after.
-  await a.goto("/admin/settings");
+  await a.goto("/en/admin/settings");
   const row = a.locator("#set-max_upload_mb");
   await row.fill("26");
   await a.locator("[data-setting=max_upload_mb]").getByRole("button", { name: "Save" }).click();
   await expect(a.getByRole("dialog").getByText(/changes from/)).toBeVisible();
   await confirmDialog(a, "Save");
   await expect(a.getByText("Maximum upload size saved.").first()).toBeVisible();
-  await a.goto("/admin/audit?action=setting.");
+  await a.goto("/en/admin/audit?action=setting.");
   await a.locator("tbody tr").first().getByRole("link").click();
   await expect(a.getByRole("complementary", { name: "Audit entry" })).toContainText("max_upload_mb");
   // put it back (the password check is remembered for 15 minutes)
-  await a.goto("/admin/settings");
+  await a.goto("/en/admin/settings");
   await a.locator("#set-max_upload_mb").fill("25");
   await a.locator("[data-setting=max_upload_mb]").getByRole("button", { name: "Save" }).click();
   await confirmDialog(a, "Save");
   await expect(a.getByText("Maximum upload size saved.").first()).toBeVisible();
 
   // A trial session (demo-flagged so it never pollutes real metrics).
-  await a.goto("/admin/trials");
+  await a.goto("/en/admin/trials");
   await a.getByRole("link", { name: "Record session" }).click();
   const form = a.getByRole("form", { name: "Record session" });
   await form.getByLabel("Participant code").fill("E2E1");
@@ -203,10 +203,10 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   await form.getByRole("button", { name: "Save session" }).click();
   await expect(a.getByText("Session recorded.").first()).toBeVisible();
   // Without demo rows there are no real sessions, so the page refuses to draw a conclusion.
-  await a.goto("/admin/trials");
+  await a.goto("/en/admin/trials");
   await expect(a.getByText(/Too few sessions to conclude \(n = 0/).first()).toBeVisible();
   await expect(a.getByText("E2E1")).toHaveCount(0);
-  await a.goto("/admin/trials?demo=1");
+  await a.goto("/en/admin/trials?demo=1");
   await expect(a.getByRole("link", { name: "E2E1" }).first()).toBeVisible();
   await expect(a.getByText("ESTAFET (n = 5)")).toBeVisible(); // 4 seeded demo sessions + the one just recorded
   const csv = await a.request.get("/api/admin/trials/export?demo=1");
@@ -214,7 +214,7 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   expect(await csv.text()).toContain("E2E1");
 
   // Break glass on one private file: typed confirmation, red banner.
-  await a.goto("/admin/projects?q=Mangrove&demo=1");
+  await a.goto("/en/admin/projects?q=Mangrove&demo=1");
   await a.locator("tbody tr").first().getByRole("link").click();
   await a.getByRole("button", { name: "Open private file" }).click();
   await confirmDialog(a, "Open private file", { phrase: "OPEN PRIVATE FILE" });
@@ -223,7 +223,7 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   await expect(a.getByText(/Expires in \d:\d\d/)).toBeVisible();
 
   // Suspension: the user cannot sign in, restore lets them back.
-  await a.goto("/admin/users?q=adopter%40estafet");
+  await a.goto("/en/admin/users?q=adopter%40estafet");
   await a.locator("tbody tr").first().getByRole("link").click();
   await a.getByRole("button", { name: "Suspend user" }).click();
   await confirmDialog(a, "Suspend user");
@@ -243,7 +243,7 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
 
   // The audit log has every action above.
   for (const action of ["setting.update", "trial.create", "break_glass.open", "user.suspend", "user.restore"]) {
-    await a.goto(`/admin/audit?action=${action}`);
+    await a.goto(`/en/admin/audit?action=${action}`);
     await expect(a.getByText(action).first(), action).toBeVisible();
   }
   await admin.context.close();
@@ -255,7 +255,7 @@ test("announcements: an admin publishes one, visitors see it in their language, 
   const admin = await fresh(browser);
   const a = admin.page;
   await login(a, "admin@estafet.demo");
-  await a.goto("/admin/announcements");
+  await a.goto("/en/admin/announcements");
   await a.getByLabel("Text in Indonesian").fill("Pemeliharaan terjadwal malam ini (uji e2e).");
   await a.getByLabel("Text in English").fill("Scheduled maintenance tonight (e2e test).");
   await a.getByRole("button", { name: "Publish announcement", exact: true }).click();
@@ -270,7 +270,7 @@ test("announcements: an admin publishes one, visitors see it in their language, 
   await visitor.page.getByRole("button", { name: "Tutup pengumuman" }).click();
   await expect(visitor.page.getByText("Pemeliharaan terjadwal malam ini (uji e2e).")).toBeHidden();
 
-  await a.goto("/admin/announcements");
+  await a.goto("/en/admin/announcements");
   await a.getByRole("button", { name: "End now" }).first().click();
   await confirmDialog(a, "End now");
   await visitor.page.goto("/en/explore");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { CheckboxField, FormMessage, SelectField, TextArea, TextField } from "@/components/ui/Field";
@@ -48,6 +49,7 @@ export function TrialForm({
   projects: { id: string; title: string }[];
   onClose: () => void;
 }) {
+  const t = useTranslations("admin.trials.form");
   const [v, setV] = useState<TrialDraft>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
@@ -65,7 +67,7 @@ export function TrialForm({
         setMessage(res.error);
         return;
       }
-      toast.push({ message: v.id ? "Session updated." : "Session recorded." });
+      toast.push({ message: v.id ? t("updated") : t("recorded") });
       router.refresh();
       onClose();
     });
@@ -76,30 +78,30 @@ export function TrialForm({
       onSubmit={submit}
       noValidate
       className="flex flex-col gap-3 rounded-3xl border-2 border-blue bg-white p-5"
-      aria-label={v.id ? "Edit session" : "Record session"}
+      aria-label={v.id ? t("editTitle") : t("recordTitle")}
     >
-      <h2 className="m-0 text-lg">{v.id ? "Edit session" : "Record session"}</h2>
+      <h2 className="m-0 text-lg">{v.id ? t("editTitle") : t("recordTitle")}</h2>
       {message ? <FormMessage tone="error">{message}</FormMessage> : null}
       <div className="grid gap-3 sm:grid-cols-2">
         <TextField
-          label="Participant code"
+          label={t("code")}
           value={v.participant_code}
           onChange={(e) => set("participant_code", e.target.value)}
           error={errors.participant_code}
-          hint="A pseudonym such as P01. No names or emails."
+          hint={t("codeHint")}
           maxLength={12}
         />
         <SelectField
-          label="Cohort"
+          label={t("cohort")}
           value={v.cohort}
           onChange={(e) => set("cohort", e.target.value as TrialDraft["cohort"])}
           error={errors.cohort}
         >
-          <option value="baseline">Baseline (raw files)</option>
-          <option value="estafet">ESTAFET project page</option>
+          <option value="baseline">{t("baselineOption")}</option>
+          <option value="estafet">{t("estafetOption")}</option>
         </SelectField>
-        <SelectField label="Project" value={v.project_id} onChange={(e) => set("project_id", e.target.value)}>
-          <option value="">Not linked</option>
+        <SelectField label={t("project")} value={v.project_id} onChange={(e) => set("project_id", e.target.value)}>
+          <option value="">{t("notLinked")}</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
               {p.title}
@@ -107,14 +109,14 @@ export function TrialForm({
           ))}
         </SelectField>
         <TextField
-          label="Start time"
+          label={t("start")}
           type="datetime-local"
           value={v.started_at}
           onChange={(e) => set("started_at", e.target.value)}
           error={errors.started_at}
         />
         <TextField
-          label="Minutes to understand"
+          label={t("minutes")}
           type="number"
           step="0.5"
           min="0"
@@ -123,7 +125,7 @@ export function TrialForm({
           error={errors.minutes_to_understand}
         />
         <TextField
-          label="SUS score (0 to 100, optional)"
+          label={t("sus")}
           type="number"
           min="0"
           max="100"
@@ -133,7 +135,7 @@ export function TrialForm({
           error={errors.sus_score}
         />
         <TextField
-          label="Questions answered correctly"
+          label={t("correct")}
           type="number"
           min="0"
           value={v.correct_answers}
@@ -141,7 +143,7 @@ export function TrialForm({
           error={errors.correct_answers}
         />
         <TextField
-          label="Questions asked"
+          label={t("asked")}
           type="number"
           min="1"
           value={v.total_questions}
@@ -149,35 +151,27 @@ export function TrialForm({
           error={errors.total_questions}
         />
       </div>
-      <CheckboxField
-        label="The participant finished (understood the project within the session)"
-        checked={v.completed}
-        onChange={(e) => set("completed", e.target.checked)}
-      />
+      <CheckboxField label={t("finished")} checked={v.completed} onChange={(e) => set("completed", e.target.checked)} />
       <TextArea
-        label="Notes (optional)"
+        label={t("notes")}
         rows={2}
         value={v.notes}
         onChange={(e) => set("notes", e.target.value)}
-        hint="No personal details."
+        hint={t("notesHint")}
       />
       <CheckboxField
-        label="Participant consented to being included"
+        label={t("consent")}
         checked={v.consent_confirmed}
         onChange={(e) => set("consent_confirmed", e.target.checked)}
         error={errors.consent_confirmed}
       />
-      <CheckboxField
-        label="This is a demo row (not a real session)"
-        checked={v.is_demo}
-        onChange={(e) => set("is_demo", e.target.checked)}
-      />
+      <CheckboxField label={t("demo")} checked={v.is_demo} onChange={(e) => set("is_demo", e.target.checked)} />
       <div className="flex gap-2">
         <Button type="submit" size="md" disabled={pending}>
-          {pending ? "Saving…" : "Save session"}
+          {pending ? t("saving") : t("save")}
         </Button>
         <Button type="button" size="md" variant="outline" onClick={onClose}>
-          Cancel
+          {t("cancel")}
         </Button>
       </div>
     </form>

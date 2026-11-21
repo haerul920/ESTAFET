@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { ShieldAlert } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 /** Persistent red banner while an emergency (break glass) view is open. */
 export function BreakGlassBanner({ expiresAt }: { expiresAt: string }) {
+  const t = useTranslations("admin.bg");
   const [left, setLeft] = useState(() => Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)));
   useEffect(() => {
     const t = setInterval(
@@ -21,9 +23,9 @@ export function BreakGlassBanner({ expiresAt }: { expiresAt: string }) {
       className="z-system-banner relative -mx-4 -mt-6 mb-6 flex flex-wrap items-center justify-center gap-3 bg-danger px-4 py-2.5 text-sm font-semibold text-white"
     >
       <ShieldAlert size={18} aria-hidden="true" />
-      <span>EMERGENCY ACCESS to private files. This view is logged and the creators were told.</span>
+      <span>{t("banner")}</span>
       <span className="font-code" aria-live="off">
-        {left > 0 ? `Expires in ${mm}:${ss}` : "Expired"}
+        {left > 0 ? t("expires", { time: `${mm}:${ss}` }) : t("expired")}
       </span>
     </div>
   );

@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient as createPlainClient } from "@supabase/supabase-js";
@@ -15,6 +16,7 @@ import { SUPABASE_PUBLIC_KEY, SUPABASE_URL } from "@/lib/supabase/keys";
 import { runSynthesis } from "@/lib/synthesis";
 import { trialSchema } from "@/lib/admin/trial-schema";
 import { SETTING_KEYS, SETTING_SCHEMAS, type SettingKey } from "@/lib/settings";
+import { KNOWN_HINTS } from "@/lib/errors";
 
 /**
  * Every admin mutation goes through an `admin_*` SQL function that writes the change and the audit row
@@ -39,23 +41,43 @@ async function run(
     revalidatePath("/admin", "layout");
     return res.error ? res : { ok: true, ...res };
   } catch (e) {
-    if (e instanceof ReauthRequired) return { needsReauth: true, error: e.message };
+    if (e instanceof ReauthRequired) {
+      return { needsReauth: true, error: (await getTranslations("admin.reason"))("needsReauth") };
+    }
     throw e; // notFound() and redirects must pass through
   }
 }
 
-const fail = (error: { message: string } | null): ActionResult | undefined =>
-  error ? { error: error.message } : undefined;
+/** A message from the `admin.errors` namespace, in the admin's language. */
+async function msg(key: string, values?: Record<string, string | number>): Promise<string> {
+  const t = await getTranslations("admin.errors");
+  return t(key as never, values as never);
+}
+
+async function hasMsg(key: string): Promise<boolean> {
+  return (await getTranslations("admin.errors")).has(key as never);
+}
+
+/** The text for a database error: a known hint gets its message, anything else is shown with its original detail. */
+async function dbMsg(error: { message?: string; hint?: string | null; code?: string }): Promise<string> {
+  const hint = error.hint ?? "";
+  if (hint && KNOWN_HINTS.has(hint)) return (await getTranslations("errors"))(`hints.${hint}` as never);
+  if (error.code === "42501") return (await getTranslations("errors"))("forbidden");
+  return msg("detail", { message: error.message ?? "" });
+}
+
+const fail = async (error: { message: string } | null): Promise<ActionResult | undefined> =>
+  error ? { error: await dbMsg(error) } : undefined;
 
 /** Password check for sensitive actions. Remembered for 15 minutes in a signed httpOnly cookie. */
 export async function reauthenticate(password: string): Promise<ActionResult> {
   const user = await requireAdmin();
-  if (!password) return { error: "Enter your password." };
+  if (!password) return { error: await msg("enterPassword") };
   const plain = createPlainClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const { error } = await plain.auth.signInWithPassword({ email: user.email, password });
-  if (error) return { error: "That password is not correct." };
+  if (error) return { error: await msg("wrongPassword") };
   const store = await cookies();
   store.set(REAUTH_COOKIE, signReauth(user.id), {
     httpOnly: true,
@@ -105,7 +127,7 @@ export async function resolveAppeal(
 export async function bulkDismissSpam(ids: string[], note: string): Promise<ActionResult> {
   return run(false, async (db) => {
     const { data, error } = await db.rpc("admin_bulk_dismiss_spam", { p_ids: ids, p_note: note });
-    if (error) return { error: error.message };
+    if (error) return { error: await dbMsg(error) };
     return { data: { dismissed: data as number } };
   });
 }
@@ -122,10 +144,11 @@ export interface AnnouncementInput {
   dismissible: boolean;
 }
 
+// Messages are codes (messages admin.errors.*).
 const announcementSchema = z.object({
   severity: z.enum(["info", "warning", "critical"]),
-  textId: z.string().trim().min(3, "Write the Indonesian text.").max(280, "At most 280 characters."),
-  textEn: z.string().trim().min(3, "Write the English text.").max(280, "At most 280 characters."),
+  textId: z.string().trim().min(3, "textId").max(280, "textMax"),
+  textEn: z.string().trim().min(3, "textEn").max(280, "textMax"),
 });
 
 function toIso(v: string | null): string | null | "invalid" {
@@ -136,10 +159,10 @@ function toIso(v: string | null): string | null | "invalid" {
 
 export async function saveAnnouncement(input: AnnouncementInput, reason: string): Promise<ActionResult> {
   const parsed = announcementSchema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the announcement." };
+  if (!parsed.success) return { error: await msg(parsed.error.issues[0]?.message ?? "checkAnnouncement") };
   const starts = toIso(input.startsAt);
   const ends = toIso(input.endsAt);
-  if (starts === "invalid" || ends === "invalid") return { error: "Enter valid dates." };
+  if (starts === "invalid" || ends === "invalid") return { error: await msg("validDates") };
   return run(false, async (db) =>
     fail(
       (
@@ -164,7 +187,7 @@ export async function endAnnouncement(id: string, reason: string): Promise<Actio
 
 /** A new policy version makes everyone accept it again. It is a platform-wide change, so it needs a recent password check. */
 export async function publishPolicy(kind: "terms" | "privacy", version: number, reason: string): Promise<ActionResult> {
-  if (!Number.isInteger(version) || version < 1) return { error: "Enter a whole version number." };
+  if (!Number.isInteger(version) || version < 1) return { error: await msg("wholeVersion") };
   return run(true, async (db) =>
     fail((await db.rpc("admin_publish_policy", { p_kind: kind, p_version: version, p_reason: reason })).error),
   );
@@ -175,7 +198,7 @@ export async function publishPolicy(kind: "terms" | "privacy", version: number, 
 export async function forceSignOut(userId: string, reason: string): Promise<ActionResult> {
   return run(false, async (db) => {
     const { data, error } = await db.rpc("admin_force_sign_out", { p_user: userId, p_reason: reason });
-    if (error) return { error: error.message };
+    if (error) return { error: await dbMsg(error) };
     return { data: { sessionsEnded: data as number } };
   });
 }
@@ -184,7 +207,7 @@ export async function forceSignOut(userId: string, reason: string): Promise<Acti
 export async function resendUserVerification(userId: string, reason: string): Promise<ActionResult> {
   return run(false, async (db) => {
     const problem = await sendConfirmationAgain(userId);
-    if (problem) return { error: problem };
+    if (problem) return { error: await msg(problem) };
     return fail(
       (
         await db.rpc("admin_log_action", {
@@ -203,24 +226,24 @@ export async function resendUserVerification(userId: string, reason: string): Pr
 export async function suspendUser(userId: string, reason: string, until: string | null): Promise<ActionResult> {
   return run(true, async (db) => {
     const untilDate = until ? new Date(until) : null;
-    if (untilDate && Number.isNaN(untilDate.getTime())) return { error: "Enter a valid end date." };
+    if (untilDate && Number.isNaN(untilDate.getTime())) return { error: await msg("validEndDate") };
     const { error } = await db.rpc("admin_suspend_user", {
       p_user: userId,
       p_reason: reason,
       p_until: untilDate ? untilDate.toISOString() : null,
     });
-    if (error) return { error: error.message };
+    if (error) return { error: await dbMsg(error) };
     const banError = await setAuthBan(userId, untilDate);
-    if (banError) return { error: `The suspension was recorded, but sign-in could not be blocked: ${banError}` };
+    if (banError) return { error: await msg("suspendBan", { detail: banError }) };
   });
 }
 
 export async function restoreUser(userId: string, reason: string): Promise<ActionResult> {
   return run(false, async (db) => {
     const { error } = await db.rpc("admin_restore_user", { p_user: userId, p_reason: reason });
-    if (error) return { error: error.message };
+    if (error) return { error: await dbMsg(error) };
     const banError = await setAuthBan(userId, "lift");
-    if (banError) return { error: `The account is restored, but the sign-in block could not be lifted: ${banError}` };
+    if (banError) return { error: await msg("restoreBan", { detail: banError }) };
   });
 }
 
@@ -231,7 +254,7 @@ export async function openBreakGlass(projectId: string, fileId: string, reason: 
       p_file: fileId,
       p_reason: reason,
     });
-    if (error) return { error: error.message };
+    if (error) return { error: await dbMsg(error) };
     return { data: { accessId: (data as { access_id: string }).access_id } };
   });
 }
@@ -260,8 +283,8 @@ export async function retryRun(runId: string, reason: string): Promise<ActionRes
       .select("id, project_id, status, requested_by")
       .eq("id", runId)
       .maybeSingle();
-    if (!row) return { error: "Run not found." };
-    if (row.status !== "failed") return { error: "Only a failed run can be retried." };
+    if (!row) return { error: await msg("runNotFound") };
+    if (row.status !== "failed") return { error: await msg("onlyFailed") };
     const logged = await db.rpc("admin_log_action", {
       p_action: "run.retry",
       p_target_type: "synthesis_run",
@@ -270,9 +293,9 @@ export async function retryRun(runId: string, reason: string): Promise<ActionRes
       p_before: { status: "failed" },
       p_after: { project_id: row.project_id },
     });
-    if (logged.error) return { error: logged.error.message };
+    if (logged.error) return { error: await dbMsg(logged.error) };
     const result = await runSynthesis(row.project_id, row.requested_by);
-    if (!result.ok) return { error: `The retry failed: ${result.error}` };
+    if (!result.ok) return { error: await msg("retryFailed", { detail: result.error }) };
     return { data: { items: result.items } };
   });
 }
@@ -295,23 +318,26 @@ const SETTING_INPUT: Record<SettingKey, (raw: string | boolean) => unknown> = {
 };
 
 export async function updateSetting(key: string, raw: string | boolean, reason: string): Promise<ActionResult> {
-  if (!(SETTING_KEYS as readonly string[]).includes(key)) return { error: "Unknown setting." };
+  if (!(SETTING_KEYS as readonly string[]).includes(key)) return { error: await msg("unknownSetting") };
   const k = key as SettingKey;
   const parsed = (SETTING_SCHEMAS[k] as z.ZodType).safeParse(SETTING_INPUT[k](raw));
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "That value is not valid." };
+  if (!parsed.success) {
+    const code = parsed.error.issues[0]?.message ?? "";
+    return { error: await msg((await hasMsg(`setting_${code}`)) ? `setting_${code}` : "invalidValue") };
+  }
   return run(true, async (db) =>
     fail((await db.rpc("admin_update_setting", { p_key: k, p_value: parsed.data, p_reason: reason })).error),
   );
 }
 
 export async function purgeDemoData(reason: string): Promise<ActionResult> {
-  if (isProduction()) return { error: "Purging demo data is disabled in the PRODUCTION environment." };
+  if (isProduction()) return { error: await msg("purgeBlocked") };
   return run(true, async (db) => {
     const { data: paths, error: pathError } = await db.rpc("admin_demo_storage_paths");
-    if (pathError) return { error: pathError.message };
+    if (pathError) return { error: await dbMsg(pathError) };
     await removeDemoObjects((paths as string[] | null) ?? []);
     const { data, error } = await db.rpc("admin_purge_demo", { p_reason: reason, p_allow: !isProduction() });
-    if (error) return { error: error.message };
+    if (error) return { error: await dbMsg(error) };
     return { data: data as Record<string, unknown> };
   });
 }
@@ -325,8 +351,8 @@ export async function saveTrial(
   const parsed = trialSchema.safeParse(input);
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
-    for (const i of parsed.error.issues) fieldErrors[String(i.path[0] ?? "_")] ??= i.message;
-    return { error: "Fix the highlighted fields.", fieldErrors };
+    for (const i of parsed.error.issues) fieldErrors[String(i.path[0] ?? "_")] ??= await msg(`trial_${i.message}`);
+    return { error: await msg("fixFields"), fieldErrors };
   }
   const { id, ...rest } = parsed.data;
   const res = await run(false, async (db) =>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ReasonAction } from "@/components/admin/ReasonDialog";
 import { saveAnnouncement, type AnnouncementInput } from "@/app/[locale]/admin/actions";
 import { fromWitaInput } from "@/lib/admin/time";
@@ -30,6 +31,7 @@ const FIELD = "w-full rounded-[14px] border border-line-strong bg-white px-3.5 p
 
 /** Create or edit a site-wide announcement. Both languages are required: visitors see the one for their language. */
 export function AnnouncementEditor({ initial, onDone }: { initial?: AnnouncementDraft; onDone?: () => void }) {
+  const t = useTranslations("admin.announce.editor");
   const [d, setD] = useState<AnnouncementDraft>(initial ?? EMPTY);
   const set = <K extends keyof AnnouncementDraft>(k: K, v: AnnouncementDraft[K]) => setD((p) => ({ ...p, [k]: v }));
   const ready = d.textId.trim().length >= 3 && d.textEn.trim().length >= 3;
@@ -39,7 +41,7 @@ export function AnnouncementEditor({ initial, onDone }: { initial?: Announcement
       <div className="grid gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="ann-id" className="text-sm font-semibold">
-            Text in Indonesian
+            {t("textId")}
           </label>
           <textarea
             id="ann-id"
@@ -52,7 +54,7 @@ export function AnnouncementEditor({ initial, onDone }: { initial?: Announcement
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="ann-en" className="text-sm font-semibold">
-            Text in English
+            {t("textEn")}
           </label>
           <textarea
             id="ann-en"
@@ -67,7 +69,7 @@ export function AnnouncementEditor({ initial, onDone }: { initial?: Announcement
       <div className="grid gap-4 md:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="ann-sev" className="text-sm font-semibold">
-            Severity
+            {t("severity")}
           </label>
           <select
             id="ann-sev"
@@ -75,14 +77,14 @@ export function AnnouncementEditor({ initial, onDone }: { initial?: Announcement
             onChange={(e) => set("severity", e.target.value as AnnouncementDraft["severity"])}
             className={FIELD}
           >
-            <option value="info">Info</option>
-            <option value="warning">Warning</option>
-            <option value="critical">Critical</option>
+            <option value="info">{t("info")}</option>
+            <option value="warning">{t("warning")}</option>
+            <option value="critical">{t("critical")}</option>
           </select>
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="ann-start" className="text-sm font-semibold">
-            Starts (WITA)
+            {t("starts")}
           </label>
           <input
             id="ann-start"
@@ -91,11 +93,11 @@ export function AnnouncementEditor({ initial, onDone }: { initial?: Announcement
             onChange={(e) => set("startsAt", e.target.value)}
             className={FIELD}
           />
-          <span className="text-[13px] text-text-2">Empty means now.</span>
+          <span className="text-[13px] text-text-2">{t("startsHint")}</span>
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="ann-end" className="text-sm font-semibold">
-            Ends (WITA)
+            {t("ends")}
           </label>
           <input
             id="ann-end"
@@ -104,7 +106,7 @@ export function AnnouncementEditor({ initial, onDone }: { initial?: Announcement
             onChange={(e) => set("endsAt", e.target.value)}
             className={FIELD}
           />
-          <span className="text-[13px] text-text-2">Empty means until you end it.</span>
+          <span className="text-[13px] text-text-2">{t("endsHint")}</span>
         </div>
       </div>
       <label className="flex min-h-[44px] cursor-pointer items-center gap-3">
@@ -114,21 +116,16 @@ export function AnnouncementEditor({ initial, onDone }: { initial?: Announcement
           onChange={(e) => set("dismissible", e.target.checked)}
           className="h-5 w-5 accent-[var(--blue)]"
         />
-        <span className="text-sm">Visitors can dismiss it</span>
+        <span className="text-sm">{t("dismissible")}</span>
       </label>
       <div>
         <ReasonAction
-          label={d.id ? "Save changes" : "Publish announcement"}
+          label={d.id ? t("save") : t("publish")}
           tone="primary"
           disabled={!ready}
-          consequence={
-            <>
-              The announcement shows as a banner at the top of every public page, in the visitor&apos;s language, from
-              the start time until the end time. It pushes content down and never covers it.
-            </>
-          }
-          reasonLabel="Why this announcement is needed (kept in the audit log)"
-          successMessage={d.id ? "Announcement saved." : "Announcement published."}
+          consequence={t("effect")}
+          reasonLabel={t("reasonLabel")}
+          successMessage={d.id ? t("saved") : t("published")}
           action={(reason) =>
             saveAnnouncement(
               {

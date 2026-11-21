@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
 
 export interface FilterGroup {
@@ -14,7 +15,7 @@ export interface FilterGroup {
 
 /** Search plus filter chips. Everything is saved in the URL (and resets to page 1 on change). */
 export function FilterBar({
-  searchLabel = "Search",
+  searchLabel,
   filters = [],
   toggles = [],
 }: {
@@ -22,9 +23,11 @@ export function FilterBar({
   filters?: FilterGroup[];
   toggles?: { key: string; label: string }[];
 }) {
+  const tc = useTranslations("admin.common");
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const label = searchLabel === undefined ? tc("search") : searchLabel;
   const [pending, start] = useTransition();
   const [q, setQ] = useState(params.get("q") ?? "");
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -54,10 +57,10 @@ export function FilterBar({
   return (
     <div className={cn("mb-4 flex flex-col gap-3", pending && "opacity-70")} role="search">
       <div className="flex flex-wrap items-center gap-3">
-        {searchLabel ? (
+        {label ? (
           <div className="relative min-w-[240px] flex-1">
             <label htmlFor="admin-q" className="sr-only">
-              {searchLabel}
+              {label}
             </label>
             <Search
               size={16}
@@ -68,7 +71,7 @@ export function FilterBar({
               id="admin-q"
               type="search"
               value={q}
-              placeholder={searchLabel}
+              placeholder={label}
               onChange={(e) => setQ(e.target.value)}
               className="min-h-[44px] w-full rounded-full border border-line-strong bg-white py-2 pl-10 pr-4 text-[15px]"
             />
@@ -94,7 +97,7 @@ export function FilterBar({
             }}
             className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-blue hover:bg-blue-tint"
           >
-            <X size={14} aria-hidden="true" /> Clear
+            <X size={14} aria-hidden="true" /> {tc("clear")}
           </button>
         ) : null}
       </div>
@@ -103,7 +106,7 @@ export function FilterBar({
         return (
           <div key={f.key} role="group" aria-label={f.label} className="flex flex-wrap items-center gap-2">
             <span className="mono-label text-[11px] text-text-2">{f.label}</span>
-            {[{ value: "", label: "All" }, ...f.options].map((o) => {
+            {[{ value: "", label: tc("all") }, ...f.options].map((o) => {
               const on = (current ?? "") === o.value;
               return (
                 <button

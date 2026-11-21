@@ -9,12 +9,12 @@ export async function emailConfirmed(userId: string): Promise<boolean> {
   return Boolean(data.user?.email_confirmed_at);
 }
 
-/** Sends the confirmation email again. Returns a short message on failure, or null when it was sent. */
+/** Sends the confirmation email again. Returns an error code (messages admin.errors.*) on failure, or null when it was sent. */
 export async function sendConfirmationAgain(userId: string): Promise<string | null> {
   const { data, error } = await createAdminClient().auth.admin.getUserById(userId);
-  if (error || !data.user?.email) return "That account has no email address.";
-  if (data.user.email_confirmed_at) return "This email address is already confirmed.";
+  if (error || !data.user?.email) return "noEmail";
+  if (data.user.email_confirmed_at) return "alreadyConfirmed";
   const plain = createPlainClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, { auth: { persistSession: false } });
   const sent = await plain.auth.resend({ type: "signup", email: data.user.email });
-  return sent.error ? "The email could not be sent. Try again in a minute." : null;
+  return sent.error ? "sendFailed" : null;
 }
