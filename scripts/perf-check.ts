@@ -47,11 +47,16 @@ async function measure(path: string): Promise<Sample> {
     }
   });
   await page.addInitScript(() => {
-    const w = window as unknown as { __lcp: number; __cls: number };
+    const w = window as unknown as { __lcp: number; __cls: number; __lcpEl: string };
     w.__lcp = 0;
     w.__cls = 0;
+    w.__lcpEl = "";
     new PerformanceObserver((l) => {
-      for (const e of l.getEntries()) w.__lcp = e.startTime;
+      for (const e of l.getEntries() as unknown as { startTime: number; element?: Element; size: number }[]) {
+        w.__lcp = e.startTime;
+        const el = e.element;
+        w.__lcpEl = el ? `${el.tagName.toLowerCase()}.${String(el.className).slice(0, 40)} "${(el.textContent ?? "").trim().slice(0, 30)}" size=${e.size}` : "(removed)";
+      }
     }).observe({ type: "largest-contentful-paint", buffered: true });
     new PerformanceObserver((l) => {
       for (const e of l.getEntries() as unknown as { value: number; hadRecentInput: boolean }[]) if (!e.hadRecentInput) w.__cls += e.value;
@@ -59,17 +64,21 @@ async function measure(path: string): Promise<Sample> {
   });
   await page.goto(base + path, { waitUntil: "load" });
   await page.waitForTimeout(4000); // let LCP settle and the entrance animations finish
-  // Scroll once: layout shifts while reveals play count against CLS.
+  // LCP is read BEFORE any scrolling: a real visitor's LCP is the first screen, and scrolling would add later candidates.
+  const first = await page.evaluate(() => {
+    const w = window as unknown as { __lcp: number; __lcpEl: string };
+    return { lcp: w.__lcp, lcpEl: w.__lcpEl };
+  });
+  // Then scroll once: layout shifts while reveals play count against CLS.
   const h = await page.evaluate(() => document.documentElement.scrollHeight);
   for (let y = 0; y < h; y += 600) {
     await page.evaluate((yy) => window.scrollTo(0, yy), y);
     await page.waitForTimeout(150);
   }
   await page.waitForTimeout(800);
-  const { lcp, cls } = await page.evaluate(() => {
-    const w = window as unknown as { __lcp: number; __cls: number };
-    return { lcp: w.__lcp, cls: w.__cls };
-  });
+  const cls = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
+  const { lcp, lcpEl } = first;
+  if (process.env.PERF_DEBUG) console.log(`  LCP element for ${path}: ${lcpEl} at ${Math.round(lcp)} ms`);
   await browser.close();
   return { lcp, cls, jsKb: jsBytes / 1024, transferKb: totalBytes / 1024 };
 }
