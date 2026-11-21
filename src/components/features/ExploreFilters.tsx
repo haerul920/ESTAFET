@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { Search, X } from "lucide-react";
-import { EXPLORE_FACULTIES, KIND_LABEL, STOP_REASON_LABEL } from "@/lib/labels";
+import { useTranslations } from "next-intl";
+import { EXPLORE_FACULTIES } from "@/lib/labels";
+import { useLabels } from "@/lib/use-labels";
 import { SelectField } from "@/components/ui/Field";
 import type { ProjectKind, StopReason } from "@/lib/db/types";
 
@@ -12,6 +15,8 @@ const REASONS: StopReason[] = ["funding_not_granted", "team_graduated", "time_or
 
 /** Search, sort and checkbox filters. Everything lives in the URL so results can be shared. */
 export function ExploreFilters({ resultCount, children }: { resultCount: number; children: React.ReactNode }) {
+  const t = useTranslations("explore");
+  const L = useLabels();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -54,7 +59,7 @@ export function ExploreFilters({ resultCount, children }: { resultCount: number;
       <div className="flex flex-wrap gap-3">
         <div className="flex flex-[1_1_320px] flex-col gap-1.5">
           <label htmlFor="q" className="text-sm font-semibold">
-            Search projects
+            {t("search")}
           </label>
           <div className="relative">
             <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-2" />
@@ -63,43 +68,43 @@ export function ExploreFilters({ resultCount, children }: { resultCount: number;
               type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Topic, method or keyword"
+              placeholder={t("searchPlaceholder")}
               className="min-h-[48px] w-full rounded-[14px] border border-line-strong bg-white py-3 pl-10 pr-3.5"
             />
           </div>
         </div>
         <SelectField
-          label="Sort by"
+          label={t("sort")}
           className="flex-[0_1_220px]"
           value={params.get("sort") ?? "recent"}
           onChange={(e) => setSingle("sort", e.target.value === "recent" ? "" : e.target.value)}
         >
-          <option value="recent">Most recently published</option>
-          <option value="tasks">Most verified tasks</option>
-          <option value="progress">Furthest along</option>
+          <option value="recent">{t("sortRecent")}</option>
+          <option value="tasks">{t("sortTasks")}</option>
+          <option value="progress">{t("sortProgress")}</option>
         </SelectField>
       </div>
 
       <div className="flex flex-wrap items-start gap-8">
-        <aside aria-label="Filters" className="flex flex-[0_0_240px] flex-col gap-6 max-md:flex-[1_1_100%]">
+        <aside aria-label={t("filters")} className="flex flex-[0_0_240px] flex-col gap-6 max-md:flex-[1_1_100%]">
           <FilterGroup
-            legend="Type of work"
+            legend={t("legendKind")}
             name="kind"
-            options={KINDS.map((k) => ({ value: k, label: KIND_LABEL[k] }))}
+            options={KINDS.map((k) => ({ value: k, label: L.kind[k] }))}
             selected={params.getAll("kind")}
             onToggle={setMulti}
           />
           <FilterGroup
-            legend="Why it stopped"
+            legend={t("legendReason")}
             name="reason"
-            options={REASONS.map((r) => ({ value: r, label: STOP_REASON_LABEL[r] }))}
+            options={REASONS.map((r) => ({ value: r, label: L.stopReason[r] }))}
             selected={params.getAll("reason")}
             onToggle={setMulti}
           />
           <FilterGroup
-            legend="Faculty"
+            legend={t("legendFaculty")}
             name="faculty"
-            options={EXPLORE_FACULTIES.map((f) => ({ value: f, label: f }))}
+            options={EXPLORE_FACULTIES.map((f) => ({ value: f, label: L.faculty(f) }))}
             selected={params.getAll("faculty")}
             onToggle={setMulti}
           />
@@ -112,13 +117,13 @@ export function ExploreFilters({ resultCount, children }: { resultCount: number;
               }}
               className="flex min-h-[44px] w-fit cursor-pointer items-center gap-1.5 rounded-full border border-line-strong bg-white px-4 text-sm font-semibold hover:bg-surface"
             >
-              <X size={16} aria-hidden="true" /> Clear filters
+              <X size={16} aria-hidden="true" /> {t("clear")}
             </button>
           ) : null}
         </aside>
-        <section aria-label="Results" className="min-w-0 flex-[1_1_560px]" aria-busy={pending}>
+        <section aria-label={t("results")} className="min-w-0 flex-[1_1_560px]" aria-busy={pending}>
           <p className="mb-4 mt-0 text-sm text-text-2" aria-live="polite">
-            {pending ? "Updating results…" : `${resultCount} ${resultCount === 1 ? "project" : "projects"}`}
+            {pending ? t("updating") : t("count", { count: resultCount })}
           </p>
           <div className={pending ? "opacity-60 transition-opacity" : "transition-opacity"}>{children}</div>
         </section>

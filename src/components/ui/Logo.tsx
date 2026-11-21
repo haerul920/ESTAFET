@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
 /** Two overlapping rounded bars: a baton passed between teams. */
 export function LogoMark({ size = 30, onSky = false }: { size?: number; onSky?: boolean }) {
@@ -11,10 +12,11 @@ export function LogoMark({ size = 30, onSky = false }: { size?: number; onSky?: 
 }
 
 export function Logo({ onSky = false, size = 30 }: { onSky?: boolean; size?: number }) {
+  const t = useTranslations("nav");
   return (
     <Link
       href="/"
-      aria-label="ESTAFET home"
+      aria-label={t("home")}
       className={`flex items-center gap-2.5 no-underline ${onSky ? "text-white" : "text-ink"}`}
     >
       <LogoMark size={size} onSky={onSky} />

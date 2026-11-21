@@ -11,7 +11,7 @@ const adopterEmail = `e2e.adopter.${stamp}@example.test`;
 const title = `E2E Reef Counter ${stamp}`;
 
 async function signUp(page: Page, name: string, email: string) {
-  await page.goto("/signup");
+  await page.goto("/en/signup");
   await page.getByLabel("Full name").fill(name);
   await page.getByLabel("University email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
@@ -32,7 +32,7 @@ async function newUserPage(browser: Browser) {
 test("core flow: share, verify, publish, request, approve, accept, access", async ({ browser, page }) => {
   // ---- Creator signs up and fills the basics
   await signUp(page, "E2E Creator", creatorEmail);
-  await page.goto("/share");
+  await page.goto("/en/share");
   await page.getByLabel("Project title").fill(title);
   await page
     .getByLabel("Short summary")
@@ -130,17 +130,17 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
   });
   expect(await base.json()).toEqual([]); // anonymous visitors cannot read draft items at all
 
-  await page.goto("/explore?q=E2E+Reef");
+  await page.goto("/en/explore?q=E2E+Reef");
   await expect(page.getByRole("link", { name: new RegExp(title) })).toBeVisible();
 
   // ---- Adopter requests, a non-member cannot open the workspace
   const adopter = await newUserPage(browser);
   const ap = adopter.page;
   await signUp(ap, "E2E Adopter", adopterEmail);
-  await ap.goto(`/projects/${slug}/workspace`);
+  await ap.goto(`/en/projects/${slug}/workspace`);
   await expect(ap).toHaveURL(new RegExp(`/projects/${slug}\\?locked=1`));
 
-  await ap.goto(`/projects/${slug}/request`);
+  await ap.goto(`/en/projects/${slug}/request`);
   await ap.getByLabel("Team name").fill("Team E2E");
   await ap.getByLabel("Teammates' university emails").fill("mate.one@example.test, mate.two@example.test");
   await ap.locator("input[name='task_ids']").first().check();
@@ -158,7 +158,7 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
   await page.goto(requestUrl);
   await page.getByRole("button", { name: "Approve request" }).click();
   await expect(page.getByText(/^Approved on/)).toBeVisible();
-  await ap.goto(`/projects/${slug}/workspace`);
+  await ap.goto(`/en/projects/${slug}/workspace`);
   await expect(ap).toHaveURL(new RegExp(`/projects/${slug}\\?locked=1`));
 
   // ---- The requester accepts the agreement for themselves: access starts
@@ -167,7 +167,7 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
   await ap.getByRole("button", { name: "Accept and get access" }).click();
   await expect(ap.getByText("Accepted. Your access is active.")).toBeVisible();
 
-  await ap.goto(`/projects/${slug}/workspace`);
+  await ap.goto(`/en/projects/${slug}/workspace`);
   await expect(ap.getByRole("heading", { name: "Private files" })).toBeVisible();
   await expect(ap.getByText("TODO: a second annotator must check")).toBeVisible();
 
@@ -192,7 +192,7 @@ test("a declined request leaves the project published", async ({ browser }) => {
     .eq("id", "e0000000-0000-4000-8000-000000000001");
 
   const creator = await newUserPage(browser);
-  await creator.page.goto("/login");
+  await creator.page.goto("/en/login");
   await creator.page.getByLabel("University email").fill("creator@estafet.demo");
   await creator.page.getByLabel("Password").fill("Demo-Pass-2026!");
   await creator.page.getByRole("button", { name: "Sign in" }).click();
@@ -202,7 +202,7 @@ test("a declined request leaves the project published", async ({ browser }) => {
   await creator.page.getByRole("button", { name: "Decline" }).click();
   await creator.page.getByRole("button", { name: "Yes, decline" }).click();
   await expect(creator.page.getByText(/^Declined on/)).toBeVisible();
-  await creator.page.goto("/projects/mangrove-cover-classifier");
+  await creator.page.goto("/en/projects/mangrove-cover-classifier");
   await expect(creator.page.getByRole("heading", { level: 1, name: "Mangrove Cover Classifier" })).toBeVisible();
   await creator.context.close();
 });
@@ -214,7 +214,7 @@ test("the same account shares projects and continues another one, through open m
 
   const person = await newUserPage(browser);
   const p = person.page;
-  await p.goto("/login");
+  await p.goto("/en/login");
   await p.getByLabel("University email").fill("creator@estafet.demo");
   await p.getByLabel("Password").fill("Demo-Pass-2026!");
   await p.getByRole("button", { name: "Sign in" }).click();
@@ -224,7 +224,7 @@ test("the same account shares projects and continues another one, through open m
   await expect(p.getByRole("link", { name: "Mangrove Cover Classifier", exact: true })).toBeVisible();
 
   // Another person's project that is open with an agreement: no approval step, the files open after one checkbox.
-  await p.goto("/projects/campus-waste-sorting-assistant");
+  await p.goto("/en/projects/campus-waste-sorting-assistant");
   await expect(p.getByRole("heading", { name: "Continue this project" })).toBeVisible();
   const take = p.getByRole("button", { name: "Continue this project" });
   await expect(take).toBeDisabled();
@@ -234,13 +234,13 @@ test("the same account shares projects and continues another one, through open m
   await expect(p.getByRole("heading", { name: "Private files" })).toBeVisible();
 
   // The same dashboard now shows both: what this person shares, and what they are continuing. No role switch.
-  await p.goto("/dasbor");
+  await p.goto("/en/dasbor");
   await expect(p.getByRole("heading", { name: "Projects I share" })).toBeVisible();
   await expect(p.getByRole("heading", { name: "Projects I am continuing" })).toBeVisible();
   await expect(p.getByText("Access active").first()).toBeVisible();
 
   // An owner cannot take access to their own project.
-  await p.goto("/projects/mangrove-cover-classifier");
+  await p.goto("/en/projects/mangrove-cover-classifier");
   await expect(p.getByRole("heading", { name: "This is your project" })).toBeVisible();
   await expect(p.getByRole("button", { name: "Continue this project" })).toHaveCount(0);
   await person.context.close();

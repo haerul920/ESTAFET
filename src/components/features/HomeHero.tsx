@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { ButtonLink } from "@/components/ui/Button";
 import { Cloud, Float } from "@/components/ui/motion";
 
@@ -33,6 +34,7 @@ function Tilt({ deg, children, className, style }: { deg: number; children: Reac
 }
 
 export function HomeHero({ nav }: { nav: React.ReactNode }) {
+  const t = useTranslations("home.hero");
   return (
     <section className="p-3">
       <div
@@ -49,9 +51,9 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
 
         <div className="relative mx-auto mt-[88px] max-w-[860px] text-center max-sm:mt-14">
           <h1 className="mb-6 text-[72px] font-medium leading-[1.02] tracking-[-0.045em] text-white max-md:text-[48px] max-sm:text-[40px]">
-            <Line delay={0.1}>Pick up where</Line>
+            <Line delay={0.1}>{t("line1")}</Line>
             <Line delay={0.22} className="text-[#C7E2FF]">
-              the last team stopped.
+              {t("line2")}
             </Line>
           </h1>
           <motion.p
@@ -60,8 +62,7 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.5, ease: EASE }}
           >
-            ESTAFET turns discontinued student projects into verified starting points, so the next team builds in week
-            one instead of digging through old drives.
+            {t("lead")}
           </motion.p>
           <motion.div
             className="flex flex-wrap justify-center gap-3"
@@ -70,10 +71,10 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
             transition={{ duration: 0.7, delay: 0.65, ease: EASE }}
           >
             <ButtonLink href="/explore" variant="dark" size="lg">
-              Explore projects
+              {t("explore")}
             </ButtonLink>
             <ButtonLink href="/share" size="lg" arrow>
-              Share a project
+              {t("share")}
             </ButtonLink>
           </motion.div>
         </div>
@@ -87,7 +88,7 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
         >
           <Float delay={0.2} className="flex-none">
             <Tilt deg={55} className={`h-[170px] w-[120px] rounded-[20px] bg-white p-3.5 ${cardShadow}`}>
-              <div className="mb-2.5 text-xs font-semibold">Objectives</div>
+              <div className="mb-2.5 text-xs font-semibold">{t("cardObjectives")}</div>
               <div className="mb-2 h-2 w-4/5 rounded-full bg-blue" />
               <div className="mb-2 h-2 w-3/5 rounded-full bg-blue" />
               <div className="h-2 w-2/5 rounded-full bg-[#E1E5E9]" />
@@ -95,25 +96,25 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
           </Float>
           <Float delay={0.9} className="flex-none">
             <Tilt deg={38} className={`h-[190px] w-[140px] rounded-[20px] bg-white p-3.5 ${cardShadow}`}>
-              <div className="mb-2.5 text-xs font-semibold">Verified tasks</div>
-              <div className="mb-2 text-xs">Sampling plan</div>
-              <div className="mb-2 text-xs">Label edge class</div>
-              <div className="mb-2 text-xs">Split by site</div>
+              <div className="mb-2.5 text-xs font-semibold">{t("cardTasks")}</div>
+              <div className="mb-2 text-xs">{t("task1")}</div>
+              <div className="mb-2 text-xs">{t("task2")}</div>
+              <div className="mb-2 text-xs">{t("task3")}</div>
             </Tilt>
           </Float>
           <Float delay={0.5} className="flex-none">
             <Tilt deg={18} className={`flex h-[190px] w-[150px] flex-col justify-between rounded-[20px] bg-lime p-4 ${cardShadow}`}>
-              <div className="text-xs font-semibold">Next steps</div>
+              <div className="text-xs font-semibold">{t("cardNext")}</div>
               <div>
                 <div className="text-[52px] font-medium leading-none tracking-[-0.04em]">4</div>
-                <div className="text-xs">verified tasks</div>
+                <div className="text-xs">{t("cardNextCount")}</div>
               </div>
             </Tilt>
           </Float>
           <Float delay={1.3} amount={6} className="flex-none">
             <div className="h-[220px] w-[210px] rounded-[22px] bg-white p-4 shadow-[0_24px_50px_rgba(10,60,150,0.3)]">
-              <div className="mb-1 text-[13px] font-semibold">Where it stands</div>
-              <div className="mb-2.5 text-xs text-text-2">3 of 5 objectives done</div>
+              <div className="mb-1 text-[13px] font-semibold">{t("cardStands")}</div>
+              <div className="mb-2.5 text-xs text-text-2">{t("cardStandsSub")}</div>
               <svg viewBox="0 0 180 90" width="100%" height="90" role="presentation">
                 <motion.path
                   d="M0 80 L30 70 L60 62 L90 50 L120 34 L150 22 L180 10"
@@ -134,12 +135,12 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
             <div className="flex h-[220px] w-[200px] flex-col justify-between rounded-[22px] bg-black p-[18px] text-white shadow-[0_24px_50px_rgba(10,60,150,0.3)]">
               <div className="text-[13px]">
                 <span className="mr-2 inline-block h-2 w-2 rounded-full bg-lime" />
-                Evidence matched
+                {t("evidence")}
               </div>
               <div className="text-[20px] font-medium leading-[1.2] tracking-[-0.02em]">
-                AI drafts.
+                {t("aiDrafts")}
                 <br />
-                People decide.
+                {t("peopleDecide")}
               </div>
             </div>
           </Float>
@@ -152,39 +153,39 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
                 <Plus size={20} />
               </div>
               <div className="text-base font-medium">
-                Request to
+                {t("requestA")}
                 <br />
-                continue
+                {t("requestB")}
               </div>
             </Tilt>
           </Float>
           <Float delay={1.1} className="flex-none">
             <Tilt deg={-38} className={`h-[190px] w-[140px] rounded-[20px] bg-white p-3.5 ${cardShadow}`}>
-              <div className="mb-3 text-xs font-semibold">Lineage</div>
+              <div className="mb-3 text-xs font-semibold">{t("cardLineage")}</div>
               <div className="mb-2.5 flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-blue" />
-                <span className="text-xs">Original team</span>
+                <span className="text-xs">{t("lineageOrigin")}</span>
               </div>
               <div className="mb-2.5 flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-blue" />
-                <span className="text-xs">Published</span>
+                <span className="text-xs">{t("lineagePublished")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full border border-black bg-lime" />
-                <span className="text-xs">Next team</span>
+                <span className="text-xs">{t("lineageNext")}</span>
               </div>
             </Tilt>
           </Float>
           <Float delay={0.4} className="flex-none">
             <Tilt deg={-55} className={`h-[170px] w-[120px] rounded-[20px] bg-white p-3.5 ${cardShadow}`}>
-              <div className="mb-2 text-xs font-semibold">Progress</div>
+              <div className="mb-2 text-xs font-semibold">{t("cardProgress")}</div>
               <div className="text-[34px] font-medium tracking-[-0.04em]">60%</div>
             </Tilt>
           </Float>
         </motion.div>
 
         <p className="mono-label relative mt-2 pb-[110px] text-center text-xs text-[#0E3A7A]">
-          Built for STACK 2026 · Case 1: Smarter Campus and Learning
+          {t("stack")}
         </p>
       </div>
     </section>

@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useToast } from "./Toast";
-import { reauthenticate } from "@/app/admin/actions";
+import { reauthenticate } from "@/app/[locale]/admin/actions";
 
 export interface ActionResult {
   ok?: boolean;

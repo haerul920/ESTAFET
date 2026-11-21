@@ -1,27 +1,32 @@
 "use client";
 
 import { useActionState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { CheckboxField, FormMessage, SelectField, TextField } from "@/components/ui/Field";
 import { FACULTIES } from "@/lib/labels";
+import { useLabels } from "@/lib/use-labels";
 import type { FormState } from "@/lib/validation";
 
 type Action = (prev: FormState, fd: FormData) => Promise<FormState>;
 
 // Demo accounts are plain accounts. Each one both shares projects and continues other people's projects.
 const DEMO = [
-  { label: "Demo account A", email: "creator@estafet.demo" },
-  { label: "Demo account B", email: "adopter@estafet.demo" },
-  { label: "Demo account C", email: "alumni@estafet.demo" },
-];
+  { key: "demoA", email: "creator@estafet.demo" },
+  { key: "demoB", email: "adopter@estafet.demo" },
+  { key: "demoC", email: "alumni@estafet.demo" },
+] as const;
 
 export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; action: Action; next: string }) {
+  const t = useTranslations("auth");
+  const L = useLabels();
   const [state, formAction, pending] = useActionState<FormState, FormData>(action, {});
   const fe = state.fieldErrors ?? {};
   const v = state.values ?? {};
   const login = mode === "login";
+  const nextQuery = next !== "/dasbor" ? `?next=${encodeURIComponent(next)}` : "";
 
   return (
     <motion.form
@@ -38,32 +43,24 @@ export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; act
 
       {!login ? (
         <>
-          <TextField label="Full name" name="full_name" autoComplete="name" defaultValue={v.full_name} error={fe.full_name} required />
-          <SelectField label="Faculty" name="faculty" defaultValue={v.faculty ?? ""} hint="Optional. Helps adopters see your background.">
-            <option value="">Prefer not to say</option>
+          <TextField label={t("fullName")} name="full_name" autoComplete="name" defaultValue={v.full_name} error={fe.full_name} required />
+          <SelectField label={t("faculty")} name="faculty" defaultValue={v.faculty ?? ""} hint={t("facultyHint")}>
+            <option value="">{t("facultyNone")}</option>
             {FACULTIES.map((f) => (
               <option key={f} value={f}>
-                {f}
+                {L.faculty(f)}
               </option>
             ))}
           </SelectField>
         </>
       ) : null}
+      <TextField label={t("email")} name="email" type="email" autoComplete="email" defaultValue={v.email} error={fe.email} required />
       <TextField
-        label="University email"
-        name="email"
-        type="email"
-        autoComplete="email"
-        defaultValue={v.email}
-        error={fe.email}
-        required
-      />
-      <TextField
-        label="Password"
+        label={t("password")}
         name="password"
         type="password"
         autoComplete={login ? "current-password" : "new-password"}
-        hint={login ? undefined : "At least 8 characters."}
+        hint={login ? undefined : t("passwordHint")}
         error={fe.password}
         required
       />
@@ -72,35 +69,33 @@ export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; act
           name="accept_policies"
           defaultChecked={v.accept_policies === "on"}
           error={fe.accept_policies}
-          label={
-            <>
-              I accept the <Link href="/terms">Terms</Link> and the <Link href="/privacy">Privacy Policy</Link>.
-            </>
-          }
+          label={t.rich("accept", {
+            terms: (chunks) => <Link href="/terms">{chunks}</Link>,
+            privacy: (chunks) => <Link href="/privacy">{chunks}</Link>,
+          })}
         />
       ) : null}
       <Button type="submit" variant="primary" disabled={pending} className="mt-2 justify-center">
-        {pending ? "Please wait…" : login ? "Sign in" : "Create account"}
+        {pending ? t("wait") : login ? t("signIn") : t("create")}
       </Button>
       <p className="m-0 text-center text-[15px] text-text-2">
         {login ? (
           <>
-            New to ESTAFET? <Link href={`/signup${next !== "/dasbor" ? `?next=${encodeURIComponent(next)}` : ""}`}>Create an account</Link>
+            {t("newHere")} <Link href={`/signup${nextQuery}`}>{t("signupTitle")}</Link>
           </>
         ) : (
           <>
-            Already have an account? <Link href={`/login${next !== "/dasbor" ? `?next=${encodeURIComponent(next)}` : ""}`}>Sign in</Link>
+            {t("haveAccount")} <Link href={`/login${nextQuery}`}>{t("signIn")}</Link>
           </>
         )}
       </p>
       {login ? (
         <div className="rounded-[18px] bg-warn-bg p-4 text-sm text-warn-ink">
-          <strong>Demo accounts (simulated data).</strong> Password for all:{" "}
-          <code className="font-code">Demo-Pass-2026!</code>
+          <strong>{t("demoTitle")}</strong> {t("demoPassword")} <code className="font-code">Demo-Pass-2026!</code>
           <ul className="m-0 mt-2 list-none p-0">
             {DEMO.map((d) => (
               <li key={d.email}>
-                {d.label}: <code className="font-code">{d.email}</code>
+                {t(d.key)}: <code className="font-code">{d.email}</code>
               </li>
             ))}
           </ul>

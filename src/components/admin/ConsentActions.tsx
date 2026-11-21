@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { ReasonAction } from "./ReasonDialog";
-import { regenerateConsent } from "@/app/admin/actions";
+import { regenerateConsent } from "@/app/[locale]/admin/actions";
 
 /** Regenerate an advisor link (shown once) and copy a short reminder message the creator can send. */
 export function ConsentActions({ projectId, projectTitle, advisorName }: { projectId: string; projectTitle: string; advisorName: string }) {

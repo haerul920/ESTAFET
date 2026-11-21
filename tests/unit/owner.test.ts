@@ -1,3 +1,4 @@
+import { translator } from "./i18n-helpers";
 import { describe, expect, it } from "vitest";
 import { buildChecklist, resumeStep } from "@/lib/db/owner";
 import { describeNotification } from "@/lib/db/dashboard";
@@ -58,18 +59,19 @@ describe("resumeStep", () => {
 });
 
 describe("describeNotification", () => {
+  const t = translator("dashboard");
   const n = (type: string, payload: Record<string, unknown>): NotificationRow => ({ id: "n", user_id: "u", type, payload, read_at: null, created_at: "2026-01-01T00:00:00Z" });
   it("describes the new access events and sends people to the new dashboard", () => {
-    expect(describeNotification(n("access_taken", { title: "P", name: "Sam" })).text).toBe("Sam took access to P.");
-    const revoked = describeNotification(n("access_revoked", { title: "P", reason: "Scope changed." }));
+    expect(describeNotification(n("access_taken", { title: "P", name: "Sam" }), t).text).toBe("Sam took access to P.");
+    const revoked = describeNotification(n("access_revoked", { title: "P", reason: "Scope changed." }), t);
     expect(revoked.detail).toContain("Scope changed.");
     expect(revoked.href).toBe("/dasbor");
-    expect(describeNotification(n("team_invite", { title: "P" })).href).toBe("/dasbor#undangan");
-    expect(describeNotification(n("request_expired", { title: "P", team: "T", request_id: "r1" })).href).toBe("/requests/r1");
+    expect(describeNotification(n("team_invite", { title: "P" }), t).href).toBe("/dasbor#undangan");
+    expect(describeNotification(n("request_expired", { title: "P", team: "T", request_id: "r1" }), t).href).toBe("/requests/r1");
   });
   it("never points at the old dashboard path", () => {
     for (const type of ["moderation", "break_glass", "unknown_type", "access_taken", "access_revoked"]) {
-      expect(describeNotification(n(type, { title: "P" })).href).not.toContain("/dashboard");
+      expect(describeNotification(n(type, { title: "P" }), t).href).not.toContain("/dashboard");
     }
   });
 });

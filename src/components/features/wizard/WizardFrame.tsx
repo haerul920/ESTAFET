@@ -1,9 +1,10 @@
+import { useTranslations } from "next-intl";
 import { PageShell } from "@/components/ui/PageShell";
 import { Stepper } from "@/components/ui/Stepper";
 
 export const WIZARD_STEPS = ["basics", "consent", "files", "verify", "publish"] as const;
 export type WizardStep = (typeof WIZARD_STEPS)[number];
-const LABELS: Record<WizardStep, string> = { basics: "Basics", consent: "Consent", files: "Files", verify: "Verify", publish: "Publish" };
+const LABEL_KEY = { basics: "stepBasics", consent: "stepConsent", files: "stepFiles", verify: "stepVerify", publish: "stepPublish" } as const;
 
 export function WizardFrame({
   projectId,
@@ -14,14 +15,15 @@ export function WizardFrame({
   current: WizardStep;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("wizard");
   const index = WIZARD_STEPS.indexOf(current);
   return (
     <PageShell>
       <Stepper
-        label="Share a project: progress"
+        label={t("frameLabel")}
         current={index}
         steps={WIZARD_STEPS.map((s) => ({
-          label: LABELS[s],
+          label: t(LABEL_KEY[s]),
           href: projectId ? `/share/${projectId}/${s}` : undefined,
         }))}
       />

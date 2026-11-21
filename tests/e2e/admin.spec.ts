@@ -5,7 +5,7 @@ const PASSWORD = "Demo-Pass-2026!";
 const REASON = "Checked by the e2e test with a clear reason.";
 
 async function login(page: Page, email: string) {
-  await page.goto("/login");
+  await page.goto("/en/login");
   await page.getByLabel("University email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
@@ -36,7 +36,7 @@ test.describe.configure({ mode: "serial" });
 test("moderation: report, hide, disappears, creators notified, restore, audited", async ({ browser }) => {
   // 1. A visitor reports a published demo project (no account).
   const visitor = await fresh(browser);
-  await visitor.page.goto("/projects/fish-freshness-indicator");
+  await visitor.page.goto("/en/projects/fish-freshness-indicator");
   await visitor.page.getByRole("button", { name: "Report this project" }).click();
   await visitor.page.getByLabel("Reason").selectOption("inaccurate");
   await visitor.page.getByLabel("What is wrong?").fill("E2E: the summary says more than the files support.");
@@ -61,16 +61,16 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
 
   // 3. It disappears from Explore and the teaser is a 404.
   const guest = await fresh(browser);
-  await guest.page.goto("/explore?q=Freshness");
+  await guest.page.goto("/en/explore?q=Freshness");
   await expect(guest.page.getByText("No projects match these filters")).toBeVisible();
-  const res = await guest.page.goto("/projects/fish-freshness-indicator");
+  const res = await guest.page.goto("/en/projects/fish-freshness-indicator");
   expect(res?.status()).toBe(404);
   await guest.context.close();
 
   // 4. The creators get an in-app notification with the reason.
   const creator = await fresh(browser);
   await login(creator.page, "alumni@estafet.demo");
-  await creator.page.goto("/dasbor");
+  await creator.page.goto("/en/dasbor");
   await expect(creator.page.getByText(/Fish Freshness Indicator was hidden from public view/)).toBeVisible();
   await expect(creator.page.getByText(REASON).first()).toBeVisible();
   await creator.context.close();
@@ -81,9 +81,9 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
   await a.getByRole("button", { name: "Restore", exact: true }).click();
   await confirmDialog(a, "Restore");
   const again = await fresh(browser);
-  await again.page.goto("/explore?q=Freshness");
+  await again.page.goto("/en/explore?q=Freshness");
   await expect(again.page.getByRole("link", { name: /Fish Freshness Indicator/ })).toBeVisible();
-  expect((await again.page.goto("/projects/fish-freshness-indicator"))?.status()).toBe(200);
+  expect((await again.page.goto("/en/projects/fish-freshness-indicator"))?.status()).toBe(200);
   await again.context.close();
 
   // 6. Every step is in the audit log with the reason.
@@ -198,7 +198,7 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   await confirmDialog(a, "Suspend user");
   await expect(a.getByText("suspended").first()).toBeVisible();
   const blocked = await fresh(browser);
-  await blocked.page.goto("/login");
+  await blocked.page.goto("/en/login");
   await blocked.page.getByLabel("University email").fill("adopter@estafet.demo");
   await blocked.page.getByLabel("Password").fill(PASSWORD);
   await blocked.page.getByRole("button", { name: "Sign in" }).click();

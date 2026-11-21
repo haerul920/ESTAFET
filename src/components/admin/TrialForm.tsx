@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { CheckboxField, FormMessage, SelectField, TextArea, TextField } from "@/components/ui/Field";
-import { saveTrial } from "@/app/admin/actions";
+import { saveTrial } from "@/app/[locale]/admin/actions";
 import { useToast } from "./Toast";
 
 export interface TrialDraft {

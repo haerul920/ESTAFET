@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getTranslations } from "next-intl/server";
+import { apiLocale } from "@/i18n/api";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOwnedProject } from "@/lib/db/owner";
@@ -24,32 +26,35 @@ interface UploadOutcome {
 /** Uploads one or more files for a project the caller creates. Validates bytes, parses, stores privately. */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: projectId } = await params;
+  const locale = apiLocale(request);
+  const api = await getTranslations({ locale, namespace: "api" });
+  const errs = await getTranslations({ locale, namespace: "errors" });
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Sign in to upload files." }, { status: 401 });
-  if ((await getCurrentUser())?.suspended) return NextResponse.json({ error: "Your account is suspended." }, { status: 403 });
+  if (!user) return NextResponse.json({ error: api("uploadSignIn") }, { status: 401 });
+  if ((await getCurrentUser())?.suspended) return NextResponse.json({ error: errs("suspended") }, { status: 403 });
   const maxBytes = mbToBytes((await getSettings()).max_upload_mb.value);
 
   const project = await getOwnedProject(projectId);
-  if (!project) return NextResponse.json({ error: "Only the owners of a project can upload files to it." }, { status: 403 });
+  if (!project) return NextResponse.json({ error: api("uploadNotOwner") }, { status: 403 });
   if (!["draft", "unpublished"].includes(project.status)) {
-    return NextResponse.json({ error: "This project is published, so its files can no longer change." }, { status: 409 });
+    return NextResponse.json({ error: api("uploadPublished") }, { status: 409 });
   }
 
   let form: FormData;
   try {
     form = await request.formData();
   } catch {
-    return NextResponse.json({ error: "The upload could not be read. Try a smaller file." }, { status: 400 });
+    return NextResponse.json({ error: api("uploadUnreadable") }, { status: 400 });
   }
   const files = form.getAll("files").filter((f): f is File => f instanceof File);
-  if (files.length === 0) return NextResponse.json({ error: "Choose at least one file." }, { status: 400 });
+  if (files.length === 0) return NextResponse.json({ error: api("uploadNone") }, { status: 400 });
 
   const { count } = await supabase.from("project_files").select("id", { count: "exact", head: true }).eq("project_id", projectId);
   if ((count ?? 0) + files.length > LIMITS.maxFilesPerProject) {
-    return NextResponse.json({ error: `A project can have at most ${LIMITS.maxFilesPerProject} files.` }, { status: 400 });
+    return NextResponse.json({ error: api("uploadTooMany", { max: LIMITS.maxFilesPerProject }) }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -57,7 +62,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   for (const file of files) {
     if (file.size > maxBytes) {
-      outcomes.push({ name: file.name, ok: false, note: `Larger than ${Math.round(maxBytes / 1024 / 1024)} MB, so it was not uploaded.` });
+      outcomes.push({ name: file.name, ok: false, note: api("uploadTooBig", { mb: Math.round(maxBytes / 1024 / 1024) }) });
       continue;
     }
     try {

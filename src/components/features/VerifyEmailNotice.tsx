@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { MailCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { resendVerification } from "@/app/actions/auth";
 
@@ -10,6 +11,7 @@ import { resendVerification } from "@/app/actions/auth";
  * (CLAUDE.md 14.3); browsing does not. The banner sits in the page flow and never covers content.
  */
 export function VerifyEmailNotice({ email, compact = false }: { email: string; compact?: boolean }) {
+  const t = useTranslations("verify");
   const [pending, start] = useTransition();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -19,10 +21,7 @@ export function VerifyEmailNotice({ email, compact = false }: { email: string; c
       <span className="flex items-start gap-3">
         <MailCheck size={20} className="mt-0.5 flex-none" aria-hidden="true" />
         <span>
-          <strong>Verify your email address.</strong>{" "}
-          {compact
-            ? "You need a confirmed email for this."
-            : `We sent a link to ${email}. Until you confirm it, you can browse but you cannot share a project or take access.`}
+          <strong>{t("title")}</strong> {compact ? t("compact") : t("body", { email })}
           {message ? <span className="block text-sm">{message}</span> : null}
           {error ? <span className="block text-sm font-semibold text-danger">{error}</span> : null}
         </span>
@@ -37,11 +36,11 @@ export function VerifyEmailNotice({ email, compact = false }: { email: string; c
             setError("");
             const r = await resendVerification();
             if (r.error) setError(r.error);
-            else setMessage("A new link is on its way. Check your inbox and spam folder.");
+            else setMessage(t("sent"));
           })
         }
       >
-        Send the link again
+        {t("resend")}
       </Button>
     </div>
   );

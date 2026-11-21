@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 const PASSWORD = "Demo-Pass-2026!";
 
 async function login(page: Page, email: string) {
-  await page.goto("/login");
+  await page.goto("/en/login");
   await page.getByLabel("University email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
@@ -51,7 +51,7 @@ test("axe: the dialogs and the public report form have no serious issues", async
   await context.close();
 
   const guest = await (await browser.newContext()).newPage();
-  await guest.goto("/projects/mangrove-cover-classifier");
+  await guest.goto("/en/projects/mangrove-cover-classifier");
   await guest.getByRole("button", { name: "Report this project" }).click();
   await guest.waitForTimeout(1500); // let the fade-in animations finish: axe would read half-transparent text
   expect(await serious(guest)).toEqual([]);

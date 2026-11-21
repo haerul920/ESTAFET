@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { ButtonLink } from "@/components/ui/Button";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 const ORANGE = [
   [90, 250, 7],
@@ -25,6 +26,7 @@ const PURPLE = [
 
 /** The one sunset-meadow moment: pure SVG hills with swaying flowers. */
 export function MeadowCta() {
+  const t = useTranslations("home.meadow");
   return (
     <section className="p-3">
       <div
@@ -39,15 +41,15 @@ export function MeadowCta() {
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         >
           <h2 className="mb-4 text-[72px] font-medium leading-[1.02] tracking-[-0.045em] text-[#1A1A2E] max-md:text-5xl">
-            Pass the baton.
+            {t("title")}
           </h2>
-          <p className="mb-7 text-lg text-[#3C3A4D]">Share what you built. Continue what someone else started.</p>
+          <p className="mb-7 text-lg text-[#3C3A4D]">{t("text")}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <ButtonLink href="/share" variant="white" size="md" className="px-7 py-3.5 text-base">
-              Get started
+              {t("start")}
             </ButtonLink>
             <Link href="/explore" className="rounded-full px-3 py-3 text-base font-medium text-[#1A1A2E] no-underline hover:underline">
-              Explore projects
+              {t("explore")}
             </Link>
           </div>
         </motion.div>

@@ -76,6 +76,7 @@ export async function synthesize(
   docs: ExtractedDoc[],
   config: SynthesisConfig = getConfig(),
   rawCall?: RawCall,
+  language: "id" | "en" = "en",
 ): Promise<SynthesisOutput> {
   if (docs.every((d) => d.pages.every((p) => p.text.trim() === ""))) {
     throw new SynthesisError("The uploaded files contain no readable text.");
@@ -88,7 +89,7 @@ export async function synthesize(
     rawCall ??
     (async (user) => {
       if (!config.model) throw new Error("LLM_MODEL is not set.");
-      return config.provider === "gemini" ? callGemini(config.model, user) : callAnthropic(config.model, user);
+      return config.provider === "gemini" ? callGemini(config.model, user, undefined, language) : callAnthropic(config.model, user, undefined, language);
     });
 
   const chunks = estimateTokens(renderDocuments(docs)) > MAX_INPUT_TOKENS ? chunkDocuments(docs, MAX_INPUT_TOKENS * 4) : [docs];
