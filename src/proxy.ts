@@ -11,17 +11,15 @@ const intl = createIntlMiddleware(routing);
  * Next.js reads the nonce from the request's own CSP header and puts it on its scripts, so the header is set on the
  * request that goes downstream as well as on the response.
  */
-export async function proxy(original: NextRequest) {
+export async function proxy(request: NextRequest) {
   const nonce = newNonce();
   const csp = contentSecurityPolicy({
     nonce,
     dev: process.env.NODE_ENV !== "production",
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
   });
-  const headers = new Headers(original.headers);
-  headers.set("content-security-policy", csp);
-  headers.set("x-nonce", nonce);
-  const request = new NextRequest(original, { headers });
+  request.headers.set("content-security-policy", csp);
+  request.headers.set("x-nonce", nonce);
 
   const response = await route(request);
   response.headers.set("content-security-policy", csp);

@@ -37,29 +37,37 @@ const withLocale = (locale: Locale, path: string) =>
  */
 export async function updateSession(request: NextRequest, base?: NextResponse) {
   const response = base ?? NextResponse.next({ request });
-
-  const supabase = createServerClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
-    cookieOptions: sessionCookieOptions(),
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
-        for (const { name, value, options } of cookiesToSet) response.cookies.set(name, value, options);
-      },
-    },
-  });
-
-  const { data } = await supabase.auth.getClaims();
-  const signedIn = Boolean(data?.claims);
   const { pathname, search } = request.nextUrl;
   const { locale, path } = splitLocale(pathname);
+
+  let signedIn = false;
+  let supabase: ReturnType<typeof createServerClient> | null = null;
+
+  if (SUPABASE_URL && SUPABASE_PUBLIC_KEY) {
+    try {
+      supabase = createServerClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
+        cookieOptions: sessionCookieOptions(),
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
+            for (const { name, value, options } of cookiesToSet) response.cookies.set(name, value, options);
+          },
+        },
+      });
+      const { data } = await supabase.auth.getClaims();
+      signedIn = Boolean(data?.claims);
+    } catch {
+      signedIn = false;
+    }
+  }
 
   // Admin area: guests and non-admins get a plain 404 so the area is not advertised.
   if (path === "/admin" || path.startsWith("/admin/") || path.startsWith("/api/admin/")) {
     let isAdmin = false;
-    if (signedIn) {
+    if (signedIn && supabase) {
       const { data: ok } = await supabase.rpc("is_admin");
       isAdmin = ok === true;
     }
