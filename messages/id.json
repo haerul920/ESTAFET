@@ -298,7 +298,10 @@
     "summaryTooShort": "Ringkasan draf terlalu pendek untuk dipakai.",
     "summaryFailed": "Ringkasan tidak bisa diperbarui.",
     "requestFailed": "Permintaanmu tidak bisa dikirim.",
-    "questionFirst": "Tulis pertanyaanmu dulu."
+    "questionFirst": "Tulis pertanyaanmu dulu.",
+    "botFailed": "Kami belum bisa memastikan kamu bukan bot. Tunggu beberapa detik, lalu kirim lagi.",
+    "tooManyAttempts": "Terlalu banyak percobaan masuk. Tunggu sekitar 15 menit, lalu coba lagi.",
+    "signupLimited": "Terlalu banyak pendaftaran dari jaringan ini. Coba lagi dalam satu jam."
   },
   "home": {
     "meta": {

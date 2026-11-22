@@ -15,6 +15,7 @@ paste the whole file, click **Run**, wait for "Success", then do the next one. D
 | 08 | `08_r5_enum_additions.sql` |
 | 09 | `09_r5_moderation_legal.sql` |
 | 10 | `10_r6_admin_v2.sql` |
+| 11 | `11_r7_production.sql` |
 | optional | `99_OPTIONAL_demo_data.sql` (demo data, skip it for a real site) |
 
 Then make yourself the first admin (replace the email with the one you signed up with):

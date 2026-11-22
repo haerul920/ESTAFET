@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+
+const noopSubscribe = () => () => {};
 import { cn } from "@/lib/cn";
 import { observeLoop } from "@/lib/loop-observer";
 import { usePrefersReducedMotion } from "@/lib/use-reduced-motion";
@@ -137,7 +139,12 @@ export function WordReveal({
 export function CountUp({ to, suffix = "", className }: { to: number; suffix?: string; className?: string }) {
   const [ref, inView] = useInViewOnce<HTMLSpanElement>("-40px");
   const reduce = usePrefersReducedMotion();
-  const [supported] = useState(() => typeof CSS !== "undefined" && "registerProperty" in CSS);
+  // The server cannot know; it renders the final value. The browser switches to the animation after hydration.
+  const supported = useSyncExternalStore(
+    noopSubscribe,
+    () => typeof CSS !== "undefined" && "registerProperty" in CSS,
+    () => false,
+  );
   const staticFinal = reduce || !supported;
   const final = `${to}${suffix}`;
   return (

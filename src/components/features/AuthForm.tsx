@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { motion } from "framer-motion";
+import { BotFields, useFillTimer } from "@/components/ui/BotFields";
 import { Button } from "@/components/ui/Button";
 import { CheckboxField, FormMessage, SelectField, TextField } from "@/components/ui/Field";
 import { FACULTIES } from "@/lib/labels";
@@ -23,6 +24,7 @@ export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; act
   const t = useTranslations("auth");
   const L = useLabels();
   const [state, formAction, pending] = useActionState<FormState, FormData>(action, {});
+  const stamp = useFillTimer();
   const fe = state.fieldErrors ?? {};
   const v = state.values ?? {};
   const login = mode === "login";
@@ -30,7 +32,7 @@ export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; act
 
   return (
     <motion.form
-      action={formAction}
+      action={(formData: FormData) => formAction(stamp(formData))}
       noValidate
       className="flex flex-col gap-4"
       initial={{ opacity: 0, y: 20 }}
@@ -38,6 +40,7 @@ export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; act
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
       <input type="hidden" name="next" value={next} />
+      {login ? null : <BotFields />}
       {state.error ? <FormMessage tone="error">{state.error}</FormMessage> : null}
       {state.ok && state.message ? <FormMessage tone="success">{state.message}</FormMessage> : null}
 

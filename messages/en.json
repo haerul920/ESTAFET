@@ -298,7 +298,10 @@
     "summaryTooShort": "The drafted summary is too short to use.",
     "summaryFailed": "Could not update the summary.",
     "requestFailed": "Your request could not be sent.",
-    "questionFirst": "Write your question first."
+    "questionFirst": "Write your question first.",
+    "botFailed": "We could not confirm you are not a bot. Wait a few seconds and send again.",
+    "tooManyAttempts": "Too many sign-in attempts. Wait about 15 minutes and try again.",
+    "signupLimited": "Too many sign-ups from this network. Try again in an hour."
   },
   "home": {
     "meta": {
