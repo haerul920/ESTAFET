@@ -11,6 +11,9 @@ const base = process.env.E2E_BASE_URL ?? "http://localhost:3100";
 const PAGES = [
   { name: "Home (id)", path: "/" },
   { name: "Explore (id)", path: "/explore" },
+  { name: "Project teaser (id)", path: "/projects/mangrove-cover-classifier" },
+  { name: "Login (id)", path: "/login" },
+  { name: "Share / Wizard redirect (id)", path: "/bagikan" },
 ];
 const RUNS = Number(process.env.PERF_RUNS ?? 3);
 

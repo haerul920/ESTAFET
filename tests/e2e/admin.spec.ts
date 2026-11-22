@@ -1,21 +1,8 @@
 import "../../scripts/lib/env";
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import { cleanTrialSession, DEMO_PASSWORD as PASSWORD, newUserPage as fresh, signIn as login } from "./helpers";
 
-const PASSWORD = "Demo-Pass-2026!";
 const REASON = "Checked by the e2e test with a clear reason.";
-
-async function login(page: Page, email: string) {
-  await page.goto("/en/login");
-  await page.getByLabel("Email", { exact: true }).fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL(/\/(dasbor|dashboard|admin|mulai)/);
-}
-
-async function fresh(browser: Browser) {
-  const context = await browser.newContext();
-  return { context, page: await context.newPage() };
-}
 
 /** Fills the reason dialog and confirms. Handles the password check when it appears. */
 async function confirmDialog(page: Page, confirmName: string, opts: { reason?: string; phrase?: string } = {}) {
@@ -190,28 +177,33 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   await confirmDialog(a, "Save");
   await expect(a.getByText("Maximum upload size saved.").first()).toBeVisible();
 
-  // A trial session (demo-flagged so it never pollutes real metrics).
-  await a.goto("/en/admin/trials");
-  await a.getByRole("link", { name: "Record session" }).click();
-  const form = a.getByRole("form", { name: "Record session" });
-  await form.getByLabel("Participant code").fill("E2E1");
-  await form.getByLabel("Minutes to understand").fill("22");
-  await form.getByLabel("Questions answered correctly").fill("4");
-  await form.getByLabel("Start time").fill("2026-11-20T10:00");
-  await form.getByLabel("Participant consented to being included").check();
-  await form.getByLabel(/This is a demo row/).check();
-  await form.getByRole("button", { name: "Save session" }).click();
-  await expect(a.getByText("Session recorded.").first()).toBeVisible();
-  // Without demo rows there are no real sessions, so the page refuses to draw a conclusion.
-  await a.goto("/en/admin/trials");
-  await expect(a.getByText(/Too few sessions to conclude \(n = 0/).first()).toBeVisible();
-  await expect(a.getByText("E2E1")).toHaveCount(0);
-  await a.goto("/en/admin/trials?demo=1");
-  await expect(a.getByRole("link", { name: "E2E1" }).first()).toBeVisible();
-  await expect(a.getByText("ESTAFET (n = 5)")).toBeVisible(); // 4 seeded demo sessions + the one just recorded
-  const csv = await a.request.get("/api/admin/trials/export?demo=1");
-  expect(csv.status()).toBe(200);
-  expect(await csv.text()).toContain("E2E1");
+  // A trial session (demo-flagged so it never pollutes real metrics). Clean up E2E1 before and after for repeatability.
+  await cleanTrialSession("E2E1");
+  try {
+    await a.goto("/en/admin/trials");
+    await a.getByRole("link", { name: "Record session" }).click();
+    const form = a.getByRole("form", { name: "Record session" });
+    await form.getByLabel("Participant code").fill("E2E1");
+    await form.getByLabel("Minutes to understand").fill("22");
+    await form.getByLabel("Questions answered correctly").fill("4");
+    await form.getByLabel("Start time").fill("2026-11-20T10:00");
+    await form.getByLabel("Participant consented to being included").check();
+    await form.getByLabel(/This is a demo row/).check();
+    await form.getByRole("button", { name: "Save session" }).click();
+    await expect(a.getByText("Session recorded.").first()).toBeVisible();
+    // Without demo rows there are no real sessions, so the page refuses to draw a conclusion.
+    await a.goto("/en/admin/trials");
+    await expect(a.getByText(/Too few sessions to conclude \(n = 0/).first()).toBeVisible();
+    await expect(a.getByText("E2E1")).toHaveCount(0);
+    await a.goto("/en/admin/trials?demo=1");
+    await expect(a.getByRole("link", { name: "E2E1" }).first()).toBeVisible();
+    await expect(a.getByText("ESTAFET (n = 5)").first()).toBeVisible(); // 4 seeded demo sessions + the one just recorded
+    const csv = await a.request.get("/api/admin/trials/export?demo=1");
+    expect(csv.status()).toBe(200);
+    expect(await csv.text()).toContain("E2E1");
+  } finally {
+    await cleanTrialSession("E2E1");
+  }
 
   // Break glass on one private file: typed confirmation, red banner.
   await a.goto("/en/admin/projects?q=Mangrove&demo=1");

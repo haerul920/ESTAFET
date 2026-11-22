@@ -29,13 +29,13 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
       >
         <ParallaxLayer>
           <Cloud
-            className="-left-[60px] top-[360px] h-[90px] w-[320px] opacity-55 blur-[24px]"
+            className="-left-[60px] top-[360px] h-[90px] w-[320px] opacity-55 blur-[24px] max-sm:hidden"
             drift={70}
             duration={52}
             depth={0.6}
           />
           <Cloud
-            className="-right-10 top-[240px] h-20 w-[300px] opacity-45 blur-[24px]"
+            className="-right-10 top-[240px] h-20 w-[300px] opacity-45 blur-[24px] max-sm:hidden"
             drift={60}
             duration={64}
             delay={20}
@@ -69,7 +69,7 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
         <div className="relative z-raised mx-auto mt-[88px] max-w-[860px] text-center max-sm:mt-14">
           <h1 className="mb-6 text-[72px] font-medium leading-[1.02] tracking-[-0.045em] text-white max-md:text-[48px] max-sm:text-[40px]">
             <WordReveal text={t("line1")} className="block" baseDelay={100} />
-            <WordReveal text={t("line2")} className="block text-[#C7E2FF]" baseDelay={420} />
+            <WordReveal text={t("line2")} className="block text-[#EAF4FF]" baseDelay={420} />
           </h1>
           <p
             className="fade-up mx-auto mb-9 max-w-[560px] text-lg text-white/95"
