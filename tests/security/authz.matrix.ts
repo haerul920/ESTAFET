@@ -440,6 +440,16 @@ export const AUTHZ_MATRIX: AuthzEntry[] = [
     expectedDenial: "404",
   },
   {
+    id: "page:admin-emails",
+    kind: "page",
+    target: "/[locale]/admin/emails",
+    sourceFile: "src/app/[locale]/admin/emails/page.tsx",
+    allowedRoles: ["admin"],
+    deniedRoles: ["guest", "authenticated", "owner", "holder", "suspended"],
+    enforcementLayer: ["proxy", "route", "rpc"],
+    expectedDenial: "404 (admin_email_log_v returns no rows to non-admins; anon has no grant)",
+  },
+  {
     id: "page:admin-pipeline",
     kind: "page",
     target: "/[locale]/admin/pipeline",
@@ -1239,6 +1249,18 @@ export const AUTHZ_MATRIX: AuthzEntry[] = [
     enforcementLayer: ["action", "rpc"],
     expectedDenial: "404 via requireAdmin(); SQL require_admin() + reason_short",
     idorParams: ["runId"],
+  },
+  {
+    id: "admin_action:resendEmail",
+    kind: "admin_action",
+    target: "resendEmail",
+    sourceFile: "src/app/[locale]/admin/actions.ts",
+    allowedRoles: ["admin"],
+    deniedRoles: ["guest", "authenticated", "owner", "holder", "suspended"],
+    enforcementLayer: ["action", "rpc"],
+    expectedDenial:
+      "404 via requireAdmin(); admin_resend_email: assert_admin, reason >= 15, only failed + essential (hint email_not_resendable)",
+    idorParams: ["emailId"],
   },
   {
     id: "admin_action:retryRun",

@@ -69,7 +69,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
   const status = (k: string) => statusText(ts as unknown as StatusTranslator, k);
   const includeDemo = demo === "1";
   const supabase = await createClient();
-  const [{ data }, { data: audit }, settings] = await Promise.all([
+  const [{ data }, { data: audit }, settings, { count: failedEmails }] = await Promise.all([
     supabase.rpc("admin_overview", { p_include_demo: includeDemo }),
     supabase
       .from("admin_audit_v")
@@ -77,6 +77,8 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
       .order("created_at", { ascending: false })
       .limit(10),
     getSettings(),
+    // Emails that failed after every attempt (any age: they stay until someone looks).
+    supabase.from("admin_email_log_v").select("id", { count: "exact", head: true }).eq("status", "failed"),
   ]);
   const o = data as Overview;
   const demoQuery = includeDemo ? "?demo=1" : "";
@@ -125,6 +127,12 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
           value={o.failed_runs_24h}
           href="/admin/pipeline?status=failed"
           tone={o.failed_runs_24h ? "danger" : "grey"}
+        />
+        <StatCard
+          label={t("failedEmails")}
+          value={failedEmails ?? 0}
+          href="/admin/emails?status=failed"
+          tone={failedEmails ? "danger" : "grey"}
         />
         <StatCard
           label={t("stale")}

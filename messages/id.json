@@ -234,7 +234,9 @@
       "bad_range": "Waktu berakhir harus setelah waktu mulai.",
       "too_many": "Pilih paling banyak 50 laporan sekaligus.",
       "not_spam": "Hanya laporan spam yang bisa ditolak sekaligus.",
-      "self_action": "Kamu tidak bisa melakukan ini pada akunmu sendiri."
+      "self_action": "Kamu tidak bisa melakukan ini pada akunmu sendiri.",
+      "email_not_found": "Email ini sudah tidak ada di antrean.",
+      "email_not_resendable": "Hanya email penting yang gagal yang bisa dikirim ulang."
     },
     "generic": "Terjadi kesalahan. Coba lagi, atau hubungi tim ESTAFET kalau berlanjut.",
     "suspended": "Akunmu ditangguhkan.",
@@ -1768,7 +1770,9 @@
       "helpToggle": "Tampilkan atau sembunyikan bantuan ini",
       "helpRow": "Buka baris tabel yang difokuskan",
       "tag": "Admin",
-      "keyEnter": "Enter"
+      "keyEnter": "Enter",
+      "navEmails": "Log email",
+      "compactRows": "Baris rapat"
     },
     "reason": {
       "reasonDefault": "Alasan (disimpan di catatan audit)",
@@ -1907,7 +1911,8 @@
       "recentAudit": "Peristiwa audit terbaru",
       "viewAll": "Lihat semua",
       "noAudit": "Belum ada peristiwa audit",
-      "noAuditText": "Setiap tindakan admin akan muncul di sini."
+      "noAuditText": "Setiap tindakan admin akan muncul di sini.",
+      "failedEmails": "Email gagal"
     },
     "reasons": {
       "copyright": "hak cipta",
@@ -2430,7 +2435,8 @@
       "request": "permintaan",
       "announcement": "pengumuman",
       "appeal": "banding",
-      "policy": "kebijakan"
+      "policy": "kebijakan",
+      "email": "email"
     },
     "settings": {
       "title": "Pengaturan",
@@ -2500,6 +2506,63 @@
         "effect": "<strong>{label}</strong> berubah dari <code>{from}</code> menjadi <code>{to}</code>. Berlaku langsung tanpa deploy ulang, dan nilai sebelum dan sesudahnya ditulis ke catatan audit.",
         "saved": "{label} disimpan.",
         "domainsExample": "student.unhas.ac.id"
+      }
+    },
+    "emails": {
+      "title": "Log email",
+      "intro": "Email produk dari antrean. Tidak pernah menampilkan alamat atau isi pesan, hanya templat, status, jumlah percobaan, dan kode galat singkat.",
+      "st": {
+        "sending": "sedang dikirim",
+        "sent": "terkirim",
+        "skipped": "dilewati"
+      },
+      "colTemplate": "Templat",
+      "essential": "penting",
+      "colRecipient": "Penerima",
+      "colStatus": "Status",
+      "colAttempts": "Percobaan",
+      "colError": "Kode galat",
+      "colCreated": "Masuk antrean",
+      "sent7": "Terkirim, 7 hari",
+      "failed7": "Gagal, 7 hari",
+      "waiting7": "Menunggu, 7 hari",
+      "waitingHint": "Menunggu atau sedang dikirim",
+      "skipped7": "Dilewati, 7 hari",
+      "skippedHint": "Penerimanya mematikan email notifikasi",
+      "provider": "Penyedia email",
+      "providerOff": "Tidak ada yang terkirim",
+      "providerBanner": "EMAIL_PROVIDER bernilai {provider}: email masuk antrean, tetapi tidak ada email sungguhan yang terkirim.",
+      "panelLabel": "Rincian email",
+      "unnamed": "(tanpa nama)",
+      "kind": "Jenis",
+      "kindEssential": "Penting: tetap dikirim walaupun penerima mematikan email notifikasi",
+      "kindRegular": "Notifikasi: mengikuti pilihan penerima",
+      "source": "Asal",
+      "sourceReport": "Hasil sebuah laporan",
+      "sourceNotification": "Notifikasi dalam aplikasi",
+      "language": "Bahasa",
+      "none": "tidak ada",
+      "sentAt": "Terkirim",
+      "notSent": "belum terkirim",
+      "nextAttempt": "Percobaan berikutnya",
+      "resend": "Kirim ulang",
+      "resendEffect": "Memasukkan email ini lagi ke antrean dengan 5 percobaan baru. Jadwal email berikutnya mengirimnya ke alamat akun saat ini.",
+      "resendReason": "Mengapa kamu mengirim ulang? (disimpan di catatan audit)",
+      "resent": "Masuk antrean lagi. Email ikut terkirim pada jadwal email berikutnya.",
+      "resendOnlyEssential": "Hanya email penting yang bisa dikirim ulang. Notifikasi di dalam aplikasi tetap ada.",
+      "search": "Cari templat, penerima, atau kode galat",
+      "onlyEssential": "Hanya yang penting",
+      "caption": "Antrean email",
+      "emptyTitle": "Tidak ada email yang cocok",
+      "emptyText": "Email muncul setelah jadwal email mengubah notifikasi menjadi baris antrean.",
+      "footnote": "Email yang terpental (bounce) belum dilacak: belum ada webhook dari penyedia, jadi \"terkirim\" berarti penyedia menerima emailnya, belum tentu sampai ke kotak masuk. Baris terkirim dan dilewati dihapus setelah 90 hari.",
+      "err": {
+        "no_address": "Akun ini sudah tidak punya alamat email (misalnya akunnya dihapus).",
+        "unknown_template": "Pengirim tidak mengenal templat ini. Ini bug: laporkan ke pengembang.",
+        "no_provider": "Belum ada penyedia email yang diatur.",
+        "resend": "Resend menolak email ini. Angkanya adalah status HTTP dari Resend.",
+        "smtp": "Server SMTP menolak email ini atau tidak bisa dihubungi.",
+        "other": "Galat tak terduga saat mengirim. Periksa log server untuk email.failed."
       }
     }
   },

@@ -234,7 +234,9 @@
       "bad_range": "The end time must be after the start time.",
       "too_many": "Select at most 50 reports at once.",
       "not_spam": "Only spam reports can be dismissed in bulk.",
-      "self_action": "You cannot do this to your own account."
+      "self_action": "You cannot do this to your own account.",
+      "email_not_found": "This email is no longer in the outbox.",
+      "email_not_resendable": "Only a failed essential email can be sent again."
     },
     "generic": "Something went wrong. Try again, or contact the ESTAFET team if it keeps happening.",
     "suspended": "Your account is suspended.",
@@ -1768,7 +1770,9 @@
       "helpToggle": "Show or hide this help",
       "helpRow": "Open the focused table row",
       "tag": "Admin",
-      "keyEnter": "Enter"
+      "keyEnter": "Enter",
+      "navEmails": "Email log",
+      "compactRows": "Compact rows"
     },
     "reason": {
       "reasonDefault": "Reason (kept in the audit log)",
@@ -1907,7 +1911,8 @@
       "recentAudit": "Recent audit events",
       "viewAll": "View all",
       "noAudit": "No audit events yet",
-      "noAuditText": "Every admin action will appear here."
+      "noAuditText": "Every admin action will appear here.",
+      "failedEmails": "Failed emails"
     },
     "reasons": {
       "copyright": "copyright",
@@ -2430,7 +2435,8 @@
       "request": "request",
       "announcement": "announcement",
       "appeal": "appeal",
-      "policy": "policy"
+      "policy": "policy",
+      "email": "email"
     },
     "settings": {
       "title": "Settings",
@@ -2500,6 +2506,63 @@
         "effect": "<strong>{label}</strong> changes from <code>{from}</code> to <code>{to}</code>. It applies immediately without a redeploy, and the before and after values are written to the audit log.",
         "saved": "{label} saved.",
         "domainsExample": "student.unhas.ac.id"
+      }
+    },
+    "emails": {
+      "title": "Email log",
+      "intro": "Product emails from the outbox. Never shows addresses or message text, only the template, status, attempts and short error codes.",
+      "st": {
+        "sending": "sending",
+        "sent": "sent",
+        "skipped": "skipped"
+      },
+      "colTemplate": "Template",
+      "essential": "essential",
+      "colRecipient": "Recipient",
+      "colStatus": "Status",
+      "colAttempts": "Attempts",
+      "colError": "Error code",
+      "colCreated": "Queued",
+      "sent7": "Sent, 7 days",
+      "failed7": "Failed, 7 days",
+      "waiting7": "Waiting, 7 days",
+      "waitingHint": "Pending or being sent",
+      "skipped7": "Skipped, 7 days",
+      "skippedHint": "The person turned notification emails off",
+      "provider": "Email provider",
+      "providerOff": "Nothing is delivered",
+      "providerBanner": "EMAIL_PROVIDER is {provider}: emails are queued but no real email is delivered.",
+      "panelLabel": "Email details",
+      "unnamed": "(no name)",
+      "kind": "Kind",
+      "kindEssential": "Essential: sent even when the person turned notification emails off",
+      "kindRegular": "Notification: follows the person's preference",
+      "source": "Source",
+      "sourceReport": "Outcome of a report",
+      "sourceNotification": "In-app notification",
+      "language": "Language",
+      "none": "none",
+      "sentAt": "Sent",
+      "notSent": "not sent",
+      "nextAttempt": "Next attempt",
+      "resend": "Send again",
+      "resendEffect": "Puts this email back in the queue with 5 new attempts. The next run of the email job sends it to the address the account has now.",
+      "resendReason": "Why do you send it again? (saved in the audit log)",
+      "resent": "Queued again. It goes out with the next email run.",
+      "resendOnlyEssential": "Only essential emails can be sent again. The in-app notification is still there.",
+      "search": "Search template, recipient or error code",
+      "onlyEssential": "Essential only",
+      "caption": "Email outbox",
+      "emptyTitle": "No emails match",
+      "emptyText": "Emails appear after the scheduled email job turns notifications into outbox rows.",
+      "footnote": "Bounces are not tracked: no provider webhook is connected, so \"sent\" means the provider accepted the email, not that it reached the inbox. Sent and skipped rows are removed after 90 days.",
+      "err": {
+        "no_address": "The account has no email address any more (for example, it was deleted).",
+        "unknown_template": "The sender does not know this template. This is a bug: report it to the developers.",
+        "no_provider": "No email provider is configured.",
+        "resend": "Resend refused the email. The number is the HTTP status from Resend.",
+        "smtp": "The SMTP server refused the email or could not be reached.",
+        "other": "An unexpected error while sending. Check the server logs for email.failed."
       }
     }
   },

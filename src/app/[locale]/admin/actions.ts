@@ -275,6 +275,16 @@ export async function cancelRun(runId: string, reason: string): Promise<ActionRe
   return run(false, async (db) => fail((await db.rpc("admin_cancel_run", { p_run: runId, p_reason: reason })).error));
 }
 
+/**
+ * Puts a failed ESSENTIAL email back in the queue with a fresh set of attempts. `admin_resend_email` checks the
+ * state and writes the audit row in the same transaction; the next run of the email job sends it.
+ */
+export async function resendEmail(emailId: string, reason: string): Promise<ActionResult> {
+  return run(false, async (db) =>
+    fail((await db.rpc("admin_resend_email", { p_id: emailId, p_reason: reason })).error),
+  );
+}
+
 /** Writes the audit row first, then re-runs the synthesis. The run counts toward the original user's daily cap. */
 export async function retryRun(runId: string, reason: string): Promise<ActionResult> {
   return run(false, async (db) => {

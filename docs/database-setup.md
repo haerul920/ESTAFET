@@ -40,6 +40,16 @@ Studio (table browser and SQL editor): http://127.0.0.1:54323 . Direct connectio
 
 Demo data is synthetic. Do not seed a production project that real students use.
 
+### One command for a development or demo cloud project: `pnpm seed:dev`
+
+For your own hosted **development** (or the judges' **demo**) project, `pnpm seed:dev` does steps 2 and 4 in one go: it applies pending migrations, inserts the demo data from `supabase/seed.sql`, and uploads the demo files.
+
+1. In your env file set `APP_ENV=LOCAL` (or `DEMO`) and `SUPABASE_DB_URL`: the **Session pooler** URI from the dashboard (**Connect**, port 5432) with your database password. It is only read by scripts, never by the app. Keep it secret.
+2. `pnpm seed:dev -- --dry-run` shows the target (host only, never the password), what is already there, and the plan. Nothing is written.
+3. `pnpm seed:dev -- --yes` runs it.
+
+Safety: it refuses `STAGING` and `PRODUCTION` (and a hosted project without `APP_ENV`, which counts as production), refuses a `SUPABASE_DB_URL` that belongs to another project than `NEXT_PUBLIC_SUPABASE_URL`, and needs `--yes`. Running it again is safe: when demo projects exist the demo SQL is skipped, and file uploads overwrite. After **Purge demo data** it inserts the demo projects again and keeps the demo accounts. The seed only changes demo accounts, never real ones. The demo admin is created only with `SEED_DEMO=true`; on a project that is reachable from the internet, prefer promoting your own account. A local stack is seeded by `pnpm db:reset` instead. `seed:dev` reads only `.env.local` and `.env`, never `.env.localstack`, and passes its own values to the upload step, so a local key or `SEED_DEMO=true` from the local file can never leak into a run against a hosted project.
+
 Ready-to-use queries (verify, daily reads, housekeeping, backup, RLS check) are in `docs/sql-queries.md`. That file also lists where each kind of data lives in Supabase.
 
 ## Verify the setup
