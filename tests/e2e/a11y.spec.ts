@@ -120,3 +120,79 @@ test("axe: the first-run screen, dashboard, access cards and policy pages have n
   }
   expect(problems).toEqual([]);
 });
+
+test("axe: Indonesian public, privacy, report and admin pages have no serious issues on mobile (390px) and desktop (1280px)", async ({
+  browser,
+}) => {
+  const problems: string[] = [];
+  for (const vp of [
+    { width: 390, height: 844 },
+    { width: 1280, height: 900 },
+  ]) {
+    const ctx = await browser.newContext({ viewport: vp, reducedMotion: "reduce" });
+    const page = await ctx.newPage();
+    for (const path of ["/", "/explore", "/login", "/pedoman", "/atribusi", "/kontak"]) {
+      await page.goto(path);
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(1200);
+      for (const p of await serious(page)) problems.push(`${path} @ ${vp.width}px: ${p}`);
+    }
+    await login(page, "creator@estafet.demo");
+    for (const path of ["/dasbor", "/laporan-saya", "/akun/privasi", "/proyek/mangrove-cover-classifier/pengaturan"]) {
+      await page.goto(path);
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(1200);
+      for (const p of await serious(page)) problems.push(`${path} @ ${vp.width}px: ${p}`);
+    }
+    await ctx.close();
+  }
+  expect(problems).toEqual([]);
+});
+
+test("keyboard navigation: skip link, visible focus ring, honeypot tabIndex=-1, and Escape closes dialogs and restores focus", async ({
+  browser,
+}) => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
+  const page = await ctx.newPage();
+
+  // 1. Skip link is the first Tab stop on Home and reveals a visible focus ring
+  await page.goto("/");
+  await page.keyboard.press("Tab");
+  const skip = page.getByRole("link", { name: "Lewati ke konten" });
+  await expect(skip).toBeFocused();
+  const skipBox = await skip.boundingBox();
+  expect(skipBox && skipBox.width > 20 && skipBox.height > 20).toBe(true);
+
+  // 2. Signup honeypot input has tabIndex === -1 so keyboard users never land in it
+  await page.goto("/signup");
+  const honeypotTabIndex = await page.locator('input[name="website"]').getAttribute("tabindex");
+  expect(honeypotTabIndex).toBe("-1");
+
+  // 3. Report dialog opens via keyboard, has honeypot tabIndex === -1, and Escape closes it
+  await page.goto("/projects/mangrove-cover-classifier");
+  const menuBtn = page.getByRole("button", { name: "Menu proyek" });
+  await menuBtn.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("menuitem", { name: /Laporkan/ })).toBeVisible();
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  expect(await dialog.locator('input[name="website"]').getAttribute("tabindex")).toBe("-1");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+
+  // 4. Direct dialog trigger (mobile navigation drawer) traps focus and restores focus to opener on Escape
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/explore");
+  const drawerBtn = page.getByRole("button", { name: "Buka menu" });
+  await drawerBtn.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'))).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(drawerBtn).toBeFocused();
+
+  await ctx.close();
+});

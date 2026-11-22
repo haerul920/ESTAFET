@@ -50,6 +50,9 @@ const PUBLIC: RouteCase[] = [
   { name: "signup", path: "/signup", role: "guest" },
   { name: "terms", path: "/terms", role: "guest" },
   { name: "privacy", path: "/privacy", role: "guest" },
+  { name: "guidelines", path: "/pedoman", role: "guest" },
+  { name: "attribution", path: "/atribusi", role: "guest" },
+  { name: "contact", path: "/kontak", role: "guest" },
   { name: "not found", path: "/halaman-tidak-ada", role: "guest" },
 ];
 
@@ -58,6 +61,8 @@ const SIGNED_IN: RouteCase[] = [
   { name: "dashboard creator", path: "/dasbor", role: "creator" },
   { name: "dashboard adopter", path: "/dasbor", role: "adopter" },
   { name: "dashboard alumni", path: "/dasbor", role: "alumni" },
+  { name: "my reports", path: "/laporan-saya", role: "adopter" },
+  { name: "account privacy", path: "/akun/privasi", role: "creator" },
   { name: "wizard start", path: "/bagikan", role: "creator" },
   { name: "wizard info", path: `/bagikan/${DRAFT_ID}/info`, role: "creator" },
   { name: "wizard team", path: `/bagikan/${DRAFT_ID}/tim`, role: "creator" },
@@ -69,6 +74,7 @@ const SIGNED_IN: RouteCase[] = [
   { name: "request view (team)", path: `/requests/${DECLINED_REQUEST}`, role: "adopter" },
   { name: "workspace", path: "/projects/mangrove-cover-classifier/workspace", role: "creator" },
   { name: "project settings", path: "/proyek/mangrove-cover-classifier/pengaturan", role: "creator" },
+  { name: "project decisions", path: "/proyek/mangrove-cover-classifier/keputusan", role: "creator" },
   { name: "visitor preview", path: "/projects/mangrove-cover-classifier?as=visitor", role: "creator" },
 ];
 
@@ -77,6 +83,8 @@ const ADMIN_PAGES = [
   "/admin/projects",
   "/admin/reports",
   "/admin/users",
+  "/admin/policies",
+  "/admin/announcements",
   "/admin/pipeline",
   "/admin/appeals",
   "/admin/requests",
@@ -378,4 +386,26 @@ test("overlap audit: the phone drawer and the account menu are never covered", a
   }
   await ctx.close();
   expect(problems).toEqual([]);
+});
+
+test("overlap audit: prefers-reduced-motion disables looping animations (.floating and .cloud-drift)", async ({
+  browser,
+}) => {
+  const ctx = await browser.newContext({ reducedMotion: "reduce", viewport: { width: 1280, height: 800 } });
+  const page = await ctx.newPage();
+  await page.goto("/");
+  await page.waitForLoadState("networkidle").catch(() => undefined);
+
+  const activeAnimations = await page.evaluate(() => {
+    const out: string[] = [];
+    for (const el of document.querySelectorAll(".floating, .cloud-drift")) {
+      const name = getComputedStyle(el).animationName;
+      if (name && name !== "none") {
+        out.push(`${el.className}: animation-name=${name}`);
+      }
+    }
+    return out;
+  });
+  await ctx.close();
+  expect(activeAnimations).toEqual([]);
 });

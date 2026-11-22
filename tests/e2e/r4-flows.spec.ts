@@ -1,6 +1,6 @@
 import "../../scripts/lib/env";
-import { expect, test, type Browser, type Page } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
+import { expect, test } from "@playwright/test";
+import { adminDb as admin, newUserPage as newPage, signIn, signUp } from "./helpers";
 
 /**
  * R4 flows (run in English: the other specs do too).
@@ -8,39 +8,7 @@ import { createClient } from "@supabase/supabase-js";
  *  2. A project that is paused, then full, then open again, with "Notify me". Uses seeded demo data and restores it.
  * The by-request approval, the declined request and "the same account shares and continues" are in core-flow.spec.ts.
  */
-const PASSWORD = "E2e-Pass-2026!";
-const DEMO_PASSWORD = "Demo-Pass-2026!";
 const stamp = Date.now();
-
-const admin = () =>
-  createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { persistSession: false },
-  });
-
-async function newPage(browser: Browser) {
-  const context = await browser.newContext();
-  return { context, page: await context.newPage() };
-}
-
-async function signIn(page: Page, email: string, password = DEMO_PASSWORD) {
-  await page.goto("/en/login");
-  await page.getByLabel("Email", { exact: true }).fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL(/\/(dasbor|mulai)/);
-}
-
-async function signUp(page: Page, name: string, email: string) {
-  await page.goto("/en/signup");
-  // The local bot check wants the form open for at least 3 seconds, as a person would take.
-  await page.waitForTimeout(3200);
-  await page.getByLabel("Full name").fill(name);
-  await page.getByLabel("Email", { exact: true }).fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByLabel(/I accept the Terms and the Privacy Policy/).check();
-  await page.getByRole("button", { name: "Create account" }).click();
-  await page.waitForURL("**/mulai");
-}
 
 test("manual mode and open access: share, publish, unpublish and publish again", async ({ browser, page }) => {
   const title = `E2E Manual Notes ${stamp}`;

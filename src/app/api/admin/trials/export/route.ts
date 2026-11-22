@@ -8,6 +8,8 @@ export const runtime = "nodejs";
 export async function GET(req: Request) {
   const demo = new URL(req.url).searchParams.get("demo") === "1";
   const supabase = await createClient();
+  const { data: isAdmin } = await supabase.rpc("is_admin");
+  if (isAdmin !== true) return NextResponse.json({ error: "Not found" }, { status: 404 });
   let q = supabase
     .from("admin_trials_v")
     .select(

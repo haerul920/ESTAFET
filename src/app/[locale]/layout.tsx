@@ -75,7 +75,11 @@ export default async function RootLayout({
   const announcements = await loadAnnouncements();
 
   return (
-    <html lang={locale} className={`${instrument.variable} ${dmMono.variable} ${jetbrains.variable}`}>
+    <html
+      lang={locale}
+      data-scroll-behavior="smooth"
+      className={`${instrument.variable} ${dmMono.variable} ${jetbrains.variable}`}
+    >
       <body>
         <a
           href="#main"

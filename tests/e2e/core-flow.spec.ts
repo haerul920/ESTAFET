@@ -1,39 +1,17 @@
 import "../../scripts/lib/env";
-import { expect, test, type Browser, type Page } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
+import { expect, test } from "@playwright/test";
 import JSZip from "jszip";
 import { makePdf } from "../../src/lib/demo/make-pdf";
+import { adminDb, newUserPage, signIn, signUp } from "./helpers";
 
-const PASSWORD = "E2e-Pass-2026!";
 const stamp = Date.now();
 const creatorEmail = `e2e.creator.${stamp}@example.test`;
 const adopterEmail = `e2e.adopter.${stamp}@example.test`;
 const title = `E2E Reef Counter ${stamp}`;
 
-async function signUp(page: Page, name: string, email: string) {
-  await page.goto("/en/signup");
-  // The local bot check wants the form open for at least 3 seconds, as a person would take.
-  await page.waitForTimeout(3200);
-  await page.getByLabel("Full name").fill(name);
-  await page.getByLabel("Email", { exact: true }).fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByLabel(/I accept the Terms and the Privacy Policy/).check();
-  await page.getByRole("button", { name: "Create account" }).click();
-  // A new account with nothing yet lands on the first-run screen. It is a hint, not a role.
-  await page.waitForURL("**/mulai");
-  await expect(page.getByRole("heading", { name: "What do you want to do?" })).toBeVisible();
-  await expect(page.getByRole("main").getByRole("link", { name: /Share a project/ })).toBeVisible();
-  await expect(page.getByRole("main").getByRole("link", { name: /Explore projects/ })).toBeVisible();
-}
-
-async function newUserPage(browser: Browser) {
-  const context = await browser.newContext();
-  return { context, page: await context.newPage() };
-}
-
 test("core flow: share, verify, publish, request, approve, accept, access", async ({ browser, page }) => {
   // ---- Creator signs up and fills the basics
-  await signUp(page, "E2E Creator", creatorEmail);
+  await signUp(page, "E2E Creator", creatorEmail, { verifyWelcome: true });
   await page.goto("/en/bagikan");
   await page.getByLabel("Project title").fill(title);
   await page
@@ -189,20 +167,14 @@ test("core flow: share, verify, publish, request, approve, accept, access", asyn
 
 test("a declined request leaves the project published", async ({ browser }) => {
   // Make the test repeatable: put the seeded demo request back to pending (lineage stays append-only).
-  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { persistSession: false },
-  });
+  const admin = adminDb();
   await admin
     .from("continuation_requests")
     .update({ status: "pending", decided_at: null, decided_by: null, decision_note: null })
     .eq("id", "e0000000-0000-4000-8000-000000000001");
 
   const creator = await newUserPage(browser);
-  await creator.page.goto("/en/login");
-  await creator.page.getByLabel("Email", { exact: true }).fill("creator@estafet.demo");
-  await creator.page.getByLabel("Password").fill("Demo-Pass-2026!");
-  await creator.page.getByRole("button", { name: "Sign in" }).click();
-  await creator.page.waitForURL("**/dasbor");
+  await signIn(creator.page, "creator@estafet.demo");
   // The seeded Mangrove request is pending for the demo account that owns it.
   await creator.page.getByRole("link", { name: "Review request" }).first().click();
   await creator.page.getByRole("button", { name: "Decline" }).click();
@@ -215,9 +187,7 @@ test("a declined request leaves the project published", async ({ browser }) => {
 
 test("the same account shares projects and continues another one, through open mode", async ({ browser }) => {
   // Make the test repeatable: remove this account's earlier access to the open demo project (lineage stays append-only).
-  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { persistSession: false },
-  });
+  const admin = adminDb();
   await admin
     .from("project_access")
     .delete()
@@ -226,11 +196,7 @@ test("the same account shares projects and continues another one, through open m
 
   const person = await newUserPage(browser);
   const p = person.page;
-  await p.goto("/en/login");
-  await p.getByLabel("Email", { exact: true }).fill("creator@estafet.demo");
-  await p.getByLabel("Password").fill("Demo-Pass-2026!");
-  await p.getByRole("button", { name: "Sign in" }).click();
-  await p.waitForURL("**/dasbor");
+  await signIn(p, "creator@estafet.demo");
   // This account owns projects, so the first section is filled.
   await expect(p.getByRole("heading", { name: "Projects I share" })).toBeVisible();
   await expect(p.getByRole("link", { name: "Mangrove Cover Classifier", exact: true })).toBeVisible();

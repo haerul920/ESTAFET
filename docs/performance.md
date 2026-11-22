@@ -1,10 +1,20 @@
-# Performance (phase R3)
+# Performance (phase R3 & R8)
 
 Targets (CLAUDE.md 14.8 and 14.10): CLS under 0.05, LCP under 2.5 s on a mid-range phone for Home and Explore, animations only on `transform` and `opacity`, loops paused off screen.
 
-## Measured numbers
+## Measured numbers (Phase R8 — Production Build against Local Stack)
 
-Measured with `scripts/perf-check.ts` against a **production build** (`pnpm build` then `pnpm start`, local Supabase stack, demo data; it was measured before the move to Supabase cloud), in headless Chromium with a mid-range phone profile: 390x844 at 2x, CPU 4x slower, 1.6 Mbps down, 150 ms round trip. Median of 3 runs, Indonesian pages, no cache.
+Measured with `scripts/perf-check.ts` against a **production build** (`NEXT_DIST_DIR=.next-prod`, `next build` then `next start -p 3100`, local Supabase stack `.env.localstack`, demo data), in headless Chromium with a mid-range phone profile: 390x844 at 2x, CPU 4x slower, 1.6 Mbps down, 150 ms round trip. Median of 3 runs, Indonesian pages, no cache.
+
+| Page | LCP (median) | CLS (median) | JavaScript (uncompressed) | Transferred (uncompressed) |
+|---|---|---|---|---|
+| Home (id) (`/`) | 1.22 s | 0.011 | 862 KB | 1218 KB |
+| Explore (id) (`/explore`) | 2.46 s | 0.000 | 861 KB | 4565 KB |
+| Project teaser (id) (`/projects/mangrove-cover-classifier`) | 3.14 s | 0.000 | 884 KB | 1222 KB |
+| Login (id) (`/login`) | 0.95 s | 0.000 | 857 KB | 1157 KB |
+| Share / Wizard redirect (id) (`/bagikan`) | 1.12 s | 0.000 | 857 KB | 1158 KB |
+
+### Baseline comparison (Phase R3 initial measurement)
 
 | Page | LCP | CLS | JavaScript (uncompressed) | Transferred (uncompressed) |
 |---|---|---|---|---|
