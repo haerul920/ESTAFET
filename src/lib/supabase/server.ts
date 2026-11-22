@@ -2,7 +2,7 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { createHash } from "node:crypto";
 import { cookies, headers } from "next/headers";
-import { SUPABASE_PUBLIC_KEY, SUPABASE_URL, pickSecretKey } from "./keys";
+import { SUPABASE_PUBLIC_KEY, SUPABASE_URL, pickSecretKey, sessionCookieOptions } from "./keys";
 
 /** Supabase client bound to the signed-in user's session cookie. RLS applies. */
 export async function createClient() {
@@ -16,6 +16,7 @@ export async function createClient() {
     .slice(0, 32);
   return createServerClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
     global: { headers: { "x-estafet-ip-hash": ipHash } },
+    cookieOptions: sessionCookieOptions(),
     cookies: {
       getAll() {
         return cookieStore.getAll();
