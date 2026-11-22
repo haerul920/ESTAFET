@@ -1554,11 +1554,11 @@
       "lead": "Halaman ini menjelaskan data apa yang disimpan ESTAFET, untuk apa, dan apa yang bisa kamu lakukan dengannya.",
       "s1": {
         "h": "Data yang kami simpan",
-        "p": "Akun: nama, alamat email, dan kampus atau fakultas bila kamu mengisinya. Proyek: detail yang kamu isi dan berkas yang kamu unggah. Akses dan permintaan: siapa memegang akses ke proyek mana, dan pesan dalam permintaan. Laporan dan banding. Notifikasi. Catatan versi syarat dan kebijakan yang kamu setujui beserta waktunya."
+        "p": "Akun: nama, alamat email, dan kampus atau fakultas bila kamu mengisinya. Proyek: detail yang kamu isi dan berkas yang kamu unggah. Akses dan permintaan: siapa memegang akses ke proyek mana, dan pesan dalam permintaan. Laporan dan banding. Notifikasi. Catatan versi syarat dan kebijakan yang kamu setujui beserta waktunya. Pengaturan email notifikasimu dan bahasa emailnya. Antrean email menyimpan jenis pesan dan isi pemberitahuannya, bukan alamat emailmu."
       },
       "s2": {
         "h": "Di mana data disimpan",
-        "p": "Data disimpan di layanan basis data dan penyimpanan berkas yang dipakai ESTAFET (Supabase). Berkas proyek ada di penyimpanan pribadi dan hanya dibuka lewat tautan sementara setelah pemeriksaan izin."
+        "p": "Data disimpan di layanan basis data dan penyimpanan berkas yang dipakai ESTAFET (Supabase). Berkas proyek ada di penyimpanan pribadi dan hanya dibuka lewat tautan sementara setelah pemeriksaan izin. Email dikirim lewat penyedia email yang dipakai ESTAFET; penyedia itu menerima alamat emailmu, namamu, dan isi pesannya. Email konfirmasi akun dikirim oleh Supabase lewat penyedia yang sama."
       },
       "s3": {
         "h": "Bantuan AI",

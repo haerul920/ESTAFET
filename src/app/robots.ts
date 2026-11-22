@@ -2,6 +2,9 @@ import type { MetadataRoute } from "next";
 import { shouldNoIndex } from "@/lib/admin/env";
 import { siteUrl } from "@/lib/seo";
 
+/** Read at run time (not at build), so one build can serve staging and production. */
+export const dynamic = "force-dynamic";
+
 /** Staging and demo are closed to search engines. Production allows the public pages and keeps private areas out. */
 export default function robots(): MetadataRoute.Robots {
   if (shouldNoIndex()) return { rules: { userAgent: "*", disallow: "/" } };

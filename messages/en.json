@@ -1554,11 +1554,11 @@
       "lead": "This page explains what data ESTAFET stores, what for, and what you can do with it.",
       "s1": {
         "h": "Data we store",
-        "p": "Account: name, email address, and university or faculty if you give them. Projects: the details you enter and the files you upload. Access and requests: who holds access to which project, and the messages in requests. Reports and appeals. Notifications. A record of which version of the terms and policies you accepted, and when."
+        "p": "Account: name, email address, and university or faculty if you give them. Projects: the details you enter and the files you upload. Access and requests: who holds access to which project, and the messages in requests. Reports and appeals. Notifications. A record of which version of the terms and policies you accepted, and when. Your notification email setting and the language of your emails. The email queue keeps the kind of message and the content of the notification, not your email address."
       },
       "s2": {
         "h": "Where data is kept",
-        "p": "Data is kept in the database and file storage service ESTAFET uses (Supabase). Project files sit in private storage and are opened only through short-lived links after a permission check."
+        "p": "Data is kept in the database and file storage service ESTAFET uses (Supabase). Project files sit in private storage and are opened only through short-lived links after a permission check. Email is sent through the email provider ESTAFET uses; that provider receives your email address, your name and the content of the message. The account confirmation email is sent by Supabase through the same provider."
       },
       "s3": {
         "h": "AI assistance",
