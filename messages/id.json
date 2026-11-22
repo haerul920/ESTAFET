@@ -298,7 +298,10 @@
     "summaryTooShort": "Ringkasan draf terlalu pendek untuk dipakai.",
     "summaryFailed": "Ringkasan tidak bisa diperbarui.",
     "requestFailed": "Permintaanmu tidak bisa dikirim.",
-    "questionFirst": "Tulis pertanyaanmu dulu."
+    "questionFirst": "Tulis pertanyaanmu dulu.",
+    "botFailed": "Kami belum bisa memastikan kamu bukan bot. Tunggu beberapa detik, lalu kirim lagi.",
+    "tooManyAttempts": "Terlalu banyak percobaan masuk. Tunggu sekitar 15 menit, lalu coba lagi.",
+    "signupLimited": "Terlalu banyak pendaftaran dari jaringan ini. Coba lagi dalam satu jam."
   },
   "home": {
     "meta": {
@@ -608,7 +611,9 @@
     "uploadUnreadable": "Unggahan tidak bisa dibaca. Coba berkas yang lebih kecil.",
     "uploadNone": "Pilih setidaknya satu berkas.",
     "uploadTooMany": "Satu proyek paling banyak punya {max} berkas.",
-    "uploadTooBig": "Lebih besar dari {mb} MB, jadi tidak diunggah."
+    "uploadTooBig": "Lebih besar dari {mb} MB, jadi tidak diunggah.",
+    "uploadRateLimited": "Terlalu banyak unggahan dalam satu jam terakhir. Tunggu sebentar, lalu coba lagi.",
+    "uploadScanRejected": "Berkas ini tidak lolos pemeriksaan keamanan, jadi tidak diunggah."
   },
   "dashboard": {
     "n": {
@@ -1217,7 +1222,8 @@
     "hourlyLimit": "Proyek ini sudah diproses beberapa kali dalam satu jam terakhir. Tunggu sebentar, lalu coba lagi.",
     "noFiles": "Unggah setidaknya satu berkas yang bisa dibaca dulu.",
     "unreadable": "Berkas yang diunggah tidak bisa dibaca. Unggah ulang.",
-    "startFailed": "Proses tidak bisa dimulai."
+    "startFailed": "Proses tidak bisa dimulai.",
+    "globalLimit": "Layanan AI sedang mencapai batas harian untuk semua pengguna. Coba lagi besok, atau isi draf secara manual."
   },
   "ui": {
     "close": "Tutup",
@@ -1482,6 +1488,17 @@
       "confirmEffect": "Akunmu dijadwalkan dihapus 30 hari dari sekarang. Kamu masih bisa masuk dan membatalkannya sampai saat itu. Setelah itu penghapusan tidak bisa dibatalkan.",
       "confirm": "Ya, jadwalkan penghapusan",
       "failed": "Penghapusan tidak bisa dijadwalkan. Coba lagi."
+    },
+    "email": {
+      "title": "Email notifikasi",
+      "text": "Kami mengirim email saat ada permintaan baru, keputusan, atau perjanjian yang perlu kamu tanggapi. Email yang menyangkut keamanan akun atau proyekmu (misalnya keputusan moderasi, banding, dan pencabutan akses) tetap dikirim walau kamu mematikan ini.",
+      "toggle": "Kirim email notifikasi kepadaku",
+      "language": "Bahasa email",
+      "save": "Simpan",
+      "saved": "Pengaturan email disimpan.",
+      "failed": "Pengaturan email belum tersimpan. Coba lagi.",
+      "langId": "Bahasa Indonesia",
+      "langEn": "English"
     }
   },
   "legal": {
@@ -1537,11 +1554,11 @@
       "lead": "Halaman ini menjelaskan data apa yang disimpan ESTAFET, untuk apa, dan apa yang bisa kamu lakukan dengannya.",
       "s1": {
         "h": "Data yang kami simpan",
-        "p": "Akun: nama, alamat email, dan kampus atau fakultas bila kamu mengisinya. Proyek: detail yang kamu isi dan berkas yang kamu unggah. Akses dan permintaan: siapa memegang akses ke proyek mana, dan pesan dalam permintaan. Laporan dan banding. Notifikasi. Catatan versi syarat dan kebijakan yang kamu setujui beserta waktunya."
+        "p": "Akun: nama, alamat email, dan kampus atau fakultas bila kamu mengisinya. Proyek: detail yang kamu isi dan berkas yang kamu unggah. Akses dan permintaan: siapa memegang akses ke proyek mana, dan pesan dalam permintaan. Laporan dan banding. Notifikasi. Catatan versi syarat dan kebijakan yang kamu setujui beserta waktunya. Pengaturan email notifikasimu dan bahasa emailnya. Antrean email menyimpan jenis pesan dan isi pemberitahuannya, bukan alamat emailmu."
       },
       "s2": {
         "h": "Di mana data disimpan",
-        "p": "Data disimpan di layanan basis data dan penyimpanan berkas yang dipakai ESTAFET (Supabase). Berkas proyek ada di penyimpanan pribadi dan hanya dibuka lewat tautan sementara setelah pemeriksaan izin."
+        "p": "Data disimpan di layanan basis data dan penyimpanan berkas yang dipakai ESTAFET (Supabase). Berkas proyek ada di penyimpanan pribadi dan hanya dibuka lewat tautan sementara setelah pemeriksaan izin. Email dikirim lewat penyedia email yang dipakai ESTAFET; penyedia itu menerima alamat emailmu, namamu, dan isi pesannya. Email konfirmasi akun dikirim oleh Supabase lewat penyedia yang sama."
       },
       "s3": {
         "h": "Bantuan AI",
@@ -2484,6 +2501,122 @@
         "saved": "{label} disimpan.",
         "domainsExample": "student.unhas.ac.id"
       }
+    }
+  },
+  "email": {
+    "common": {
+      "greeting": "Halo {name},",
+      "greetingNoName": "Halo,",
+      "signature": "Salam, tim ESTAFET",
+      "fallbackLink": "Jika tombol tidak berfungsi, salin alamat ini ke peramban: {url}",
+      "footerEssential": "Email ini menyangkut keamanan akun atau proyekmu, jadi tetap dikirim walau kamu mematikan email notifikasi.",
+      "footerPrefs": "Kamu menerima email ini karena email notifikasi aktif. Kamu bisa mematikannya di pengaturan akun:",
+      "footerPrefsLink": "Pengaturan akun",
+      "aProject": "sebuah proyek",
+      "ownerNote": "Catatan pemilik: “{note}”"
+    },
+    "cta": {
+      "dashboard": "Buka dasbor",
+      "myReports": "Lihat laporan saya",
+      "decision": "Lihat keputusan",
+      "admin": "Buka area admin"
+    },
+    "new_request": {
+      "subject": "Permintaan baru untuk {title}",
+      "intro": "{team} ingin melanjutkan proyek {title}.",
+      "detail": "Baca rencana mereka, lalu setujui, tolak, atau ajukan pertanyaan. Permintaan yang tidak dijawab akan kedaluwarsa."
+    },
+    "request_decision": {
+      "approved": {
+        "subject": "Permintaanmu untuk {title} disetujui",
+        "intro": "Pemilik proyek menyetujui permintaanmu untuk melanjutkan {title}.",
+        "detail": "Langkah berikutnya: terima perjanjian atribusi di dasbormu agar berkas pribadi terbuka."
+      },
+      "declined": {
+        "subject": "Permintaanmu untuk {title} ditolak",
+        "intro": "Pemilik proyek tidak dapat menerima permintaanmu untuk {title} saat ini.",
+        "detail": "Kamu bisa mengajukan lagi setelah masa jeda yang tertera di halaman proyek."
+      }
+    },
+    "agreement_accepted": {
+      "creator": {
+        "subject": "Pemilik {title} menerima perjanjian atribusi",
+        "intro": "Pemilik proyek {title} sudah menerima perjanjian atribusi.",
+        "detail": "Jika kamu belum menerimanya, lakukan di dasbor agar berkas pribadi terbuka."
+      },
+      "adopter": {
+        "subject": "Tim penerus menerima perjanjian atribusi untuk {title}",
+        "intro": "Tim penerus sudah menerima perjanjian atribusi untuk {title}.",
+        "detail": "Jika kamu belum menerimanya juga, lakukan di dasbor."
+      }
+    },
+    "moderation": {
+      "hold": {
+        "subject": "{title} sedang ditahan untuk ditinjau",
+        "intro": "Tim ESTAFET menahan {title} sementara sambil meninjau laporan yang masuk."
+      },
+      "hide": {
+        "subject": "{title} disembunyikan dari halaman publik",
+        "intro": "Tim ESTAFET menyembunyikan {title} dari halaman publik."
+      },
+      "remove": {
+        "subject": "{title} dihapus dari tampilan publik",
+        "intro": "Tim ESTAFET menghapus {title} dari tampilan publik."
+      },
+      "restore": {
+        "subject": "{title} dipulihkan",
+        "intro": "Tim ESTAFET memulihkan {title}. Proyekmu tampil kembali di halaman publik."
+      },
+      "reason": "Alasan: “{reason}”. Datamu dan perjanjian yang sudah ditandatangani tidak berubah.",
+      "appeal": "Kamu bisa mengajukan banding dari dasbormu."
+    },
+    "appeal_outcome": {
+      "accepted": {
+        "subject": "Bandingmu untuk {title} diterima",
+        "intro": "Tim ESTAFET menerima bandingmu. Keputusan sebelumnya untuk {title} dibatalkan."
+      },
+      "rejected": {
+        "subject": "Bandingmu untuk {title} ditolak",
+        "intro": "Tim ESTAFET meninjau bandingmu dan keputusan sebelumnya untuk {title} tetap berlaku."
+      },
+      "note": "Catatan tim: “{note}”"
+    },
+    "access_revoked": {
+      "subject": "Aksesmu ke {title} dicabut",
+      "intro": "Pemilik proyek mencabut aksesmu ke berkas pribadi {title}.",
+      "reason": "Alasan: “{reason}”.",
+      "detail": "Kewajiban atribusi untuk bahan yang sudah kamu pakai tetap berlaku."
+    },
+    "team_invite": {
+      "subject": "Kamu diundang menjadi pemilik bersama {title}",
+      "intro": "Kamu diundang menjadi pemilik bersama proyek {title}.",
+      "detail": "Terima atau tolak undangan ini di dasbormu."
+    },
+    "ownership_offer": {
+      "subject": "Kamu ditawari kepemilikan {title}",
+      "intro": "Seorang pemilik menawarkan kepemilikan proyek {title} kepadamu.",
+      "detail": "Terima atau tolak tawaran ini di pengaturan proyek. Tidak ada yang berubah sebelum kamu menjawab."
+    },
+    "report_outcome": {
+      "subject": "Laporan {reference} sudah ditinjau",
+      "resolved": "Tim ESTAFET sudah menindaklanjuti laporanmu {reference}.",
+      "dismissed": "Tim ESTAFET meninjau laporanmu {reference} dan tidak menemukan alasan untuk mengambil tindakan.",
+      "detail": "Terima kasih sudah membantu menjaga ESTAFET tetap aman. Identitasmu tidak pernah ditampilkan kepada pemilik proyek."
+    },
+    "admin_hold": {
+      "subject": "[Admin] Proyek ditahan: {title}",
+      "intro": "Proyek {title} ditahan dan perlu ditinjau.",
+      "detail": "Alasan: “{reason}”."
+    },
+    "admin_hold_overdue": {
+      "subject": "[Admin] Penahanan melewati target tinjauan: {title}",
+      "intro": "Proyek {title} sudah ditahan melewati target tinjauan.",
+      "detail": "Putuskan: pulihkan, sembunyikan, atau hapus, dengan alasan tertulis."
+    },
+    "admin_appeal": {
+      "subject": "[Admin] Banding baru untuk {title}",
+      "intro": "Pemilik {title} mengajukan banding atas keputusan moderasi.",
+      "detail": "Satu banding terbuka per keputusan. Tinjau dan beri hasil."
     }
   }
 }

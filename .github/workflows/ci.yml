@@ -46,6 +46,52 @@ jobs:
       # High and critical advisories fail the build. Moderate ones are reviewed by hand.
       - run: pnpm audit --audit-level=high
 
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the whole history, so an old leaked key is found too
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Production build and unsafe-config refusal
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build with placeholder values (pages are rendered per request, nothing is contacted)
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          APP_ENV: PRODUCTION
+      - name: A production server with unsafe settings must stop with exit code 1
+        env:
+          APP_ENV: PRODUCTION
+          LLM_PROVIDER: mock
+          SEED_DEMO: "true"
+          APP_URL: http://example.test
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+        run: |
+          code=0
+          timeout 60 pnpm start -p 3199 > boot.log 2>&1 || code=$?
+          cat boot.log
+          test "$code" -eq 1
+          grep -q "LLM_PROVIDER=mock is refused" boot.log
+          grep -q "SEED_DEMO=true is refused" boot.log
+
   database:
     name: Database tests (local Supabase)
     runs-on: ubuntu-latest

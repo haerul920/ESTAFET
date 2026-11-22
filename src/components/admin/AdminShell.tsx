@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import * as Popover from "@radix-ui/react-popover";
 import { ExternalLink, Menu, Search } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
+import type { EnvName } from "@/lib/admin/env";
 import { cn } from "@/lib/cn";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/Dialog";
 import { Tip } from "@/components/ui/Tooltip";
@@ -64,6 +65,7 @@ const GO: Record<string, string> = {
 
 const ENV_STYLE = {
   LOCAL: "bg-ok-bg text-ok",
+  DEMO: "bg-blue-tint text-blue-dark",
   STAGING: "bg-warn-bg text-warn",
   PRODUCTION: "bg-danger text-white",
 } as const;
@@ -206,7 +208,7 @@ export function AdminShell({
   children,
 }: {
   adminName: string;
-  env: "LOCAL" | "STAGING" | "PRODUCTION";
+  env: EnvName;
   children: React.ReactNode;
 }) {
   const t = useTranslations("admin.shell");

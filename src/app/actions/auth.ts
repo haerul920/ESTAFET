@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { emailSchema, fieldErrorsFrom, formValues, safeNext, type FormState } from "@/lib/validation";
 import { getSettings, isEmailAllowedBy } from "@/lib/settings";
 import { isSuspendedProfile } from "@/lib/auth";
+import { botSignalsFrom, verifyBot } from "@/lib/botcheck";
+import { allow, clientIp } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { TFn } from "@/lib/labels";
 
@@ -23,6 +25,14 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
     .object({ email: emailSchema(t.v), password: z.string().min(1, t.v("passwordRequired")) })
     .safeParse(values);
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error), values };
+
+  // Slow down password guessing: per client address, and per email address (many addresses against one account).
+  const ip = await clientIp();
+  if (
+    !(await allow({ scope: "login-ip", identity: ip, max: 20, windowSeconds: 900 })) ||
+    !(await allow({ scope: "login-email", identity: parsed.data.email, max: 8, windowSeconds: 900 }))
+  )
+    return { error: t.a("tooManyAttempts"), values };
 
   const supabase = await createClient();
   const settings = await getSettings();
@@ -59,6 +69,12 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
     })
     .safeParse(values);
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error), values };
+
+  // Bot check first (Turnstile when configured, the local check otherwise), then a limit per client address.
+  const ip = await clientIp();
+  if (!(await verifyBot(botSignalsFrom(formData), ip))) return { error: t.a("botFailed"), values };
+  if (!(await allow({ scope: "signup-ip", identity: ip, max: 5, windowSeconds: 3600 })))
+    return { error: t.a("signupLimited"), values };
 
   const settings = await getSettings();
   if (!settings.registrations_open.value) return { error: t.a("registrationsClosed"), values };
@@ -109,6 +125,8 @@ export async function resendVerification(): Promise<{ error?: string }> {
   } = await supabase.auth.getUser();
   if (!user?.email) return { error: (await getTranslations("errors"))("signIn") };
   if (user.email_confirmed_at) return {};
+  if (!(await allow({ scope: "resend-verification", identity: user.id, max: 3, windowSeconds: 3600 })))
+    return { error: t.a("resendWait") };
   const { error } = await supabase.auth.resend({ type: "signup", email: user.email });
   if (error) return { error: /rate|seconds|frequen/i.test(error.message) ? t.a("resendWait") : t.a("resendFail") };
   return {};

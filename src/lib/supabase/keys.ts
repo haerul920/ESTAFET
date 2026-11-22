@@ -17,3 +17,16 @@ export function pickPublicKey(env: Record<string, string | undefined>): string |
 export function pickSecretKey(env: Record<string, string | undefined>): string | undefined {
   return env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY || undefined;
 }
+
+/**
+ * Options for the Supabase session cookies. `SameSite=Lax` blocks cross-site form posts; `Secure` is set whenever the
+ * site is served over HTTPS (the server knows from APP_URL, the browser from its own address). The cookies are not
+ * `HttpOnly` on purpose: the browser client reads the session from them.
+ */
+export function sessionCookieOptions(): { sameSite: "lax"; secure: boolean; path: string } {
+  const secure =
+    typeof window !== "undefined"
+      ? window.location.protocol === "https:"
+      : (process.env.APP_URL ?? "").startsWith("https://");
+  return { sameSite: "lax", secure, path: "/" };
+}

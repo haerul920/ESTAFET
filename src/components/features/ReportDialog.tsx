@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import Script from "next/script";
 import { Flag } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { BotFields, useFillTimer } from "@/components/ui/BotFields";
 import { Button } from "@/components/ui/Button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/Dialog";
 import { FormMessage, TextArea, TextField } from "@/components/ui/Field";
@@ -22,8 +22,6 @@ const REASONS = [
   "spam",
   "other",
 ] as const;
-
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 /**
  * Report a project: a dialog with each reason and its rule in one line, required details, an optional evidence link,
@@ -75,12 +73,11 @@ export function ReportDialog({
 function ReportForm({ projectId, signedIn, onClose }: { projectId: string; signedIn: boolean; onClose: () => void }) {
   const t = useTranslations("report");
   const [reason, setReason] = useState("");
-  // When the form appeared. The browser sends how long it was open, so a wrong clock does not matter.
-  const [openedAt] = useState(() => Date.now());
+  // The form only exists while the dialog is open, so the timer starts when it appears.
+  const stamp = useFillTimer();
   const [state, dispatch, pending] = useActionState<FormState, FormData>(submitReport, {});
   const action = (formData: FormData) => {
-    formData.set("fill_ms", String(Date.now() - openedAt));
-    dispatch(formData);
+    dispatch(stamp(formData));
   };
   const fe = state.fieldErrors ?? {};
   const v = state.values ?? {};
@@ -108,13 +105,7 @@ function ReportForm({ projectId, signedIn, onClose }: { projectId: string; signe
       <p className="mb-0 mt-3 text-sm text-text-2">{t("intro")}</p>
       <form action={action} noValidate className="mt-4 flex flex-col gap-4">
         <input type="hidden" name="project_id" value={projectId} />
-        {/* Honeypot: people never see or fill this. */}
-        <div aria-hidden="true" className="absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden">
-          <label>
-            Website
-            <input type="text" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
-          </label>
-        </div>
+        {signedIn ? null : <BotFields />}
         {state.error ? <FormMessage tone="error">{state.error}</FormMessage> : null}
 
         <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
@@ -172,13 +163,6 @@ function ReportForm({ projectId, signedIn, onClose }: { projectId: string; signe
             error={fe.contact}
             hint={t("contactHint")}
           />
-        )}
-
-        {signedIn || !TURNSTILE_SITE_KEY ? null : (
-          <>
-            <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="lazyOnload" />
-            <div className="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} />
-          </>
         )}
 
         <p className="m-0 text-[13px] text-text-2">

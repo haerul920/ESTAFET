@@ -9,12 +9,13 @@ import { Cloud, CountUp, Reveal, Stagger, StaggerItem } from "@/components/ui/mo
 import { Footer } from "@/components/ui/Footer";
 import { MeadowCta } from "@/components/features/MeadowCta";
 import { SurveyDots } from "@/components/features/SurveyDots";
+import { pageAlternates } from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "home" });
   const m = await getTranslations({ locale, namespace: "meta" });
-  return { title: t("meta.title"), description: m("description") };
+  return { title: t("meta.title"), description: m("description"), alternates: pageAlternates(locale, "/") };
 }
 
 const STEPS = [

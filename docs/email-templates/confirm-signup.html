@@ -1,0 +1,38 @@
+<!doctype html>
+<!--
+  Template for Supabase Auth, "Confirm signup" (Authentication, Email Templates).
+  Supabase allows one template per type, so it carries Indonesian and English together.
+  {{ .ConfirmationURL }} is filled in by Supabase. Subject:
+  Konfirmasi emailmu di ESTAFET / Confirm your email on ESTAFET
+-->
+<html lang="id">
+  <body style="margin:0;padding:0;background:#F3F4F6;font-family:Arial,Helvetica,sans-serif">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F3F4F6">
+      <tr>
+        <td align="center" style="padding:24px 12px">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border-radius:24px">
+            <tr>
+              <td style="padding:28px 28px 8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#1760D6;font-weight:600">ESTAFET</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 28px 4px;color:#0E1A26;font-size:16px;line-height:1.55">
+                <p style="margin:0 0 14px">Halo, terima kasih sudah mendaftar di ESTAFET. Konfirmasi emailmu agar kamu bisa membagikan proyek dan melanjutkan proyek orang lain.</p>
+                <p style="margin:22px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#1760D6;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px;padding:14px 26px;border-radius:999px">Konfirmasi email</a></p>
+                <p style="margin:0 0 18px;font-size:13px;color:#4A5A66">Jika kamu tidak mendaftar, abaikan email ini. Tidak ada yang berubah.</p>
+                <hr style="border:0;border-top:1px solid #DDE1E5;margin:18px 0" />
+                <p style="margin:0 0 14px">Hi, thanks for signing up to ESTAFET. Confirm your email so you can share projects and continue other people's projects.</p>
+                <p style="margin:22px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#1760D6;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px;padding:14px 26px;border-radius:999px">Confirm email</a></p>
+                <p style="margin:0 0 18px;font-size:13px;color:#4A5A66">If you did not sign up, ignore this email. Nothing changes.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 28px 28px;border-top:1px solid #DDE1E5;font-size:12px;line-height:1.5;color:#4A5A66">
+                Email ini menyangkut akunmu, jadi selalu dikirim. / This email is about your account, so it is always sent.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

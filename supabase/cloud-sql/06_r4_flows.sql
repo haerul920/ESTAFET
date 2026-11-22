@@ -1,4 +1,4 @@
--- ESTAFET database, step 06 of 10: r4_flows.
+-- ESTAFET database, step 06 of 11: r4_flows.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 05 succeeded.
 -- Generated from supabase/migrations/20261122000002_r4_flows.sql. Do not edit by hand.
 

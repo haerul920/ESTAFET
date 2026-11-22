@@ -1,4 +1,4 @@
--- ESTAFET database, step 04 of 10: r1_access_model.
+-- ESTAFET database, step 04 of 11: r1_access_model.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 03 succeeded.
 -- Generated from supabase/migrations/20261121000002_r1_access_model.sql. Do not edit by hand.
 

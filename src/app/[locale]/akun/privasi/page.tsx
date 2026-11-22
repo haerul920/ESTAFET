@@ -8,6 +8,7 @@ import { PageShell } from "@/components/ui/PageShell";
 import { Card } from "@/components/ui/Card";
 import { ButtonLink } from "@/components/ui/Button";
 import { DeletionControls } from "@/components/features/DeletionControls";
+import { EmailPreferences } from "@/components/features/EmailPreferences";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -20,10 +21,11 @@ const LISTED = ["l1", "l2", "l3", "l4", "l5"] as const;
 /** Account privacy: download your data, or schedule the deletion of your account (30 day grace period). */
 export default async function AccountPrivacyPage() {
   await requireUser("/akun/privasi");
-  const [locale, t, td] = await Promise.all([
+  const [locale, t, td, te] = await Promise.all([
     getLocale(),
     getTranslations("account"),
     getTranslations("account.delete"),
+    getTranslations("account.email"),
   ]);
   const supabase = await createClient();
   const { data: pending } = await supabase
@@ -33,6 +35,9 @@ export default async function AccountPrivacyPage() {
     .is("completed_at", null)
     .maybeSingle();
   const scheduledFor = (pending?.scheduled_for as string | undefined) ?? null;
+  const { data: prefs } = await supabase.from("profiles").select("email_notifications, locale").maybeSingle();
+  const emailOn = prefs?.email_notifications !== false;
+  const emailLocale = prefs?.locale === "en" ? "en" : "id";
 
   return (
     <PageShell width={820}>
@@ -51,6 +56,14 @@ export default async function AccountPrivacyPage() {
               <Download size={18} aria-hidden="true" /> {t("export.button")}
             </ButtonLink>
           </div>
+        </Card>
+
+        <Card as="section" aria-labelledby="email-h" className="flex flex-col gap-3">
+          <h2 id="email-h" className="m-0 text-xl">
+            {te("title")}
+          </h2>
+          <p className="m-0 text-[15px] text-text-3">{te("text")}</p>
+          <EmailPreferences enabled={emailOn} locale={emailLocale} />
         </Card>
 
         <Card as="section" aria-labelledby="delete-h" className="flex flex-col gap-3">

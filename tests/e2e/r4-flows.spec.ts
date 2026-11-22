@@ -32,6 +32,8 @@ async function signIn(page: Page, email: string, password = DEMO_PASSWORD) {
 
 async function signUp(page: Page, name: string, email: string) {
   await page.goto("/en/signup");
+  // The local bot check wants the form open for at least 3 seconds, as a person would take.
+  await page.waitForTimeout(3200);
   await page.getByLabel("Full name").fill(name);
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password").fill(PASSWORD);

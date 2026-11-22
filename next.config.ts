@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { staticHeaders } from "./src/lib/security-headers";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -35,6 +36,19 @@ const nextConfig: NextConfig = {
       ]),
     ];
   },
+  // Fixed security headers on every response. The Content-Security-Policy (it needs a nonce per request) is in src/proxy.ts.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: staticHeaders({
+          production:
+            process.env.NODE_ENV === "production" && (process.env.APP_ENV ?? "PRODUCTION").toUpperCase() !== "LOCAL",
+        }),
+      },
+    ];
+  },
+  poweredByHeader: false,
   serverExternalPackages: ["pdfjs-dist", "@react-pdf/renderer", "jszip"],
   experimental: {
     serverActions: { bodySizeLimit: "30mb" },

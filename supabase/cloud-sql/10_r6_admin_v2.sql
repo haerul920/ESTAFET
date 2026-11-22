@@ -1,4 +1,4 @@
--- ESTAFET database, step 10 of 10: r6_admin_v2.
+-- ESTAFET database, step 10 of 11: r6_admin_v2.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 09 succeeded.
 -- Generated from supabase/migrations/20261124000001_r6_admin_v2.sql. Do not edit by hand.
 
