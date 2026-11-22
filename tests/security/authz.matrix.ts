@@ -41,7 +41,7 @@ export const AUTHZ_MATRIX: AuthzEntry[] = [
     id: "page:home",
     kind: "page",
     target: "/[locale]",
-    sourceFile: "src/app/[locale]/page.tsx",
+    sourceFile: "src/app/[locale]/(public)/(home)/page.tsx",
     allowedRoles: ["guest", "authenticated", "owner", "holder", "admin"],
     deniedRoles: [],
     enforcementLayer: ["rls"],

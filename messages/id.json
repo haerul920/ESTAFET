@@ -65,7 +65,8 @@
     "home": "Kembali ke beranda"
   },
   "common": {
-    "progress": "Kemajuan"
+    "progress": "Kemajuan",
+    "loadingPage": "Memuat halaman"
   },
   "labels": {
     "kind": {

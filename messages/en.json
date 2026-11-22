@@ -65,7 +65,8 @@
     "home": "Back to home"
   },
   "common": {
-    "progress": "Progress"
+    "progress": "Progress",
+    "loadingPage": "Loading the page"
   },
   "labels": {
     "kind": {
