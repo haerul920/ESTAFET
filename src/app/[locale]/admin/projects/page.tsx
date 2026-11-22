@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { FilterBar } from "@/components/admin/FilterBar";
 import { PageHeader, StatusPill, Time, toneFor } from "@/components/admin/ui";
 import { DemoBadge } from "@/components/ui/Badge";
 import { queryView } from "@/lib/admin/query";
+import { statusText, type StatusTranslator } from "@/lib/admin/labels";
 import type { SearchParams } from "@/lib/admin/table";
 import { FACULTIES } from "@/lib/labels";
 
-export const metadata: Metadata = { title: "Projects" };
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.projects" });
+  return { title: t("title") };
+}
 
 interface Row {
   id: string;
@@ -24,6 +30,8 @@ interface Row {
 
 export default async function AdminProjectsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
+  const [t, ts] = await Promise.all([getTranslations("admin.projects"), getTranslations("admin.status")]);
+  const status = (k: string) => statusText(ts as unknown as StatusTranslator, k);
   const { rows, total, params } = await queryView<Row>("admin_projects_v", sp, {
     sortable: ["title", "status", "moderation_status", "updated_at", "open_reports"],
     defaultSort: "updated_at",
@@ -33,25 +41,25 @@ export default async function AdminProjectsPage({ searchParams }: { searchParams
   });
 
   const columns: Column<Row>[] = [
-    { key: "title", label: "Title", sortable: true },
-    { key: "creators", label: "Owners", render: (r) => r.creators || "—" },
+    { key: "title", label: t("colTitle"), sortable: true },
+    { key: "creators", label: t("colOwners"), render: (r) => r.creators || "—" },
     {
       key: "status",
-      label: "Status",
+      label: t("colStatus"),
       sortable: true,
-      render: (r) => <StatusPill tone={toneFor(r.status)}>{r.status.replace("_", " ")}</StatusPill>,
+      render: (r) => <StatusPill tone={toneFor(r.status)}>{status(r.status)}</StatusPill>,
     },
     {
       key: "moderation_status",
-      label: "Moderation",
+      label: t("colModeration"),
       sortable: true,
-      render: (r) => <StatusPill tone={toneFor(r.moderation_status)}>{r.moderation_status}</StatusPill>,
+      render: (r) => <StatusPill tone={toneFor(r.moderation_status)}>{status(r.moderation_status)}</StatusPill>,
     },
-    { key: "is_demo", label: "Demo", render: (r) => (r.is_demo ? <DemoBadge /> : "—") },
-    { key: "updated_at", label: "Updated", sortable: true, render: (r) => <Time iso={r.updated_at} /> },
+    { key: "is_demo", label: t("colDemo"), render: (r) => (r.is_demo ? <DemoBadge /> : "—") },
+    { key: "updated_at", label: t("colUpdated"), sortable: true, render: (r) => <Time iso={r.updated_at} /> },
     {
       key: "open_reports",
-      label: "Open reports",
+      label: t("colReports"),
       sortable: true,
       render: (r) => (r.open_reports ? <StatusPill tone="warn">{r.open_reports}</StatusPill> : "0"),
     },
@@ -59,28 +67,26 @@ export default async function AdminProjectsPage({ searchParams }: { searchParams
 
   return (
     <>
-      <PageHeader
-        title="Projects"
-        intro="Lifecycle status and moderation status are separate. Public pages need published AND moderation ok."
-      />
+      <PageHeader title={t("title")} intro={t("intro")} />
       <FilterBar
-        searchLabel="Search title, slug or owner"
-        toggles={[{ key: "demo", label: "Include demo projects" }]}
+        searchLabel={t("search")}
+        toggles={[{ key: "demo", label: t("includeDemo") }]}
         filters={[
           {
             key: "status",
-            label: "Status",
-            options: ["draft", "published", "unpublished", "archived"].map((v) => ({
-              value: v,
-              label: v.replace("_", " "),
-            })),
+            label: t("filterStatus"),
+            options: ["draft", "published", "unpublished", "archived"].map((v) => ({ value: v, label: status(v) })),
           },
           {
             key: "moderation",
-            label: "Moderation",
-            options: ["ok", "held", "hidden", "removed"].map((v) => ({ value: v, label: v })),
+            label: t("filterModeration"),
+            options: ["ok", "held", "hidden", "removed"].map((v) => ({ value: v, label: status(v) })),
           },
-          { key: "field", label: "Field", options: FACULTIES.slice(0, 4).map((v) => ({ value: v, label: v })) },
+          {
+            key: "field",
+            label: t("filterField"),
+            options: FACULTIES.slice(0, 4).map((v) => ({ value: v, label: v })),
+          },
         ]}
       />
       <DataTable
@@ -91,8 +97,8 @@ export default async function AdminProjectsPage({ searchParams }: { searchParams
         sp={sp}
         basePath="/admin/projects"
         rowHref={(r) => `/admin/projects/${r.id}`}
-        caption="Projects"
-        empty={{ title: "No projects match", text: "Demo projects are hidden unless you include them." }}
+        caption={t("caption")}
+        empty={{ title: t("emptyTitle"), text: t("emptyText") }}
       />
     </>
   );

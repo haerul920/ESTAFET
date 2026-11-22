@@ -3,6 +3,7 @@
 import { useId, useState, useTransition } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { ShieldAlert } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
 import { useToast } from "@/components/ui/Toast";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/Dialog";
@@ -38,6 +39,8 @@ interface Props {
   disabled?: boolean;
   /** Optional extra fields rendered above the reason (their state is the caller's). */
   children?: React.ReactNode;
+  /** Ready-made reasons: choosing one fills the reason field, and it can still be edited. */
+  templates?: string[];
 }
 
 const BTN: Record<NonNullable<Props["tone"]>, string> = {
@@ -57,13 +60,15 @@ export function ReasonAction({
   action,
   undo,
   typedPhrase,
-  reasonLabel = "Reason (kept in the audit log)",
+  reasonLabel,
   successMessage,
   onDone,
   small,
   disabled,
   children,
+  templates,
 }: Props) {
+  const t = useTranslations("admin.reason");
   const router = useRouter();
   const toast = useToast();
   const id = useId();
@@ -100,7 +105,7 @@ export function ReasonAction({
       const res = await action(reason.trim());
       if (res.needsReauth) {
         setNeedsReauth(true);
-        setError("This action needs a recent password check. Enter your password to continue.");
+        setError(t("needsReauth"));
         return;
       }
       if (res.error) {
@@ -112,13 +117,15 @@ export function ReasonAction({
       setReason("");
       setTyped("");
       toast.push({
-        message: successMessage ?? `${label}: done.`,
+        message: successMessage ?? t("done", { label }),
         undo: undo
           ? () =>
-              undo.action(`Undo: ${label.toLowerCase()}. ${usedReason}`.slice(0, 300)).then((r) => {
-                router.refresh();
-                return r;
-              })
+              undo
+                .action(t("undoReason", { label: label.toLowerCase(), reason: usedReason }).slice(0, 300))
+                .then((r) => {
+                  router.refresh();
+                  return r;
+                })
           : undefined,
       });
       onDone?.(res.data);
@@ -143,14 +150,28 @@ export function ReasonAction({
       </DialogTrigger>
       <DialogContent title={label} showClose={false}>
         <div className="mt-2 rounded-2xl bg-surface p-3.5 text-sm text-text-3">
-          <strong className="mb-1 block text-ink">What will happen</strong>
+          <strong className="mb-1 block text-ink">{t("whatHappens")}</strong>
           {consequence}
         </div>
         {children ? <div className="mt-4 flex flex-col gap-3">{children}</div> : null}
         <div className="mt-4 flex flex-col gap-1.5">
           <label htmlFor={`${id}-r`} className="text-sm font-semibold">
-            {reasonLabel}
+            {reasonLabel ?? t("reasonDefault")}
           </label>
+          {templates?.length ? (
+            <div role="group" aria-label={t("suggested")} className="flex flex-wrap gap-1.5">
+              {templates.map((tpl) => (
+                <button
+                  key={tpl}
+                  type="button"
+                  onClick={() => setReason(tpl)}
+                  className="cursor-pointer rounded-full border border-line-strong bg-white px-3 py-1 text-[13px] hover:bg-surface"
+                >
+                  {tpl.length > 38 ? `${tpl.slice(0, 36)}…` : tpl}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <textarea
             id={`${id}-r`}
             rows={3}
@@ -160,13 +181,16 @@ export function ReasonAction({
             aria-describedby={`${id}-c`}
           />
           <span id={`${id}-c`} className={cn("text-[13px]", reasonOk ? "text-ok" : "text-text-2")}>
-            {reason.trim().length} of at least {MIN_REASON} characters
+            {t("count", { count: reason.trim().length, min: MIN_REASON })}
           </span>
         </div>
         {typedPhrase ? (
           <div className="mt-3 flex flex-col gap-1.5">
             <label htmlFor={`${id}-p`} className="text-sm font-semibold">
-              Type <code className="font-code">{typedPhrase}</code> to confirm
+              {t.rich("typePhrase", {
+                phrase: typedPhrase,
+                code: (chunks) => <code className="font-code">{chunks}</code>,
+              })}
             </label>
             <input
               id={`${id}-p`}
@@ -180,7 +204,7 @@ export function ReasonAction({
         {needsReauth ? (
           <div className="mt-3 flex flex-col gap-1.5 rounded-2xl bg-warn-bg p-3.5">
             <label htmlFor={`${id}-pw`} className="flex items-center gap-2 text-sm font-semibold text-warn-ink">
-              <ShieldAlert size={16} aria-hidden="true" /> Confirm your password
+              <ShieldAlert size={16} aria-hidden="true" /> {t("confirmPassword")}
             </label>
             <input
               id={`${id}-pw`}
@@ -190,7 +214,7 @@ export function ReasonAction({
               onChange={(e) => setPassword(e.target.value)}
               className="min-h-[44px] w-full rounded-[14px] border border-line-strong bg-white px-3.5"
             />
-            <span className="text-[13px] text-warn-ink">Remembered for 15 minutes in this session.</span>
+            <span className="text-[13px] text-warn-ink">{t("remembered")}</span>
           </div>
         ) : null}
         {error ? (
@@ -204,7 +228,7 @@ export function ReasonAction({
             onClick={close}
             className="min-h-[44px] cursor-pointer rounded-full border-[1.5px] border-line-strong bg-white px-5 font-semibold hover:bg-surface"
           >
-            Cancel
+            {t("cancel")}
           </button>
           <button
             type="button"
@@ -215,7 +239,7 @@ export function ReasonAction({
               tone === "danger" ? "bg-danger text-white" : "bg-lime text-black",
             )}
           >
-            {pending ? "Working…" : needsReauth ? "Confirm and continue" : label}
+            {pending ? t("working") : needsReauth ? t("confirmContinue") : label}
           </button>
         </div>
       </DialogContent>

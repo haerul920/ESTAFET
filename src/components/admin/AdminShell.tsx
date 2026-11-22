@@ -9,44 +9,50 @@ import { LogoMark } from "@/components/ui/Logo";
 import { cn } from "@/lib/cn";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/Dialog";
 import { Tip } from "@/components/ui/Tooltip";
-import { ToastProvider, type ToastLabels } from "@/components/ui/Toast";
+import { ToastProvider } from "@/components/ui/Toast";
+import { useTranslations } from "next-intl";
 
-const EN_TOAST: ToastLabels = { undo: "Undo", undone: "Undone.", dismiss: "Dismiss", region: "Notifications" };
-
-const GROUPS: { label: string; items: { href: string; label: string; exact?: boolean }[] }[] = [
-  { label: "Overview", items: [{ href: "/admin", label: "Overview", exact: true }] },
+const GROUPS: { group: string; items: { href: string; key: string; exact?: boolean }[] }[] = [
+  { group: "groupOverview", items: [{ href: "/admin", key: "navOverview", exact: true }] },
   {
-    label: "Moderation",
+    group: "groupModeration",
     items: [
-      { href: "/admin/projects", label: "Projects" },
-      { href: "/admin/reports", label: "Reports" },
-      { href: "/admin/appeals", label: "Appeals" },
+      { href: "/admin/projects", key: "navProjects" },
+      { href: "/admin/reports", key: "navReports" },
+      { href: "/admin/appeals", key: "navAppeals" },
     ],
   },
-  { label: "People", items: [{ href: "/admin/users", label: "Users" }] },
   {
-    label: "Operations",
+    group: "groupPeople",
     items: [
-      { href: "/admin/pipeline", label: "Pipeline" },
-      { href: "/admin/requests", label: "Requests" },
+      { href: "/admin/users", key: "navUsers" },
+      { href: "/admin/policies", key: "navPolicies" },
+      { href: "/admin/announcements", key: "navAnnouncements" },
     ],
   },
-  { label: "Evidence", items: [{ href: "/admin/trials", label: "Trials" }] },
   {
-    label: "Governance",
+    group: "groupOperations",
     items: [
-      { href: "/admin/audit", label: "Audit" },
-      { href: "/admin/settings", label: "Settings" },
+      { href: "/admin/pipeline", key: "navPipeline" },
+      { href: "/admin/requests", key: "navRequests" },
+    ],
+  },
+  { group: "groupEvidence", items: [{ href: "/admin/trials", key: "navTrials" }] },
+  {
+    group: "groupGovernance",
+    items: [
+      { href: "/admin/audit", key: "navAudit" },
+      { href: "/admin/settings", key: "navSettings" },
     ],
   },
 ];
 
 const SHORTCUTS: [string, string, string][] = [
-  ["g then o", "Overview", "/admin"],
-  ["g then p", "Projects", "/admin/projects"],
-  ["g then r", "Reports", "/admin/reports"],
-  ["g then u", "Users", "/admin/users"],
-  ["g then a", "Audit", "/admin/audit"],
+  ["g then o", "navOverview", "/admin"],
+  ["g then p", "navProjects", "/admin/projects"],
+  ["g then r", "navReports", "/admin/reports"],
+  ["g then u", "navUsers", "/admin/users"],
+  ["g then a", "navAudit", "/admin/audit"],
 ];
 const GO: Record<string, string> = {
   o: "/admin",
@@ -70,6 +76,7 @@ interface Hit {
 type Results = { projects: Hit[]; users: Hit[]; reports: Hit[] };
 
 function GlobalSearch() {
+  const t = useTranslations("admin.shell");
   const router = useRouter();
   const [q, setQ] = useState("");
   const [res, setRes] = useState<Results | null>(null);
@@ -78,9 +85,9 @@ function GlobalSearch() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
+      const el = e.target as HTMLElement | null;
       const typing =
-        t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable);
+        el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
       if (e.key === "/" && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         input.current?.focus();
@@ -93,7 +100,7 @@ function GlobalSearch() {
   useEffect(() => {
     if (q.trim().length < 2) return;
     const ctl = new AbortController();
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         const r = await fetch(`/api/admin/search?q=${encodeURIComponent(q.trim())}`, { signal: ctl.signal });
         if (r.ok) setRes((await r.json()) as Results);
@@ -102,7 +109,7 @@ function GlobalSearch() {
       }
     }, 200);
     return () => {
-      clearTimeout(t);
+      clearTimeout(timer);
       ctl.abort();
     };
   }, [q]);
@@ -110,9 +117,9 @@ function GlobalSearch() {
   const shown = q.trim().length >= 2 ? res : null;
   const groups: { title: string; hits: Hit[]; href: (h: Hit) => string }[] = shown
     ? [
-        { title: "Projects", hits: shown.projects, href: (h) => `/admin/projects/${h.id}` },
-        { title: "Users", hits: shown.users, href: (h) => `/admin/users/${h.id}` },
-        { title: "Reports", hits: shown.reports, href: (h) => `/admin/reports?open=${h.id}` },
+        { title: t("hitProjects"), hits: shown.projects, href: (h) => `/admin/projects/${h.id}` },
+        { title: t("hitUsers"), hits: shown.users, href: (h) => `/admin/users/${h.id}` },
+        { title: t("hitReports"), hits: shown.reports, href: (h) => `/admin/reports?open=${h.id}` },
       ]
     : [];
   const first = groups.flatMap((g) => g.hits.map((h) => g.href(h)))[0];
@@ -122,7 +129,7 @@ function GlobalSearch() {
       <Popover.Anchor asChild>
         <div className="relative min-w-0 flex-1 max-w-[420px]">
           <label htmlFor="admin-global-search" className="sr-only">
-            Search projects, users and reports
+            {t("searchLabel")}
           </label>
           <Search
             size={16}
@@ -134,7 +141,7 @@ function GlobalSearch() {
             id="admin-global-search"
             type="search"
             value={q}
-            placeholder="Search (press /)"
+            placeholder={t("searchPlaceholder")}
             autoComplete="off"
             onChange={(e) => {
               setQ(e.target.value);
@@ -166,7 +173,9 @@ function GlobalSearch() {
           }}
           className="o-menu z-dropdown max-h-[60vh] w-[var(--radix-popover-trigger-width)] min-w-[280px] overflow-auto rounded-2xl border border-line bg-white p-2 shadow-[0_20px_50px_rgba(10,60,150,0.2)]"
         >
-          {groups.every((g) => g.hits.length === 0) ? <p className="m-2 text-sm text-text-2">No matches.</p> : null}
+          {groups.every((g) => g.hits.length === 0) ? (
+            <p className="m-2 text-sm text-text-2">{t("noMatches")}</p>
+          ) : null}
           {groups.map((g) =>
             g.hits.length ? (
               <div key={g.title} className="mb-1">
@@ -200,6 +209,7 @@ export function AdminShell({
   env: "LOCAL" | "STAGING" | "PRODUCTION";
   children: React.ReactNode;
 }) {
+  const t = useTranslations("admin.shell");
   const pathname = usePathname();
   const router = useRouter();
   const [drawer, setDrawer] = useState(false);
@@ -214,8 +224,11 @@ export function AdminShell({
   useEffect(() => {
     let armed = 0;
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable))
+      const el = e.target as HTMLElement | null;
+      if (
+        el &&
+        (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)
+      )
         return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === "?") {
@@ -234,11 +247,14 @@ export function AdminShell({
     return () => document.removeEventListener("keydown", onKey);
   }, [router]);
 
+  // Navigation labels are picked by key (see messages admin.shell.*).
+  const label = t as unknown as (key: string) => string;
+
   const nav = (
-    <nav aria-label="Admin" className="flex flex-col gap-4">
+    <nav aria-label={t("nav")} className="flex flex-col gap-4">
       {GROUPS.map((g) => (
-        <div key={g.label}>
-          <div className="mono-label px-3 pb-1 text-[11px] text-text-2">{g.label}</div>
+        <div key={g.group}>
+          <div className="mono-label px-3 pb-1 text-[11px] text-text-2">{label(g.group)}</div>
           <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
             {g.items.map((i) => {
               const active = i.exact ? pathname === i.href : pathname === i.href || pathname.startsWith(i.href + "/");
@@ -252,7 +268,7 @@ export function AdminShell({
                       active ? "bg-ink text-white" : "text-ink hover:bg-white",
                     )}
                   >
-                    {i.label}
+                    {label(i.key)}
                   </Link>
                 </li>
               );
@@ -264,13 +280,13 @@ export function AdminShell({
   );
 
   return (
-    <ToastProvider labels={EN_TOAST}>
+    <ToastProvider>
       <div className="flex min-h-screen bg-[#f7f8fa]">
         <aside className="sticky top-0 hidden h-screen w-[230px] flex-none flex-col gap-5 overflow-auto border-r border-line bg-surface p-4 min-[900px]:flex">
           <Link href="/admin" className="flex items-center gap-2 px-2 text-ink no-underline">
             <LogoMark size={26} />
             <span className="font-semibold tracking-[0.02em]">ESTAFET</span>
-            <span className="mono-label rounded bg-ink px-1.5 py-0.5 text-[10px] text-white">Admin</span>
+            <span className="mono-label rounded bg-ink px-1.5 py-0.5 text-[10px] text-white">{t("tag")}</span>
           </Link>
           {nav}
         </aside>
@@ -281,18 +297,18 @@ export function AdminShell({
               <DialogTrigger asChild>
                 <button
                   type="button"
-                  aria-label="Open menu"
+                  aria-label={t("openMenu")}
                   className="icon-btn flex h-11 w-11 cursor-pointer items-center justify-center rounded-full hover:bg-surface min-[900px]:hidden"
                 >
                   <Menu size={20} aria-hidden="true" />
                 </button>
               </DialogTrigger>
-              <DialogContent variant="drawer" title="ESTAFET Admin" closeLabel="Close menu" className="bg-surface">
+              <DialogContent variant="drawer" title={t("menuTitle")} closeLabel={t("closeMenu")} className="bg-surface">
                 <div className="mt-10">{nav}</div>
               </DialogContent>
             </Dialog>
             <GlobalSearch />
-            <Tip label="Current environment">
+            <Tip label={t("env")}>
               <span tabIndex={0} className={cn("mono-label rounded-full px-3 py-1 text-[11px]", ENV_STYLE[env])}>
                 {env}
               </span>
@@ -303,12 +319,12 @@ export function AdminShell({
                 onClick={() => setHelp(true)}
                 className="hidden cursor-pointer rounded-full px-3 py-1.5 font-semibold text-text-2 hover:bg-surface sm:block"
               >
-                Shortcuts
+                {t("shortcuts")}
               </button>
               <Link href="/" className="inline-flex items-center gap-1 text-text-2 no-underline hover:text-ink">
-                Public site <ExternalLink size={14} aria-hidden="true" />
+                {t("publicSite")} <ExternalLink size={14} aria-hidden="true" />
               </Link>
-              <Tip label="Signed in as">
+              <Tip label={t("signedInAs")}>
                 <span tabIndex={0} className="font-semibold">
                   {adminName}
                 </span>
@@ -322,26 +338,26 @@ export function AdminShell({
       </div>
 
       <Dialog open={help} onOpenChange={setHelp}>
-        <DialogContent title="Keyboard shortcuts" closeLabel="Close" className="max-w-[380px]">
+        <DialogContent title={t("helpTitle")} closeLabel={t("helpClose")} className="max-w-[380px]">
           <table className="mt-3 w-full text-sm">
             <tbody>
               <tr>
                 <td className="py-1 font-code">/</td>
-                <td>Focus search</td>
+                <td>{t("helpSearch")}</td>
               </tr>
               {SHORTCUTS.map(([k, l]) => (
                 <tr key={k}>
                   <td className="py-1 font-code">{k}</td>
-                  <td>Go to {l}</td>
+                  <td>{t("helpGo", { page: label(l) })}</td>
                 </tr>
               ))}
               <tr>
                 <td className="py-1 font-code">?</td>
-                <td>Show or hide this help</td>
+                <td>{t("helpToggle")}</td>
               </tr>
               <tr>
-                <td className="py-1 font-code">Enter</td>
-                <td>Open the focused table row</td>
+                <td className="py-1 font-code">{t("keyEnter")}</td>
+                <td>{t("helpRow")}</td>
               </tr>
             </tbody>
           </table>

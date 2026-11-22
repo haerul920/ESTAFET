@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DataTable, type Column } from "@/components/admin/DataTable";
@@ -7,10 +8,16 @@ import { NoteForm } from "@/components/admin/NoteForm";
 import { KeyValueList, PageHeader, Panel, StatusPill, Time, Timeline, toneFor } from "@/components/admin/ui";
 import { queryView } from "@/lib/admin/query";
 import type { SearchParams } from "@/lib/admin/table";
-import { EN, fmtDate } from "@/lib/admin/en";
+import { formatDate } from "@/lib/format";
+import { getLabels } from "@/lib/get-labels";
+import { statusText, type StatusTranslator } from "@/lib/admin/labels";
 import type { RequestPurpose } from "@/lib/db/types";
 
-export const metadata: Metadata = { title: "Requests" };
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.requests" });
+  return { title: t("title") };
+}
 
 interface Row {
   id: string;
@@ -34,6 +41,13 @@ interface Row {
 
 export default async function AdminRequestsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
+  const [locale, t, ts, L] = await Promise.all([
+    getLocale(),
+    getTranslations("admin.requests"),
+    getTranslations("admin.status"),
+    getLabels(),
+  ]);
+  const status = (k: string) => statusText(ts as unknown as StatusTranslator, k);
   const state = typeof sp.state === "string" ? sp.state : "";
   const { rows, total, params } = await queryView<Row>("admin_requests_v", sp, {
     sortable: ["created_at", "last_change", "project_title", "status"],
@@ -62,54 +76,57 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
     : [];
 
   const columns: Column<Row>[] = [
-    { key: "project_title", label: "Project", sortable: true },
-    { key: "adopter_team_name", label: "Team" },
+    { key: "project_title", label: t("colProject"), sortable: true },
+    { key: "adopter_team_name", label: t("colTeam") },
     {
       key: "status",
-      label: "Status",
+      label: t("colStatus"),
       sortable: true,
       render: (r) => (
         <span className="flex flex-wrap gap-1.5">
-          <StatusPill tone={toneFor(r.status)}>{r.status}</StatusPill>
-          {r.stale ? <StatusPill tone="danger">pending 7+ days</StatusPill> : null}
-          {r.waiting_agreement ? <StatusPill tone="warn">waiting for agreement</StatusPill> : null}
-          {r.unlocked ? <StatusPill tone="ok">unlocked</StatusPill> : null}
+          <StatusPill tone={toneFor(r.status)}>{status(r.status)}</StatusPill>
+          {r.stale ? <StatusPill tone="danger">{t("stale")}</StatusPill> : null}
+          {r.waiting_agreement ? <StatusPill tone="warn">{t("waiting")}</StatusPill> : null}
+          {r.unlocked ? <StatusPill tone="ok">{t("unlocked")}</StatusPill> : null}
         </span>
       ),
     },
-    { key: "created_at", label: "Created", sortable: true, render: (r) => <Time iso={r.created_at} /> },
-    { key: "last_change", label: "Last change", sortable: true, render: (r) => <Time iso={r.last_change} /> },
+    { key: "created_at", label: t("colCreated"), sortable: true, render: (r) => <Time iso={r.created_at} /> },
+    { key: "last_change", label: t("colLastChange"), sortable: true, render: (r) => <Time iso={r.last_change} /> },
   ];
 
   return (
     <>
-      <PageHeader title="Requests" intro="Read-only. Admins cannot approve or decline on behalf of owners." />
+      <PageHeader title={t("title")} intro={t("intro")} />
       {open ? (
-        <aside aria-label="Request details" className="mb-5 rounded-3xl border-2 border-blue bg-white p-5">
+        <aside aria-label={t("panelLabel")} className="mb-5 rounded-3xl border-2 border-blue bg-white p-5">
           <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
             <h2 className="m-0 text-lg">
               {open.adopter_team_name} → {open.project_title}
             </h2>
             <Link href="/admin/requests" className="text-sm">
-              Close
+              {t("close")}
             </Link>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <Panel title="Request">
+            <Panel title={t("request")}>
               <KeyValueList
                 items={[
-                  { label: "Status", value: <StatusPill tone={toneFor(open.status)}>{open.status}</StatusPill> },
-                  { label: "Team size", value: open.team_size },
-                  { label: "Purpose", value: EN.purpose[open.purpose] },
-                  { label: "Target date", value: open.target_date ? fmtDate(open.target_date) : "—" },
-                  { label: "Plan", value: open.plan },
-                  { label: "Fit", value: open.fit_note || "—" },
-                  { label: "Owners said", value: open.decision_note || "—" },
+                  {
+                    label: t("colStatus"),
+                    value: <StatusPill tone={toneFor(open.status)}>{status(open.status)}</StatusPill>,
+                  },
+                  { label: t("teamSize"), value: open.team_size },
+                  { label: t("purpose"), value: L.purpose[open.purpose] },
+                  { label: t("targetDate"), value: open.target_date ? formatDate(open.target_date, locale) : "—" },
+                  { label: t("plan"), value: open.plan },
+                  { label: t("fit"), value: open.fit_note || "—" },
+                  { label: t("ownersSaid"), value: open.decision_note || "—" },
                 ]}
               />
             </Panel>
             <div className="flex flex-col gap-3">
-              <Panel title="Admin notes">
+              <Panel title={t("adminNotes")}>
                 <Timeline
                   items={notes.map((n) => ({ id: n.id, title: n.actor_name, sub: n.reason, when: n.created_at }))}
                 />
@@ -118,27 +135,27 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
                 </div>
               </Panel>
               <p className="m-0 text-sm">
-                <Link href={`/admin/projects/${open.project_id}`}>Open the project</Link>
+                <Link href={`/admin/projects/${open.project_id}`}>{t("openProject")}</Link>
               </p>
             </div>
           </div>
         </aside>
       ) : null}
       <FilterBar
-        searchLabel="Search project or team"
-        toggles={[{ key: "demo", label: "Include demo data" }]}
+        searchLabel={t("search")}
+        toggles={[{ key: "demo", label: t("includeDemo") }]}
         filters={[
           {
             key: "status",
-            label: "Status",
-            options: ["pending", "approved", "declined", "withdrawn"].map((v) => ({ value: v, label: v })),
+            label: t("colStatus"),
+            options: ["pending", "approved", "declined", "withdrawn"].map((v) => ({ value: v, label: status(v) })),
           },
           {
             key: "state",
-            label: "Needs attention",
+            label: t("needsAttention"),
             options: [
-              { value: "stale", label: "pending 7+ days" },
-              { value: "waiting", label: "approved, waiting for agreement" },
+              { value: "stale", label: t("stale") },
+              { value: "waiting", label: t("waitingFull") },
             ],
           },
         ]}
@@ -151,9 +168,9 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
         sp={sp}
         basePath="/admin/requests"
         rowHref={(r) => `/admin/requests?open=${r.id}`}
-        caption="Continuation requests"
+        caption={t("caption")}
         selectedId={openId}
-        empty={{ title: "No requests match", text: "Demo data is hidden unless you include it." }}
+        empty={{ title: t("emptyTitle"), text: t("emptyText") }}
       />
     </>
   );

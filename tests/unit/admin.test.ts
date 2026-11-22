@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { signReauth, verifyReauth } from "@/lib/admin/reauth";
 import { environmentName, isProduction } from "@/lib/admin/env";
 import { likePattern, parseTableParams, rangeFor, withParams } from "@/lib/admin/table";
-import { formatWita, relativeTime } from "@/lib/admin/time";
+import { formatWita, fromWitaInput, relativeTime, slaFor, toWitaInput } from "@/lib/admin/time";
 import { auditCsv, diffObjects, type AuditEvent } from "@/lib/admin/audit";
 import { methodsParagraph, tooFew, trialsCsv, type CohortSummary, type TrialRow } from "@/lib/admin/trials";
 import { isEmailAllowedBy, mbToBytes, resolveSettings, SETTING_SCHEMAS } from "@/lib/settings-core";
@@ -267,5 +267,30 @@ describe("admin code never writes tables directly", () => {
     const rpcs = [...src.matchAll(/rpc\("([a-z_]+)"/g)].map((m) => m[1]);
     expect(rpcs.length).toBeGreaterThan(10);
     expect(rpcs.every((r) => r.startsWith("admin_"))).toBe(true);
+  });
+});
+
+describe("WITA date inputs", () => {
+  it("reads a datetime-local value as WITA (UTC+8) and writes it back unchanged", () => {
+    expect(fromWitaInput("2026-12-01T08:00")).toBe("2026-12-01T00:00:00.000Z");
+    expect(toWitaInput("2026-12-01T00:00:00.000Z")).toBe("2026-12-01T08:00");
+    expect(toWitaInput(fromWitaInput("2026-03-05T23:30"))).toBe("2026-03-05T23:30");
+  });
+  it("treats empty or malformed input as no date", () => {
+    expect(fromWitaInput("")).toBeNull();
+    expect(fromWitaInput(null)).toBeNull();
+    expect(fromWitaInput("tomorrow")).toBeNull();
+    expect(toWitaInput(null)).toBe("");
+  });
+});
+
+describe("review target (SLA)", () => {
+  const created = "2026-01-01T00:00:00.000Z";
+  const at = (days: number) => new Date(created).getTime() + days * 86_400_000;
+  it("is ok while more than a day is left, soon in the last day, overdue after the target", () => {
+    expect(slaFor(created, 3, at(0.5))).toEqual({ state: "ok", days: 2 });
+    expect(slaFor(created, 3, at(2.5)).state).toBe("soon");
+    expect(slaFor(created, 3, at(3.5))).toMatchObject({ state: "overdue" });
+    expect(slaFor(created, 3, at(3.5)).days).toBeLessThan(0);
   });
 });

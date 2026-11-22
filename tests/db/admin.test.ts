@@ -118,6 +118,22 @@ const ADMIN_RPCS: [string, Record<string, unknown>][] = [
   ["admin_demo_storage_paths", {}],
   ["admin_purge_demo", { p_reason: REASON, p_allow: false }],
   ["admin_overview", { p_include_demo: false }],
+  [
+    "admin_save_announcement",
+    {
+      p_id: null,
+      p_severity: "info",
+      p_text_id: "Pengumuman uji",
+      p_text_en: "Test announcement",
+      p_starts: null,
+      p_ends: null,
+      p_dismissible: true,
+      p_reason: REASON,
+    },
+  ],
+  ["admin_end_announcement", { p_id: "00000000-0000-0000-0000-000000000000", p_reason: REASON }],
+  ["admin_bulk_dismiss_spam", { p_ids: [], p_note: REASON }],
+  ["admin_force_sign_out", { p_user: "00000000-0000-0000-0000-000000000000", p_reason: REASON }],
   ["admin_trial_summary", { p_include_demo: false }],
   ["admin_project_detail", { p_id: "00000000-0000-0000-0000-000000000000" }],
   ["admin_user_detail", { p_id: "00000000-0000-0000-0000-000000000000" }],
@@ -132,6 +148,8 @@ const ADMIN_VIEWS = [
   "admin_requests_v",
   "admin_audit_v",
   "admin_trials_v",
+  "admin_announcements_v",
+  "admin_policies_v",
 ];
 const ADMIN_TABLES = ["reports", "audit_log", "app_settings", "trial_sessions", "break_glass_access"];
 

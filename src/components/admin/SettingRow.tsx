@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ReasonAction } from "./ReasonDialog";
 import { StatusPill } from "./ui";
 import { updateSetting } from "@/app/[locale]/admin/actions";
 
 const SOURCE = {
-  setting: ["Set here", "info"],
-  env: ["From env default", "neutral"],
-  default: ["Built-in default", "neutral"],
+  setting: ["sourceSetting", "info"],
+  env: ["sourceEnv", "neutral"],
+  default: ["sourceDefault", "neutral"],
 } as const;
 
 export function SettingRow({
@@ -30,9 +31,10 @@ export function SettingRow({
   fallback: string;
   unit?: string;
 }) {
+  const t = useTranslations("admin.settings.row");
   const [draft, setDraft] = useState<string | boolean>(value);
   const changed = draft !== value;
-  const [text, tone] = SOURCE[source];
+  const [sourceKey, tone] = SOURCE[source];
   const id = `set-${settingKey}`;
 
   return (
@@ -46,8 +48,8 @@ export function SettingRow({
         </label>
         <p className="mb-0 mt-0.5 text-[13px] text-text-2">{help}</p>
         <p className="mb-0 mt-1 flex flex-wrap items-center gap-2 text-[13px]">
-          <StatusPill tone={tone}>{text}</StatusPill>
-          <span className="text-text-2">Without an override: {fallback}</span>
+          <StatusPill tone={tone}>{t(sourceKey)}</StatusPill>
+          <span className="text-text-2">{t("withoutOverride", { value: fallback })}</span>
         </p>
       </div>
       <div>
@@ -60,7 +62,7 @@ export function SettingRow({
               onChange={(e) => setDraft(e.target.checked)}
               className="h-5 w-5 accent-[#1760d6]"
             />
-            {draft === true ? "On" : "Off"}
+            {draft === true ? t("on") : t("off")}
           </label>
         ) : kind === "list" ? (
           <textarea
@@ -68,7 +70,7 @@ export function SettingRow({
             rows={2}
             value={String(draft)}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="student.unhas.ac.id"
+            placeholder={t("domainsExample")}
             className="w-full rounded-[14px] border border-line-strong bg-white px-3.5 py-2.5 font-code text-[13px]"
           />
         ) : (
@@ -86,18 +88,18 @@ export function SettingRow({
       </div>
       <ReasonAction
         small
-        label="Save"
+        label={t("save")}
         tone="primary"
         disabled={!changed}
-        consequence={
-          <>
-            <strong>{label}</strong> changes from <code className="font-code">{String(value) || "empty"}</code> to{" "}
-            <code className="font-code">{String(draft) || "empty"}</code>. It applies immediately without a redeploy,
-            and the before and after values are written to the audit log.
-          </>
-        }
+        consequence={t.rich("effect", {
+          label,
+          from: String(value) || t("empty"),
+          to: String(draft) || t("empty"),
+          strong: (chunks) => <strong>{chunks}</strong>,
+          code: (chunks) => <code className="font-code">{chunks}</code>,
+        })}
         action={(reason) => updateSetting(settingKey, draft, reason)}
-        successMessage={`${label} saved.`}
+        successMessage={t("saved", { label })}
       />
     </div>
   );

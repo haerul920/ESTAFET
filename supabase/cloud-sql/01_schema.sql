@@ -1,4 +1,4 @@
--- ESTAFET database, step 01 of 9: schema.
+-- ESTAFET database, step 01 of 10: schema.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 00 succeeded.
 -- Generated from supabase/migrations/20261119000001_schema.sql. Do not edit by hand.
 

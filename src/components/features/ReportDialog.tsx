@@ -49,21 +49,9 @@ export function ReportDialog({
     if (onOpenChange) onOpenChange(next);
     else setInner(next);
   };
-  const [reason, setReason] = useState("");
-  // When the dialog opened: the server rejects forms that were submitted impossibly fast (a simple bot signal).
-  const [startedAt, setStartedAt] = useState(0);
-  const [state, action, pending] = useActionState<FormState, FormData>(submitReport, {});
-  const fe = state.fieldErrors ?? {};
-  const v = state.values ?? {};
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(next) => {
-        if (next) setStartedAt(Date.now());
-        setOpen(next);
-      }}
-    >
+    <Dialog open={isOpen} onOpenChange={setOpen}>
       {hideTrigger ? null : (
         <div className="rounded-[28px] border border-line-soft p-4">
           <DialogTrigger asChild>
@@ -76,122 +64,141 @@ export function ReportDialog({
           </DialogTrigger>
         </div>
       )}
-      <DialogContent
-        title={t("title")}
-        description={state.ok ? undefined : t("intro")}
-        className="w-[min(560px,calc(100vw-2rem))]"
-      >
-        {state.ok ? (
-          <div className="mt-4 flex flex-col gap-3">
-            <FormMessage tone="success">{state.message}</FormMessage>
-            {signedIn ? (
-              <Link href="/laporan-saya" className="link-anim self-start font-semibold text-blue">
-                {t("myReports")}
-              </Link>
-            ) : (
-              <p className="m-0 text-sm text-text-2">{t("keepReference")}</p>
-            )}
-            <Button variant="outline" onClick={() => setOpen(false)} className="self-start">
-              {t("close")}
-            </Button>
-          </div>
-        ) : (
-          <form action={action} noValidate className="mt-4 flex flex-col gap-4">
-            <input type="hidden" name="project_id" value={projectId} />
-            <input type="hidden" name="started_at" value={startedAt} />
-            {/* Honeypot: people never see or fill this. */}
-            <div aria-hidden="true" className="absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden">
-              <label>
-                Website
-                <input type="text" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
-              </label>
-            </div>
-            {state.error ? <FormMessage tone="error">{state.error}</FormMessage> : null}
-
-            <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
-              <legend className="mb-1 p-0 text-sm font-semibold">{t("reasonLegend")}</legend>
-              {REASONS.map((r) => (
-                <label
-                  key={r}
-                  className={cn(
-                    "flex min-h-[44px] cursor-pointer items-start gap-3 rounded-[14px] border-[1.5px] px-3.5 py-2.5",
-                    (reason || v.reason) === r ? "border-blue bg-blue-tint" : "border-line bg-white hover:bg-surface",
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="reason"
-                    value={r}
-                    checked={(reason || v.reason) === r}
-                    onChange={() => setReason(r)}
-                    className="mt-1 h-5 w-5 flex-none accent-[var(--blue)]"
-                  />
-                  <span>
-                    <strong className="block text-[15px]">{t(`r.${r}`)}</strong>
-                    <span className="text-[13px] text-text-2">{t(`d.${r}`)}</span>
-                  </span>
-                </label>
-              ))}
-              {fe.reason ? (
-                <span role="alert" className="text-[13px] font-semibold text-danger">
-                  {fe.reason}
-                </span>
-              ) : null}
-            </fieldset>
-
-            <TextArea
-              label={t("details")}
-              name="details"
-              rows={4}
-              defaultValue={v.details}
-              error={fe.details}
-              maxLength={1000}
-            />
-            <TextField
-              label={t("evidence")}
-              name="evidence"
-              type="url"
-              defaultValue={v.evidence}
-              error={fe.evidence}
-              hint={t("evidenceHint")}
-            />
-            {signedIn ? null : (
-              <TextField
-                label={t("contact")}
-                name="contact"
-                defaultValue={v.contact}
-                error={fe.contact}
-                hint={t("contactHint")}
-              />
-            )}
-
-            {signedIn || !TURNSTILE_SITE_KEY ? null : (
-              <>
-                <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="lazyOnload" />
-                <div className="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} />
-              </>
-            )}
-
-            <p className="m-0 text-[13px] text-text-2">
-              {t.rich("rules", {
-                guidelines: (chunks) => (
-                  <Link href="/pedoman" className="font-semibold text-blue">
-                    {chunks}
-                  </Link>
-                ),
-              })}
-            </p>
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                {t("cancel")}
-              </Button>
-              <Button type="submit" disabled={pending}>
-                {pending ? t("sending") : t("send")}
-              </Button>
-            </div>
-          </form>
-        )}
+      <DialogContent title={t("title")} className="w-[min(560px,calc(100vw-2rem))]">
+        {/* The form only exists while the dialog is open, so its state (and its timer) start fresh every time. */}
+        <ReportForm projectId={projectId} signedIn={signedIn} onClose={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ReportForm({ projectId, signedIn, onClose }: { projectId: string; signedIn: boolean; onClose: () => void }) {
+  const t = useTranslations("report");
+  const [reason, setReason] = useState("");
+  // When the form appeared. The browser sends how long it was open, so a wrong clock does not matter.
+  const [openedAt] = useState(() => Date.now());
+  const [state, dispatch, pending] = useActionState<FormState, FormData>(submitReport, {});
+  const action = (formData: FormData) => {
+    formData.set("fill_ms", String(Date.now() - openedAt));
+    dispatch(formData);
+  };
+  const fe = state.fieldErrors ?? {};
+  const v = state.values ?? {};
+
+  if (state.ok) {
+    return (
+      <div className="mt-4 flex flex-col gap-3">
+        <FormMessage tone="success">{state.message}</FormMessage>
+        {signedIn ? (
+          <Link href="/laporan-saya" className="link-anim self-start font-semibold text-blue">
+            {t("myReports")}
+          </Link>
+        ) : (
+          <p className="m-0 text-sm text-text-2">{t("keepReference")}</p>
+        )}
+        <Button variant="outline" onClick={onClose} className="self-start">
+          {t("close")}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <p className="mb-0 mt-3 text-sm text-text-2">{t("intro")}</p>
+      <form action={action} noValidate className="mt-4 flex flex-col gap-4">
+        <input type="hidden" name="project_id" value={projectId} />
+        {/* Honeypot: people never see or fill this. */}
+        <div aria-hidden="true" className="absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden">
+          <label>
+            Website
+            <input type="text" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
+          </label>
+        </div>
+        {state.error ? <FormMessage tone="error">{state.error}</FormMessage> : null}
+
+        <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+          <legend className="mb-1 p-0 text-sm font-semibold">{t("reasonLegend")}</legend>
+          {REASONS.map((r) => (
+            <label
+              key={r}
+              className={cn(
+                "flex min-h-[44px] cursor-pointer items-start gap-3 rounded-[14px] border-[1.5px] px-3.5 py-2.5",
+                (reason || v.reason) === r ? "border-blue bg-blue-tint" : "border-line bg-white hover:bg-surface",
+              )}
+            >
+              <input
+                type="radio"
+                name="reason"
+                value={r}
+                checked={(reason || v.reason) === r}
+                onChange={() => setReason(r)}
+                className="mt-1 h-5 w-5 flex-none accent-[var(--blue)]"
+              />
+              <span>
+                <strong className="block text-[15px]">{t(`r.${r}`)}</strong>
+                <span className="text-[13px] text-text-2">{t(`d.${r}`)}</span>
+              </span>
+            </label>
+          ))}
+          {fe.reason ? (
+            <span role="alert" className="text-[13px] font-semibold text-danger">
+              {fe.reason}
+            </span>
+          ) : null}
+        </fieldset>
+
+        <TextArea
+          label={t("details")}
+          name="details"
+          rows={4}
+          defaultValue={v.details}
+          error={fe.details}
+          maxLength={1000}
+        />
+        <TextField
+          label={t("evidence")}
+          name="evidence"
+          type="url"
+          defaultValue={v.evidence}
+          error={fe.evidence}
+          hint={t("evidenceHint")}
+        />
+        {signedIn ? null : (
+          <TextField
+            label={t("contact")}
+            name="contact"
+            defaultValue={v.contact}
+            error={fe.contact}
+            hint={t("contactHint")}
+          />
+        )}
+
+        {signedIn || !TURNSTILE_SITE_KEY ? null : (
+          <>
+            <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="lazyOnload" />
+            <div className="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} />
+          </>
+        )}
+
+        <p className="m-0 text-[13px] text-text-2">
+          {t.rich("rules", {
+            guidelines: (chunks) => (
+              <Link href="/pedoman" className="font-semibold text-blue">
+                {chunks}
+              </Link>
+            ),
+          })}
+        </p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>
+            {t("cancel")}
+          </Button>
+          <Button type="submit" disabled={pending}>
+            {pending ? t("sending") : t("send")}
+          </Button>
+        </div>
+      </form>
+    </>
   );
 }

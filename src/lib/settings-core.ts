@@ -23,26 +23,18 @@ export const SETTING_SCHEMAS = {
         .string()
         .trim()
         .toLowerCase()
-        .regex(/^[a-z0-9.-]+\.[a-z]{2,}$/, "Use domains like student.unhas.ac.id."),
+        .regex(/^[a-z0-9.-]+\.[a-z]{2,}$/, "domains"),
     )
     .max(20),
-  max_upload_mb: z.number().int("Use a whole number.").min(1, "At least 1 MB.").max(200, "At most 200 MB."),
-  synthesis_daily_cap: z.number().int("Use a whole number.").min(1, "At least 1 run.").max(1000, "At most 1000 runs."),
+  max_upload_mb: z.number().int("whole").min(1, "mb_min").max(200, "mb_max"),
+  synthesis_daily_cap: z.number().int("whole").min(1, "runs_min").max(1000, "runs_max"),
   show_demo_banner: z.boolean(),
   registrations_open: z.boolean(),
-  contact_email: z.union([z.literal(""), z.string().trim().email("Enter a valid email address.")]),
-  request_expiry_days: z.number().int("Use a whole number.").min(1, "At least 1 day.").max(180, "At most 180 days."),
-  reapply_cooldown_days: z
-    .number()
-    .int("Use a whole number.")
-    .min(0, "Zero turns the cooldown off.")
-    .max(90, "At most 90 days."),
-  report_hold_threshold: z
-    .number()
-    .int("Use a whole number.")
-    .min(2, "At least 2 different reporters, so one person cannot hold a project alone.")
-    .max(20, "At most 20 reporters."),
-  hold_review_days: z.number().int("Use a whole number.").min(1, "At least 1 day.").max(30, "At most 30 days."),
+  contact_email: z.union([z.literal(""), z.string().trim().email("email")]),
+  request_expiry_days: z.number().int("whole").min(1, "days_min").max(180, "days_max180"),
+  reapply_cooldown_days: z.number().int("whole").min(0, "cooldown_min").max(90, "cooldown_max"),
+  report_hold_threshold: z.number().int("whole").min(2, "reporters_min").max(20, "reporters_max"),
+  hold_review_days: z.number().int("whole").min(1, "days_min").max(30, "review_max"),
 } satisfies Record<SettingKey, z.ZodType>;
 
 export interface SettingValues {

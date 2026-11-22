@@ -6,28 +6,27 @@ import { resolveSettings, SETTING_SCHEMAS } from "@/lib/settings-core";
 import { translator } from "./i18n-helpers";
 
 describe("local bot check", () => {
-  const now = 1_000_000_000;
   it("passes a person who waited and left the hidden field empty", () => {
-    expect(localBotCheck({ honeypot: "", startedAt: now - MIN_FILL_MS - 1 }, now)).toBe(true);
+    expect(localBotCheck({ honeypot: "", elapsedMs: MIN_FILL_MS + 1 })).toBe(true);
   });
   it("rejects a filled honeypot", () => {
-    expect(localBotCheck({ honeypot: "http://spam.example", startedAt: now - 60_000 }, now)).toBe(false);
+    expect(localBotCheck({ honeypot: "http://spam.example", elapsedMs: 60_000 })).toBe(false);
   });
   it("rejects a form that was sent faster than a person can fill it", () => {
-    expect(localBotCheck({ honeypot: "", startedAt: now - 500 }, now)).toBe(false);
+    expect(localBotCheck({ honeypot: "", elapsedMs: 500 })).toBe(false);
   });
   it("rejects a missing, invalid or stale start time", () => {
-    expect(localBotCheck({ honeypot: "", startedAt: 0 }, now)).toBe(false);
-    expect(localBotCheck({ honeypot: "", startedAt: Number.NaN }, now)).toBe(false);
-    expect(localBotCheck({ honeypot: "", startedAt: now - MAX_FILL_MS - 1 }, now)).toBe(false);
+    expect(localBotCheck({ honeypot: "", elapsedMs: 0 })).toBe(false);
+    expect(localBotCheck({ honeypot: "", elapsedMs: Number.NaN })).toBe(false);
+    expect(localBotCheck({ honeypot: "", elapsedMs: MAX_FILL_MS + 1 })).toBe(false);
   });
   it("reads the signals from a form", () => {
     const f = new FormData();
     f.set("website", "x");
-    f.set("started_at", "123");
+    f.set("fill_ms", "123");
     f.set("cf-turnstile-response", "tok");
-    expect(botSignalsFrom(f)).toEqual({ honeypot: "x", startedAt: 123, token: "tok" });
-    expect(botSignalsFrom(new FormData())).toEqual({ honeypot: "", startedAt: 0, token: undefined });
+    expect(botSignalsFrom(f)).toEqual({ honeypot: "x", elapsedMs: 123, token: "tok" });
+    expect(botSignalsFrom(new FormData())).toEqual({ honeypot: "", elapsedMs: 0, token: undefined });
   });
 });
 
@@ -42,16 +41,16 @@ describe("Turnstile path", () => {
   });
   it("fails closed without a token, and when Cloudflare cannot be reached", async () => {
     vi.stubEnv("TURNSTILE_SECRET_KEY", "secret");
-    expect(await verifyBot({ honeypot: "", startedAt: 0 })).toBe(false);
+    expect(await verifyBot({ honeypot: "", elapsedMs: 0 })).toBe(false);
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
-    expect(await verifyBot({ honeypot: "", startedAt: 0, token: "t" })).toBe(false);
+    expect(await verifyBot({ honeypot: "", elapsedMs: 0, token: "t" })).toBe(false);
   });
   it("trusts only an explicit success from Cloudflare", async () => {
     vi.stubEnv("TURNSTILE_SECRET_KEY", "secret");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: async () => ({ success: true }) }));
-    expect(await verifyBot({ honeypot: "", startedAt: 0, token: "t" })).toBe(true);
+    expect(await verifyBot({ honeypot: "", elapsedMs: 0, token: "t" })).toBe(true);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: async () => ({ success: false }) }));
-    expect(await verifyBot({ honeypot: "", startedAt: 0, token: "t" })).toBe(false);
+    expect(await verifyBot({ honeypot: "", elapsedMs: 0, token: "t" })).toBe(false);
   });
 });
 

@@ -26,16 +26,16 @@ async function serious(page: Page) {
 }
 
 const ADMIN_PAGES = [
-  "/admin",
-  "/admin/projects",
-  "/admin/reports",
-  "/admin/users",
-  "/admin/pipeline",
-  "/admin/appeals",
-  "/admin/requests",
-  "/admin/trials",
-  "/admin/audit",
-  "/admin/settings",
+  "/en/admin",
+  "/en/admin/projects",
+  "/en/admin/reports",
+  "/en/admin/users",
+  "/en/admin/pipeline",
+  "/en/admin/appeals",
+  "/en/admin/requests",
+  "/en/admin/trials",
+  "/en/admin/audit",
+  "/en/admin/settings",
 ];
 
 for (const width of [900, 1280, 1440]) {
@@ -46,7 +46,7 @@ for (const width of [900, 1280, 1440]) {
     const problems: string[] = [];
     for (const path of ADMIN_PAGES) {
       await page.goto(
-        path + (path.includes("trials") || path.includes("projects") || path === "/admin" ? "?demo=1" : ""),
+        path + (path.includes("trials") || path.includes("projects") || path === "/en/admin" ? "?demo=1" : ""),
       );
       await page.waitForLoadState("networkidle");
       for (const p of await serious(page)) problems.push(`${path}: ${p}`);
@@ -60,7 +60,7 @@ test("axe: the dialogs and the public report form have no serious issues", async
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   await login(page, "admin@estafet.demo");
-  await page.goto("/admin/settings");
+  await page.goto("/en/admin/settings");
   await page.locator("#set-max_upload_mb").fill("27");
   await page.locator("[data-setting=max_upload_mb]").getByRole("button", { name: "Save" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -71,7 +71,8 @@ test("axe: the dialogs and the public report form have no serious issues", async
 
   const guest = await (await browser.newContext()).newPage();
   await guest.goto("/en/projects/mangrove-cover-classifier");
-  await guest.getByRole("button", { name: "Report this project" }).click();
+  await guest.getByRole("button", { name: "Project menu" }).click();
+  await guest.getByRole("menuitem", { name: /Report/ }).click();
   await guest.waitForTimeout(1500); // let the fade-in animations finish: axe would read half-transparent text
   expect(await serious(guest)).toEqual([]);
 });

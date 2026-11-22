@@ -30,10 +30,13 @@ test("the legal pages render in both languages, say they are drafts, and are lin
   page,
 }) => {
   for (const p of PAGES) {
+    await page.context().clearCookies();
     await page.goto(`/en/${p.path}`);
     await expect(page.getByRole("heading", { level: 1, name: p.en })).toBeVisible();
     await expect(page.getByText("Draft, not yet reviewed by the competent authority")).toBeVisible();
 
+    // The language choice is remembered in a cookie, so start the Indonesian visit without it.
+    await page.context().clearCookies();
     await page.goto(`/${p.path}`);
     await expect(page.getByRole("heading", { level: 1, name: p.id })).toBeVisible();
     await expect(page.getByText("Draf, belum ditinjau pihak berwenang")).toBeVisible();
@@ -57,7 +60,7 @@ test("a guest reports a project from the menu and receives a reference code", as
   // The local bot check rejects a form that is sent faster than a person could fill it.
   await page.waitForTimeout(3500);
   await dialog.getByRole("button", { name: "Send report" }).click();
-  await expect(dialog.getByText(/reference/i)).toBeVisible();
+  await expect(dialog.getByText(/Reference code:/)).toBeVisible();
 });
 
 test("a held project shows a neutral notice, not the teaser, and returns when restored", async ({ page }) => {

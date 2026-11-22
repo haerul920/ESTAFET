@@ -1,10 +1,12 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 
 /** From/to date filter. Dates are interpreted in WITA. Saved in the URL. */
 export function DateRange({ from, to }: { from?: string; to?: string }) {
+  const t = useTranslations("admin.common");
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -16,9 +18,9 @@ export function DateRange({ from, to }: { from?: string; to?: string }) {
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });
   }
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-3 text-sm" role="group" aria-label="Date range">
+    <div className="mb-4 flex flex-wrap items-center gap-3 text-sm" role="group" aria-label={t("dateRange")}>
       <label className="flex items-center gap-2">
-        From{" "}
+        {t("from")}{" "}
         <input
           type="date"
           value={from ?? ""}
@@ -27,7 +29,7 @@ export function DateRange({ from, to }: { from?: string; to?: string }) {
         />
       </label>
       <label className="flex items-center gap-2">
-        To{" "}
+        {t("to")}{" "}
         <input
           type="date"
           value={to ?? ""}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -7,10 +8,14 @@ import { ReasonAction } from "@/components/admin/ReasonDialog";
 import { KeyValueList, PageHeader, Panel, StatusPill, Time, Timeline, toneFor } from "@/components/admin/ui";
 import { DemoBadge } from "@/components/ui/Badge";
 import { setProjectModeration } from "@/app/[locale]/admin/actions";
-import { EN } from "@/lib/admin/en";
-import { formatWita } from "@/lib/admin/time";
+import { formatWita, type AdminLocale } from "@/lib/admin/time";
+import { statusText, type StatusTranslator } from "@/lib/admin/labels";
 
-export const metadata: Metadata = { title: "Project" };
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.project" });
+  return { title: t("title") };
+}
 
 interface Detail {
   project: {
@@ -18,7 +23,7 @@ interface Detail {
     slug: string;
     title: string;
     summary: string;
-    kind: keyof typeof EN.kind;
+    kind: string;
     field: string;
     year: number;
     status: string;
@@ -51,90 +56,101 @@ interface Detail {
 
 export default async function AdminProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const [locale, t, ts, tk, tl] = await Promise.all([
+    getLocale(),
+    getTranslations("admin.project"),
+    getTranslations("admin.status"),
+    getTranslations("admin.kinds"),
+    getTranslations("lineage.events"),
+  ]);
+  const status = (k: string) => statusText(ts as unknown as StatusTranslator, k);
+  const kindName = (k: string) =>
+    (tk as unknown as StatusTranslator).has(k) ? tk(k as never) : k.replaceAll("_", " ");
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("admin_project_detail", { p_id: id });
   if (error || !data) notFound();
   const d = data as Detail;
   const p = d.project;
   const mod = p.moderation_status;
+  const wita = (iso: string) => formatWita(iso, locale as AdminLocale);
 
   return (
     <>
       <PageHeader
         title={p.title}
-        intro={`${EN.kind[p.kind]} · ${p.year} · ${p.field}`}
+        intro={`${kindName(p.kind)} · ${p.year} · ${p.field}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {p.is_demo ? <DemoBadge /> : null}
-            <StatusPill tone={toneFor(p.status)}>{p.status.replace("_", " ")}</StatusPill>
-            <StatusPill tone={toneFor(mod)}>moderation: {mod}</StatusPill>
+            <StatusPill tone={toneFor(p.status)}>{status(p.status)}</StatusPill>
+            <StatusPill tone={toneFor(mod)}>{t("moderationPill", { status: status(mod) })}</StatusPill>
           </div>
         }
       />
       <p className="mt-0 text-sm">
-        <Link href="/admin/projects">All projects</Link>
+        <Link href="/admin/projects">{t("allProjects")}</Link>
         {mod === "ok" && p.status === "published" ? (
           <>
             {" "}
-            · <Link href={`/projects/${p.slug}`}>View public teaser</Link>
+            · <Link href={`/projects/${p.slug}`}>{t("viewTeaser")}</Link>
           </>
         ) : null}
       </p>
 
       <div className="grid items-start gap-4 lg:grid-cols-[1fr_380px]">
         <div className="flex min-w-0 flex-col gap-4">
-          <Panel title="Metadata">
+          <Panel title={t("metadata")}>
             <KeyValueList
               items={[
-                { label: "Slug", value: <code className="font-code">{p.slug}</code> },
-                { label: "Owners", value: d.creators.map((c) => c.name).join(", ") || "—" },
-                { label: "Published", value: p.published_at ? formatWita(p.published_at) : "Not published" },
-                { label: "Created", value: formatWita(p.created_at) },
-                { label: "Built with", value: p.tech.join(", ") || "—" },
-                ...(p.moderation_reason ? [{ label: "Moderation reason", value: p.moderation_reason }] : []),
+                { label: t("slug"), value: <code className="font-code">{p.slug}</code> },
+                { label: t("owners"), value: d.creators.map((c) => c.name).join(", ") || "—" },
+                { label: t("published"), value: p.published_at ? wita(p.published_at) : t("notPublished") },
+                { label: t("created"), value: wita(p.created_at) },
+                { label: t("builtWith"), value: p.tech.join(", ") || "—" },
+                ...(p.moderation_reason ? [{ label: t("moderationReason"), value: p.moderation_reason }] : []),
               ]}
             />
           </Panel>
 
-          <Panel title="Public teaser preview">
+          <Panel title={t("teaserPreview")}>
             <p className="mt-0 text-[15px]">{p.summary}</p>
-            {p.stopped_note ? <p className="text-sm text-text-2">Where it stopped: {p.stopped_note}</p> : null}
+            {p.stopped_note ? (
+              <p className="text-sm text-text-2">{t("whereStopped", { note: p.stopped_note })}</p>
+            ) : null}
             {d.items.length === 0 ? (
-              <p className="m-0 text-sm text-text-2">No kept items yet.</p>
+              <p className="m-0 text-sm text-text-2">{t("noItems")}</p>
             ) : (
               <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-sm">
                 {d.items.map((i) => (
                   <li key={i.id} className="flex gap-2">
-                    <StatusPill tone="info">{i.kind.replace("_", " ")}</StatusPill>
+                    <StatusPill tone="info">{status(i.kind)}</StatusPill>
                     <span>{i.title}</span>
                   </li>
                 ))}
               </ul>
             )}
-            <p className="mb-0 mt-3 text-[13px] text-text-2">
-              Titles only. Evidence quotes from private files are never shown here.
-            </p>
+            <p className="mb-0 mt-3 text-[13px] text-text-2">{t("titlesOnly")}</p>
           </Panel>
 
-          <Panel title="Evidence status (counts only)">
+          <Panel title={t("evidenceTitle")}>
             <div className="flex flex-wrap gap-2 text-sm">
-              <StatusPill tone="ok">matched {d.evidence.matched}</StatusPill>
-              <StatusPill tone="warn">partial {d.evidence.partial}</StatusPill>
-              <StatusPill tone="danger">not found {d.evidence.not_found}</StatusPill>
+              <StatusPill tone="ok">{t("evMatched", { count: d.evidence.matched })}</StatusPill>
+              <StatusPill tone="warn">{t("evPartial", { count: d.evidence.partial })}</StatusPill>
+              <StatusPill tone="danger">{t("evNotFound", { count: d.evidence.not_found })}</StatusPill>
             </div>
           </Panel>
 
-          <Panel title="Files (metadata only)">
+          <Panel title={t("filesTitle")}>
             {d.files.length === 0 ? (
-              <p className="m-0 text-sm text-text-2">No files.</p>
+              <p className="m-0 text-sm text-text-2">{t("noFiles")}</p>
             ) : (
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="text-text-2">
-                    <th className="py-1 font-semibold">Name</th>
-                    <th className="font-semibold">Type</th>
-                    <th className="font-semibold">Size</th>
-                    <th className="font-semibold">Skipped sensitive</th>
+                    <th className="py-1 font-semibold">{t("fileName")}</th>
+                    <th className="font-semibold">{t("fileType")}</th>
+                    <th className="font-semibold">{t("fileSize")}</th>
+                    <th className="font-semibold">{t("fileSkipped")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -151,16 +167,16 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
             )}
           </Panel>
 
-          <Panel title="Requests">
+          <Panel title={t("requests")}>
             {d.requests.length === 0 ? (
-              <p className="m-0 text-sm text-text-2">No requests.</p>
+              <p className="m-0 text-sm text-text-2">{t("noRequests")}</p>
             ) : (
               <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-sm">
                 {d.requests.map((r) => (
                   <li key={r.id} className="flex items-center justify-between gap-2">
                     <span>{r.team}</span>
                     <span className="flex items-center gap-2">
-                      <StatusPill tone={toneFor(r.status)}>{r.status}</StatusPill>
+                      <StatusPill tone={toneFor(r.status)}>{status(r.status)}</StatusPill>
                       <Time iso={r.created_at} />
                     </span>
                   </li>
@@ -171,79 +187,68 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
-          <Panel title="Moderation">
+          <Panel title={t("moderation")}>
             <div className="flex flex-wrap gap-2">
               {mod === "ok" || mod === "held" ? (
                 <>
                   {mod === "ok" ? (
                     <ReasonAction
-                      label="Hold"
-                      consequence={
-                        <>
-                          The project is held while you review it: it disappears from public pages, and the public sees
-                          a neutral notice. The owners are told and can appeal. You can restore it at any time.
-                        </>
-                      }
+                      label={t("hold")}
+                      consequence={t("holdEffect")}
                       action={setProjectModeration.bind(null, id, "held")}
                       undo={{ action: setProjectModeration.bind(null, id, "ok") }}
-                      successMessage="Project held."
+                      successMessage={t("held")}
                     />
                   ) : (
                     <ReasonAction
-                      label="Restore"
+                      label={t("restore")}
                       tone="primary"
-                      consequence={
-                        <>The project becomes visible again if its status is published. The owners are told.</>
-                      }
+                      consequence={t("restoreEffect")}
                       action={setProjectModeration.bind(null, id, "ok")}
-                      successMessage="Project restored."
+                      successMessage={t("restored")}
                     />
                   )}
                   <ReasonAction
-                    label="Hide"
-                    consequence={
-                      <>
-                        The project disappears from Explore, search and its public page (404). Nothing is deleted. The
-                        creators are told your reason.
-                      </>
-                    }
+                    label={t("hide")}
+                    consequence={t("hideEffect")}
                     action={setProjectModeration.bind(null, id, "hidden")}
                     undo={{ action: setProjectModeration.bind(null, id, "ok") }}
-                    successMessage="Project hidden."
+                    successMessage={t("hidden")}
                   />
                   <ReasonAction
-                    label="Remove"
+                    label={t("remove")}
                     tone="danger"
-                    consequence={
-                      <>
-                        The project is taken down like Hide, and marked as removed. Data and any signed agreement stay.
-                        Needs a recent password check. You can restore it later.
-                      </>
-                    }
+                    consequence={t("removeEffect")}
                     action={setProjectModeration.bind(null, id, "removed")}
-                    successMessage="Project removed."
+                    successMessage={t("removed")}
                   />
                 </>
               ) : (
                 <ReasonAction
-                  label="Restore"
+                  label={t("restore")}
                   tone="primary"
-                  consequence={<>The project becomes visible again if its status is published. The owners are told.</>}
+                  consequence={t("restoreEffect")}
                   action={setProjectModeration.bind(null, id, "ok")}
                   undo={mod === "hidden" ? { action: setProjectModeration.bind(null, id, "hidden") } : undefined}
-                  successMessage="Project restored."
+                  successMessage={t("restored")}
                 />
               )}
             </div>
           </Panel>
 
-          <Panel title="Lifecycle (lineage)">
+          <Panel title={t("lineage")}>
             <Timeline
-              items={d.lineage.map((e) => ({ id: e.id, title: e.type.replace(/_/g, " "), when: e.created_at }))}
+              items={d.lineage.map((e) => ({
+                id: e.id,
+                title: (tl as unknown as StatusTranslator).has(e.type)
+                  ? tl(e.type as never)
+                  : e.type.replace(/_/g, " "),
+                when: e.created_at,
+              }))}
             />
           </Panel>
 
-          <Panel title="Audit history for this project">
+          <Panel title={t("auditHistory")}>
             <Timeline
               items={d.audit.map((a) => ({
                 id: a.id,

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DataTable, type Column } from "@/components/admin/DataTable";
@@ -12,10 +13,13 @@ import { queryView } from "@/lib/admin/query";
 import { methodsParagraph, MIN_N, tooFew, type CohortSummary, type TrialRow } from "@/lib/admin/trials";
 import { withParams, type SearchParams } from "@/lib/admin/table";
 
-export const metadata: Metadata = { title: "Trials" };
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.trials" });
+  return { title: t("metaTitle") };
+}
 
 type Row = TrialRow & { project_id: string | null; notes: string | null };
-const pct = (v: number | null) => (v === null ? "n/a" : `${Math.round(v * 100)}%`);
 
 function toDraft(r: Row): TrialDraft {
   const local = (iso: string) => {
@@ -42,6 +46,9 @@ function toDraft(r: Row): TrialDraft {
 
 export default async function AdminTrialsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
+  const t = await getTranslations("admin.trials");
+  const pct = (v: number | null) => (v === null ? t("notAvailable") : `${Math.round(v * 100)}%`);
+  const cohortName = (c: string) => t(c === "estafet" ? "cohortEstafet" : "cohortBaseline");
   const includeDemo = sp.demo === "1";
   const supabase = await createClient();
   const [{ rows, total, params }, { data: sum }, { data: all }, { data: projects }] = await Promise.all([
@@ -83,30 +90,38 @@ export default async function AdminTrialsPage({ searchParams }: { searchParams: 
   const exportHref = `/api/admin/trials/export${includeDemo ? "?demo=1" : ""}`;
 
   const columns: Column<Row>[] = [
-    { key: "participant_code", label: "Participant", sortable: true },
+    { key: "participant_code", label: t("colParticipant"), sortable: true },
     {
       key: "cohort",
-      label: "Cohort",
+      label: t("colCohort"),
       sortable: true,
-      render: (r) => (r.cohort === "estafet" ? "ESTAFET" : "Baseline"),
+      render: (r) => cohortName(r.cohort),
     },
-    { key: "project_title", label: "Project", render: (r) => r.project_title ?? "—" },
-    { key: "minutes_to_understand", label: "Minutes", sortable: true, render: (r) => r.minutes_to_understand ?? "—" },
-    { key: "completed", label: "Completed", render: (r) => (r.completed ? "yes" : "no") },
+    { key: "project_title", label: t("colProject"), render: (r) => r.project_title ?? "—" },
+    {
+      key: "minutes_to_understand",
+      label: t("colMinutes"),
+      sortable: true,
+      render: (r) => r.minutes_to_understand ?? "—",
+    },
+    { key: "completed", label: t("colCompleted"), render: (r) => (r.completed ? t("yes") : t("no")) },
     {
       key: "score",
-      label: "Score",
+      label: t("colScore"),
       render: (r) => (r.total_questions ? `${r.correct_answers ?? 0}/${r.total_questions}` : "—"),
     },
-    { key: "sus_score", label: "SUS", render: (r) => r.sus_score ?? "—" },
-    { key: "is_demo", label: "Demo", render: (r) => (r.is_demo ? <DemoBadge /> : "—") },
-    { key: "started_at", label: "Date", sortable: true, render: (r) => <Time iso={r.started_at} /> },
+    { key: "sus_score", label: t("colSus"), render: (r) => r.sus_score ?? "—" },
+    { key: "is_demo", label: t("colDemo"), render: (r) => (r.is_demo ? <DemoBadge /> : "—") },
+    { key: "started_at", label: t("colDate"), sortable: true, render: (r) => <Time iso={r.started_at} /> },
     {
       key: "edit",
       label: "",
       render: (r) => (
-        <Link href={`/admin/trials${withParams(sp, { edit: r.id })}`} aria-label={`Edit session ${r.participant_code}`}>
-          Edit
+        <Link
+          href={`/admin/trials${withParams(sp, { edit: r.id })}`}
+          aria-label={t("editSession", { code: r.participant_code })}
+        >
+          {t("edit")}
         </Link>
       ),
     },
@@ -115,14 +130,14 @@ export default async function AdminTrialsPage({ searchParams }: { searchParams: 
   return (
     <>
       <PageHeader
-        title="Onboarding trials"
-        intro="Real sessions only. Numbers show n. Demo rows are excluded unless you include them."
+        title={t("title")}
+        intro={t("intro")}
         actions={
           <Link
             href={`/admin/trials${withParams(sp, { edit: "new" })}`}
             className="inline-flex min-h-[44px] items-center rounded-full bg-lime px-5 font-semibold text-black no-underline"
           >
-            Record session
+            {t("record")}
           </Link>
         }
       />
@@ -137,15 +152,15 @@ export default async function AdminTrialsPage({ searchParams }: { searchParams: 
       ) : null}
 
       <FilterBar
-        searchLabel="Search participant or project"
-        toggles={[{ key: "demo", label: "Include demo rows" }]}
+        searchLabel={t("search")}
+        toggles={[{ key: "demo", label: t("includeDemo") }]}
         filters={[
           {
             key: "cohort",
-            label: "Cohort",
+            label: t("colCohort"),
             options: [
-              { value: "baseline", label: "baseline" },
-              { value: "estafet", label: "ESTAFET" },
+              { value: "baseline", label: t("cohortBaseline") },
+              { value: "estafet", label: t("cohortEstafet") },
             ],
           },
         ]}
@@ -155,45 +170,44 @@ export default async function AdminTrialsPage({ searchParams }: { searchParams: 
         {(["baseline", "estafet"] as const).map((c) => {
           const s = by(c);
           return (
-            <Panel key={c} title={`${c === "baseline" ? "Baseline" : "ESTAFET"} (n = ${s?.n ?? 0})`}>
+            <Panel key={c} title={t("cohortTitle", { cohort: cohortName(c), n: s?.n ?? 0 })}>
               {tooFew(s?.n) ? (
                 <p role="status" className="m-0 rounded-2xl bg-warn-bg p-3 text-sm font-semibold text-warn-ink">
-                  Too few sessions to conclude (n = {s?.n ?? 0}, at least {MIN_N} needed). Numbers below are shown for
-                  reference only.
+                  {t("tooFew", { n: s?.n ?? 0, min: MIN_N })}
                 </p>
               ) : null}
               {s ? (
                 <dl className="m-0 mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-                  <dt className="text-text-2">Median minutes (completed)</dt>
-                  <dd className="m-0 font-semibold">{s.median_minutes ?? "n/a"}</dd>
-                  <dt className="text-text-2">Mean minutes (completed)</dt>
-                  <dd className="m-0 font-semibold">{s.mean_minutes ?? "n/a"}</dd>
-                  <dt className="text-text-2">Completion rate</dt>
+                  <dt className="text-text-2">{t("median")}</dt>
+                  <dd className="m-0 font-semibold">{s.median_minutes ?? t("notAvailable")}</dd>
+                  <dt className="text-text-2">{t("mean")}</dt>
+                  <dd className="m-0 font-semibold">{s.mean_minutes ?? t("notAvailable")}</dd>
+                  <dt className="text-text-2">{t("completion")}</dt>
                   <dd className="m-0 font-semibold">
-                    {pct(s.completion_rate)} ({s.completed_n} of {s.n})
+                    {pct(s.completion_rate)} ({t("ofN", { done: s.completed_n, n: s.n })})
                   </dd>
-                  <dt className="text-text-2">Mean comprehension score</dt>
+                  <dt className="text-text-2">{t("meanScore")}</dt>
                   <dd className="m-0 font-semibold">{pct(s.mean_score)}</dd>
                   {c === "estafet" ? (
                     <>
-                      <dt className="text-text-2">Mean SUS</dt>
-                      <dd className="m-0 font-semibold">{s.mean_sus ?? "n/a"}</dd>
-                      <dt className="text-text-2">Finished within 30 min</dt>
+                      <dt className="text-text-2">{t("meanSus")}</dt>
+                      <dd className="m-0 font-semibold">{s.mean_sus ?? t("notAvailable")}</dd>
+                      <dt className="text-text-2">{t("within30")}</dt>
                       <dd className="m-0 font-semibold">
-                        {pct(s.within30_share)} ({s.within30_n} of {s.n})
+                        {pct(s.within30_share)} ({t("ofN", { done: s.within30_n, n: s.n })})
                       </dd>
                     </>
                   ) : null}
                 </dl>
               ) : (
-                <p className="m-0 mt-2 text-sm text-text-2">No sessions in this cohort.</p>
+                <p className="m-0 mt-2 text-sm text-text-2">{t("noSessions")}</p>
               )}
             </Panel>
           );
         })}
       </div>
 
-      <Panel title="Minutes to understand, by cohort" className="mb-5">
+      <Panel title={t("chartTitle")} className="mb-5">
         <TrialChart rows={chartRows} summary={summary} />
       </Panel>
 
@@ -204,29 +218,30 @@ export default async function AdminTrialsPage({ searchParams }: { searchParams: 
         params={params}
         sp={sp}
         basePath="/admin/trials"
-        caption="Trial sessions"
+        caption={t("caption")}
         empty={{
-          title: "No sessions yet",
-          text: "Record a session after each onboarding trial. Demo rows are hidden unless you include them.",
+          title: t("emptyTitle"),
+          text: t("emptyText"),
         }}
       />
 
-      <Panel title="Export and methods" className="mt-5">
-        <p className="mt-0 text-sm text-text-2">The CSV has pseudonym codes only: no names, no emails.</p>
+      <Panel title={t("exportTitle")} className="mt-5">
+        <p className="mt-0 text-sm text-text-2">{t("csvNote")}</p>
         <p className="mb-3">
           <a
             href={exportHref}
             download
             className="inline-flex min-h-[44px] items-center rounded-full border-[1.5px] border-line-strong bg-white px-5 font-semibold text-ink no-underline hover:bg-surface"
           >
-            Download CSV
+            {t("download")}
           </a>
         </p>
-        <h3 className="mb-1 mt-0 text-sm">Methods and limits (paste into the proposal)</h3>
+        <h3 className="mb-1 mt-0 text-sm">{t("methodsTitle")}</h3>
+        <p className="mb-2 mt-0 text-[13px] text-text-2">{t("methodsEnglish")}</p>
         <p className="m-0 rounded-2xl bg-white p-3.5 text-sm leading-relaxed">{methods}</p>
         {includeDemo ? (
           <p className="mb-0 mt-2">
-            <StatusPill tone="warn">Demo rows included</StatusPill>
+            <StatusPill tone="warn">{t("demoIncluded")}</StatusPill>
           </p>
         ) : null}
       </Panel>
