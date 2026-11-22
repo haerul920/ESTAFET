@@ -611,7 +611,9 @@
     "uploadUnreadable": "The upload could not be read. Try a smaller file.",
     "uploadNone": "Choose at least one file.",
     "uploadTooMany": "A project can have at most {max} files.",
-    "uploadTooBig": "Larger than {mb} MB, so it was not uploaded."
+    "uploadTooBig": "Larger than {mb} MB, so it was not uploaded.",
+    "uploadRateLimited": "Too many uploads in the last hour. Wait a little, then try again.",
+    "uploadScanRejected": "This file did not pass the security check, so it was not uploaded."
   },
   "dashboard": {
     "n": {

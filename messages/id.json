@@ -611,7 +611,9 @@
     "uploadUnreadable": "Unggahan tidak bisa dibaca. Coba berkas yang lebih kecil.",
     "uploadNone": "Pilih setidaknya satu berkas.",
     "uploadTooMany": "Satu proyek paling banyak punya {max} berkas.",
-    "uploadTooBig": "Lebih besar dari {mb} MB, jadi tidak diunggah."
+    "uploadTooBig": "Lebih besar dari {mb} MB, jadi tidak diunggah.",
+    "uploadRateLimited": "Terlalu banyak unggahan dalam satu jam terakhir. Tunggu sebentar, lalu coba lagi.",
+    "uploadScanRejected": "Berkas ini tidak lolos pemeriksaan keamanan, jadi tidak diunggah."
   },
   "dashboard": {
     "n": {

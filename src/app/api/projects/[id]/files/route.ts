@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getOwnedProject } from "@/lib/db/owner";
 import { ingestUpload, UploadRejected } from "@/lib/ingest";
 import { LIMITS } from "@/lib/ingest/limits";
+import { scanUpload } from "@/lib/ingest/scan";
+import { allow } from "@/lib/rate-limit";
 import { getSettings, mbToBytes } from "@/lib/settings";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -43,6 +45,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: api("uploadPublished") }, { status: 409 });
   }
 
+  // 30 upload requests per hour per account. A person preparing a project stays far below this.
+  if (!(await allow({ scope: "upload", identity: user.id, max: 30, windowSeconds: 3600 })))
+    return NextResponse.json({ error: api("uploadRateLimited") }, { status: 429 });
+
   let form: FormData;
   try {
     form = await request.formData();
@@ -74,6 +80,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
+      if (!(await scanUpload(file.name, bytes)).clean) {
+        outcomes.push({ name: file.name, ok: false, note: api("uploadScanRejected") });
+        continue;
+      }
       const result = await ingestUpload(file.name, bytes, { maxBytes });
       const fileId = crypto.randomUUID();
       let storagePath = "";
