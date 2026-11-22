@@ -2618,5 +2618,139 @@
       "intro": "The owners of {title} appealed a moderation decision.",
       "detail": "One appeal is open per decision. Review it and give an outcome."
     }
+  },
+  "styleguide": {
+    "metaTitle": "Styleguide (internal)",
+    "eyebrow": "Internal page",
+    "title": "Styleguide",
+    "lead": "Every design token and shared component of ESTAFET in one place, to compare against the approved design.",
+    "notice": "This page is not in the navigation, is not indexed by search engines and does not exist in production.",
+    "tokenCol": "Token",
+    "valueCol": "Value",
+    "colors": {
+      "title": "Colors",
+      "lead": "Tokens from src/styles/tokens.css. Use the token, never the raw hex value."
+    },
+    "type": {
+      "title": "Typography",
+      "lead": "Instrument Sans for headings and text, DM Mono for small labels and buttons, JetBrains Mono for code and file names.",
+      "display": "Hand over what you started",
+      "heading": "Where the project stopped",
+      "body": "A new team should understand the objectives, the finished work and the verified next steps without digging through old chats.",
+      "secondary": "Secondary text for hints and metadata.",
+      "label": "Small mono label",
+      "code": "File names use the code font."
+    },
+    "buttons": {
+      "title": "Buttons",
+      "lead": "Pills with mono labels. One primary action per screen. The sky row shows the variants made for the sky background.",
+      "v": {
+        "primary": "Primary",
+        "darkSolid": "Dark",
+        "outline": "Outline",
+        "outlineBlue": "Blue outline",
+        "danger": "Destructive",
+        "ghost": "Ghost",
+        "dark": "Glass dark",
+        "white": "White"
+      },
+      "hero": "Hero action",
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "disabled": "Disabled"
+    },
+    "badges": {
+      "title": "Badges and chips",
+      "lead": "Status language from the design: owner verified, sample data and the evidence check.",
+      "tone": {
+        "ok": "Success",
+        "info": "Information",
+        "warn": "Warning",
+        "neutral": "Neutral",
+        "danger": "Danger",
+        "lime": "Accent"
+      },
+      "evidenceDetail": "{file}, page {page}"
+    },
+    "cards": {
+      "title": "Cards",
+      "lead": "Soft rounded cards (28 px). Pick the tone by meaning, not by taste.",
+      "tone": {
+        "surface": "Default grey surface",
+        "white": "White card on a grey area",
+        "lime": "Highlighted choice",
+        "blue": "Information",
+        "warn": "Needs attention",
+        "grey": "Bento grey",
+        "dashed": "Empty state"
+      }
+    },
+    "fields": {
+      "title": "Form fields",
+      "lead": "Every field has a visible label. Hints and errors are linked to the field for screen readers.",
+      "title1": "Project title",
+      "title1Hint": "Short and specific, up to 80 characters.",
+      "title1Value": "Mangrove cover classifier",
+      "email": "Email",
+      "emailError": "This email address is incomplete. Check the part after @.",
+      "kind": "Type of work",
+      "kindA": "Student program",
+      "kindB": "Hackathon",
+      "kindC": "Research",
+      "disabled": "Disabled field",
+      "disabledValue": "Cannot be changed",
+      "notes": "Notes for the next team",
+      "notesHint": "Optional.",
+      "check": "I confirm that my team agrees to share this project.",
+      "success": "Saved. Your changes are kept.",
+      "error": "Could not save. Check the fields marked in red and try again."
+    },
+    "stepper": {
+      "title": "Stepper",
+      "lead": "Shows progress in a flow. The current step carries aria-current.",
+      "label": "Example progress",
+      "s1": "Basics",
+      "s2": "Files",
+      "s3": "Review the AI draft",
+      "s4": "Team and access",
+      "s5": "Preview and publish"
+    },
+    "interactive": {
+      "title": "Interactive components",
+      "lead": "Built on Radix: they render in portals, trap focus, close with Escape and return focus to the trigger.",
+      "tabsLabel": "Example tabs",
+      "tabOne": "Projects I share",
+      "tabTwo": "Projects I continue",
+      "panelOne": "The first panel. Use the arrow keys to move between tabs.",
+      "panelTwo": "The second panel slides in when the tab changes.",
+      "openDialog": "Open dialog",
+      "dialogTitle": "Publish this summary?",
+      "dialogText": "The public summary becomes visible on Explore. Your files stay private.",
+      "cancel": "Cancel",
+      "confirm": "Publish",
+      "openDrawer": "Open drawer",
+      "drawerTitle": "Drawer",
+      "drawerText": "The phone navigation uses this panel.",
+      "openMenu": "Open menu",
+      "menuLabel": "Project",
+      "menuOne": "Watch this project",
+      "menuTwo": "Report this project",
+      "menuPicked": "You picked: {item}",
+      "tooltipTrigger": "Show a tip",
+      "tooltipText": "A short hint for a control or a value.",
+      "toastSuccess": "Show a success toast",
+      "toastSaved": "Saved. You can undo this for 10 seconds.",
+      "toastError": "Show an error toast",
+      "toastFailed": "Something went wrong. Try again."
+    },
+    "layers": {
+      "title": "Layers",
+      "lead": "The only allowed z-index values (CLAUDE.md 14.9). Overlays live in portals on these layers."
+    },
+    "motion": {
+      "title": "Motion",
+      "lead": "Animate transform and opacity only. Reduced motion turns off floating, drifting and reveals."
+    }
   }
 }

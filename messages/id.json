@@ -2618,5 +2618,139 @@
       "intro": "Pemilik {title} mengajukan banding atas keputusan moderasi.",
       "detail": "Satu banding terbuka per keputusan. Tinjau dan beri hasil."
     }
+  },
+  "styleguide": {
+    "metaTitle": "Panduan gaya (internal)",
+    "eyebrow": "Halaman internal",
+    "title": "Panduan gaya",
+    "lead": "Semua token desain dan komponen bersama ESTAFET di satu tempat, untuk dibandingkan dengan desain yang sudah disetujui.",
+    "notice": "Halaman ini tidak ada di navigasi, tidak diindeks mesin pencari, dan tidak tersedia di produksi.",
+    "tokenCol": "Token",
+    "valueCol": "Nilai",
+    "colors": {
+      "title": "Warna",
+      "lead": "Token dari src/styles/tokens.css. Pakai tokennya, jangan nilai hex langsung."
+    },
+    "type": {
+      "title": "Tipografi",
+      "lead": "Instrument Sans untuk judul dan teks, DM Mono untuk label kecil dan tombol, JetBrains Mono untuk kode dan nama berkas.",
+      "display": "Serahkan apa yang sudah kamu mulai",
+      "heading": "Di mana proyek ini berhenti",
+      "body": "Tim baru seharusnya paham tujuan, pekerjaan yang sudah selesai, dan langkah berikutnya yang terverifikasi tanpa perlu menggali obrolan lama.",
+      "secondary": "Teks sekunder untuk petunjuk dan metadata.",
+      "label": "Label mono kecil",
+      "code": "Nama berkas memakai huruf kode."
+    },
+    "buttons": {
+      "title": "Tombol",
+      "lead": "Tombol berbentuk pil dengan label mono. Satu aksi utama per layar. Baris langit menunjukkan varian untuk latar langit.",
+      "v": {
+        "primary": "Utama",
+        "darkSolid": "Gelap",
+        "outline": "Garis tepi",
+        "outlineBlue": "Garis tepi biru",
+        "danger": "Berisiko",
+        "ghost": "Tanpa latar",
+        "dark": "Kaca gelap",
+        "white": "Putih"
+      },
+      "hero": "Aksi utama beranda",
+      "small": "Kecil",
+      "medium": "Sedang",
+      "large": "Besar",
+      "disabled": "Nonaktif"
+    },
+    "badges": {
+      "title": "Lencana dan chip",
+      "lead": "Bahasa status dari desain: diverifikasi pemilik, data contoh, dan pemeriksaan bukti.",
+      "tone": {
+        "ok": "Berhasil",
+        "info": "Informasi",
+        "warn": "Peringatan",
+        "neutral": "Netral",
+        "danger": "Bahaya",
+        "lime": "Aksen"
+      },
+      "evidenceDetail": "{file}, halaman {page}"
+    },
+    "cards": {
+      "title": "Kartu",
+      "lead": "Kartu membulat lembut (28 px). Pilih warnanya berdasarkan makna, bukan selera.",
+      "tone": {
+        "surface": "Permukaan abu-abu bawaan",
+        "white": "Kartu putih di area abu-abu",
+        "lime": "Pilihan yang disorot",
+        "blue": "Informasi",
+        "warn": "Perlu perhatian",
+        "grey": "Abu-abu bento",
+        "dashed": "Keadaan kosong"
+      }
+    },
+    "fields": {
+      "title": "Kolom formulir",
+      "lead": "Setiap kolom punya label yang terlihat. Petunjuk dan pesan galat terhubung ke kolomnya untuk pembaca layar.",
+      "title1": "Judul proyek",
+      "title1Hint": "Singkat dan spesifik, maksimal 80 karakter.",
+      "title1Value": "Pengklasifikasi tutupan mangrove",
+      "email": "Email",
+      "emailError": "Alamat email ini belum lengkap. Periksa bagian setelah @.",
+      "kind": "Jenis kegiatan",
+      "kindA": "Program kemahasiswaan",
+      "kindB": "Hackathon",
+      "kindC": "Penelitian",
+      "disabled": "Kolom nonaktif",
+      "disabledValue": "Tidak bisa diubah",
+      "notes": "Catatan untuk tim berikutnya",
+      "notesHint": "Opsional.",
+      "check": "Saya memastikan tim saya setuju membagikan proyek ini.",
+      "success": "Tersimpan. Perubahanmu sudah disimpan.",
+      "error": "Gagal menyimpan. Periksa kolom yang ditandai merah, lalu coba lagi."
+    },
+    "stepper": {
+      "title": "Penanda langkah",
+      "lead": "Menunjukkan kemajuan dalam sebuah alur. Langkah yang sedang aktif membawa aria-current.",
+      "label": "Contoh kemajuan",
+      "s1": "Info dasar",
+      "s2": "Berkas",
+      "s3": "Tinjau draf AI",
+      "s4": "Tim dan akses",
+      "s5": "Pratinjau dan terbitkan"
+    },
+    "interactive": {
+      "title": "Komponen interaktif",
+      "lead": "Dibangun di atas Radix: tampil di portal, menjaga fokus, tertutup dengan Escape, dan mengembalikan fokus ke pemicunya.",
+      "tabsLabel": "Contoh tab",
+      "tabOne": "Proyek saya",
+      "tabTwo": "Proyek yang saya lanjutkan",
+      "panelOne": "Panel pertama. Pakai tombol panah untuk berpindah tab.",
+      "panelTwo": "Panel kedua bergeser masuk saat tab berganti.",
+      "openDialog": "Buka dialog",
+      "dialogTitle": "Terbitkan ringkasan ini?",
+      "dialogText": "Ringkasan publik akan tampil di Jelajahi. Berkasmu tetap pribadi.",
+      "cancel": "Batal",
+      "confirm": "Terbitkan",
+      "openDrawer": "Buka laci",
+      "drawerTitle": "Laci",
+      "drawerText": "Navigasi di ponsel memakai panel ini.",
+      "openMenu": "Buka menu",
+      "menuLabel": "Proyek",
+      "menuOne": "Pantau proyek ini",
+      "menuTwo": "Laporkan proyek ini",
+      "menuPicked": "Kamu memilih: {item}",
+      "tooltipTrigger": "Tampilkan petunjuk",
+      "tooltipText": "Petunjuk singkat untuk sebuah kontrol atau nilai.",
+      "toastSuccess": "Tampilkan notifikasi berhasil",
+      "toastSaved": "Tersimpan. Kamu bisa membatalkannya selama 10 detik.",
+      "toastError": "Tampilkan notifikasi galat",
+      "toastFailed": "Terjadi kesalahan. Coba lagi."
+    },
+    "layers": {
+      "title": "Lapisan",
+      "lead": "Satu-satunya nilai z-index yang boleh dipakai (CLAUDE.md 14.9). Lapisan atas tampil di portal pada lapisan ini."
+    },
+    "motion": {
+      "title": "Gerak",
+      "lead": "Animasikan transform dan opacity saja. Mode gerak dikurangi mematikan efek melayang, bergeser, dan muncul bertahap."
+    }
   }
 }

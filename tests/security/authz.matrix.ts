@@ -109,6 +109,16 @@ export const AUTHZ_MATRIX: AuthzEntry[] = [
     expectedDenial: "200 (public legal document with draft notice)",
   },
   {
+    id: "page:styleguide",
+    kind: "page",
+    target: "/[locale]/styleguide",
+    sourceFile: "src/app/[locale]/styleguide/page.tsx",
+    allowedRoles: ["guest", "authenticated"],
+    deniedRoles: [],
+    enforcementLayer: ["route"],
+    expectedDenial: "404 when APP_ENV=PRODUCTION; otherwise 200 (static UI kit, no data, noindex)",
+  },
+  {
     id: "page:privacy",
     kind: "page",
     target: "/[locale]/privacy",
