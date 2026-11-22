@@ -65,6 +65,7 @@ const FILE_NS = {
 // Keys that are built from data at run time (enum values, SQL hints), so a static scan cannot see them used.
 const DYNAMIC_PREFIXES = [
   "labels.",
+  "email.",
   "errors.hints.",
   "lineage.events.",
   "report.r.",

@@ -1220,7 +1220,8 @@
     "hourlyLimit": "This project already ran several times in the last hour. Wait a little, then try again.",
     "noFiles": "Upload at least one readable file first.",
     "unreadable": "The uploaded files could not be read. Upload them again.",
-    "startFailed": "Could not start the run."
+    "startFailed": "Could not start the run.",
+    "globalLimit": "The AI service has reached its daily limit for all users. Try again tomorrow, or fill the draft in by hand."
   },
   "ui": {
     "close": "Close",
@@ -1485,6 +1486,17 @@
       "confirmEffect": "Your account is scheduled to be deleted 30 days from now. You can still sign in and cancel until then. After that, deletion cannot be undone.",
       "confirm": "Yes, schedule deletion",
       "failed": "The deletion could not be scheduled. Please try again."
+    },
+    "email": {
+      "title": "Notification emails",
+      "text": "We send an email when a new request, a decision or an agreement needs your attention. Emails about the safety of your account or project (for example moderation decisions, appeals and revoked access) are still sent if you turn this off.",
+      "toggle": "Send me notification emails",
+      "language": "Email language",
+      "save": "Save",
+      "saved": "Email settings saved.",
+      "failed": "Your email settings were not saved. Try again.",
+      "langId": "Bahasa Indonesia",
+      "langEn": "English"
     }
   },
   "legal": {
@@ -2487,6 +2499,122 @@
         "saved": "{label} saved.",
         "domainsExample": "student.unhas.ac.id"
       }
+    }
+  },
+  "email": {
+    "common": {
+      "greeting": "Hi {name},",
+      "greetingNoName": "Hi,",
+      "signature": "Regards, the ESTAFET team",
+      "fallbackLink": "If the button does not work, copy this address into your browser: {url}",
+      "footerEssential": "This email is about the safety of your account or project, so it is sent even if you turned notification emails off.",
+      "footerPrefs": "You get this email because notification emails are on. You can turn them off in your account settings:",
+      "footerPrefsLink": "Account settings",
+      "aProject": "a project",
+      "ownerNote": "Note from the owners: “{note}”"
+    },
+    "cta": {
+      "dashboard": "Open your dashboard",
+      "myReports": "See my reports",
+      "decision": "See the decision",
+      "admin": "Open the admin area"
+    },
+    "new_request": {
+      "subject": "New request for {title}",
+      "intro": "{team} wants to continue the project {title}.",
+      "detail": "Read their plan, then approve, decline or ask a question. A request with no answer expires."
+    },
+    "request_decision": {
+      "approved": {
+        "subject": "Your request for {title} was approved",
+        "intro": "The owners approved your request to continue {title}.",
+        "detail": "Next step: accept the attribution agreement on your dashboard so the private files open."
+      },
+      "declined": {
+        "subject": "Your request for {title} was declined",
+        "intro": "The owners could not accept your request for {title} right now.",
+        "detail": "You can ask again after the waiting period shown on the project page."
+      }
+    },
+    "agreement_accepted": {
+      "creator": {
+        "subject": "The owners of {title} accepted the attribution agreement",
+        "intro": "The owners of {title} accepted the attribution agreement.",
+        "detail": "If you have not accepted it yet, do it on your dashboard so the private files open."
+      },
+      "adopter": {
+        "subject": "The continuing team accepted the attribution agreement for {title}",
+        "intro": "The continuing team accepted the attribution agreement for {title}.",
+        "detail": "If you have not accepted it yet, do it on your dashboard."
+      }
+    },
+    "moderation": {
+      "hold": {
+        "subject": "{title} is being held for review",
+        "intro": "The ESTAFET team is holding {title} for now while it reviews incoming reports."
+      },
+      "hide": {
+        "subject": "{title} was hidden from public pages",
+        "intro": "The ESTAFET team hid {title} from public pages."
+      },
+      "remove": {
+        "subject": "{title} was removed from public view",
+        "intro": "The ESTAFET team removed {title} from public view."
+      },
+      "restore": {
+        "subject": "{title} was restored",
+        "intro": "The ESTAFET team restored {title}. Your project is back on public pages."
+      },
+      "reason": "Reason: “{reason}”. Your data and any signed agreement are unchanged.",
+      "appeal": "You can appeal from your dashboard."
+    },
+    "appeal_outcome": {
+      "accepted": {
+        "subject": "Your appeal for {title} was accepted",
+        "intro": "The ESTAFET team accepted your appeal. The earlier decision about {title} was reversed."
+      },
+      "rejected": {
+        "subject": "Your appeal for {title} was rejected",
+        "intro": "The ESTAFET team reviewed your appeal and the earlier decision about {title} stands."
+      },
+      "note": "Note from the team: “{note}”"
+    },
+    "access_revoked": {
+      "subject": "Your access to {title} was revoked",
+      "intro": "The owners revoked your access to the private files of {title}.",
+      "reason": "Reason: “{reason}”.",
+      "detail": "The attribution duty for what you already used still applies."
+    },
+    "team_invite": {
+      "subject": "You were invited to co-own {title}",
+      "intro": "You were invited to co-own the project {title}.",
+      "detail": "Accept or decline the invitation on your dashboard."
+    },
+    "ownership_offer": {
+      "subject": "You were offered ownership of {title}",
+      "intro": "An owner offered you ownership of the project {title}.",
+      "detail": "Accept or decline the offer in the project settings. Nothing changes until you answer."
+    },
+    "report_outcome": {
+      "subject": "Report {reference} was reviewed",
+      "resolved": "The ESTAFET team followed up on your report {reference}.",
+      "dismissed": "The ESTAFET team reviewed your report {reference} and found no reason to act.",
+      "detail": "Thank you for helping keep ESTAFET safe. Your identity is never shown to the project owners."
+    },
+    "admin_hold": {
+      "subject": "[Admin] Project held: {title}",
+      "intro": "The project {title} was held and needs a review.",
+      "detail": "Reason: “{reason}”."
+    },
+    "admin_hold_overdue": {
+      "subject": "[Admin] Hold past its review target: {title}",
+      "intro": "The project {title} has been held past its review target.",
+      "detail": "Decide: restore, hide or remove, with a written reason."
+    },
+    "admin_appeal": {
+      "subject": "[Admin] New appeal for {title}",
+      "intro": "The owners of {title} appealed a moderation decision.",
+      "detail": "One appeal is open per decision. Review it and give an outcome."
     }
   }
 }

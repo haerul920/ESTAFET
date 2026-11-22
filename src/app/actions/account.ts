@@ -36,6 +36,21 @@ export async function cancelAccountDeletion(): Promise<{ error?: string }> {
   return {};
 }
 
+/** Saves the person's own choice: notification emails on or off, and the language of the emails. */
+export async function saveEmailPreferences(formData: FormData): Promise<{ error?: string }> {
+  const t = await getTranslations("account.email");
+  await requireUser("/akun/privasi");
+  const locale = String(formData.get("locale") ?? "id") === "en" ? "en" : "id";
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_email_preferences", {
+    p_enabled: formData.get("enabled") === "on",
+    p_locale: locale,
+  });
+  if (error) return { error: t("failed") };
+  revalidatePath("/akun/privasi");
+  return {};
+}
+
 /** The re-acceptance screen: records the current Terms and Privacy Policy, then goes on to where the person was headed. */
 export async function acceptPoliciesAndContinue(formData: FormData): Promise<void> {
   const locale = await getLocale();

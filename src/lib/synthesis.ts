@@ -7,6 +7,9 @@ import { getConfig, synthesize, SynthesisError, type SynthesisOutput } from "@/l
 import { checkItemEvidence } from "@/lib/evidence/match";
 import { normalize } from "@/lib/evidence/normalize";
 import { getSettings } from "@/lib/settings";
+import { globalSynthesisCap } from "@/lib/settings-core";
+import { alert } from "@/lib/log";
+import { allow } from "@/lib/rate-limit";
 import type { ExtractedDoc } from "@/lib/ingest/types";
 import type { ProjectFile } from "@/lib/db/types";
 
@@ -115,6 +118,29 @@ export async function runSynthesis(
   if ((userCount.count ?? 0) >= cap) return { ok: false, status: 429, error: t("dailyLimit", { cap }) };
   if ((projectCount.count ?? 0) >= PROJECT_HOURLY_CAP) {
     return { ok: false, status: 429, error: t("hourlyLimit") };
+  }
+
+  // A cap on the whole platform per day, so a burst of use cannot run up the bill (live AI only; mock costs nothing).
+  if (getConfig().mode === "live") {
+    const globalCap = globalSynthesisCap();
+    const { count } = await admin
+      .from("synthesis_runs")
+      .select("id", { count: "exact", head: true })
+      .eq("mode", "live")
+      .gte("created_at", since(86_400_000));
+    if ((count ?? 0) >= globalCap) {
+      // Tell the team once a day, not on every refused click.
+      if (
+        await allow({
+          scope: "alert-global-cap",
+          identity: new Date().toISOString().slice(0, 10),
+          max: 1,
+          windowSeconds: 86_400,
+        })
+      )
+        await alert("synthesis_cap", "The platform-wide daily limit for AI runs was reached.", { cap: globalCap });
+      return { ok: false, status: 429, error: t("globalLimit") };
+    }
   }
 
   const { data: fileRows } = await admin

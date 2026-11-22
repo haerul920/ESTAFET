@@ -119,3 +119,12 @@ export function isEmailAllowedBy(email: string, domains: string[]): boolean {
   const domain = email.split("@")[1]?.toLowerCase() ?? "";
   return domains.some((d) => domain === d || domain.endsWith("." + d));
 }
+
+/**
+ * The platform-wide limit for live AI runs in 24 hours (all people together). From the environment, because it protects
+ * the bill and should not be changed by a click in the admin area. Default 300; a bad value falls back to the default.
+ */
+export function globalSynthesisCap(env: Record<string, string | undefined> = process.env): number {
+  const n = Number(env.SYNTHESIS_GLOBAL_DAILY_CAP);
+  return Number.isInteger(n) && n >= 0 ? n : 300;
+}
