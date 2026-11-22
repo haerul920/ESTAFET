@@ -134,6 +134,10 @@ select public.promote_admin('person@student.unhas.ac.id');   -- demote_admin(...
 | Deployment (Vercel + Supabase cloud) | **Prepared, not deployed** | Configuration, schedule, health check and runbook exist (R7); only the local stack and a local production build have been run. Staging and production projects do not exist yet. |
 | `/styleguide` route | **Planned** | Not built. |
 
+## For the next developer
+
+Phases R0 to R7 are done and merged into `release/next`. **R8 (quality gate) and R9 (staged launch) are next.** Start with [`docs/handover-r8-r9.md`](docs/handover-r8-r9.md) (in Indonesian): the rules that bind the work, the local setup and its traps, a map of the code, and step-by-step plans for R8 and R9 with everything that is not yet verified.
+
 ## Known limitations
 
 - Admin: the "environment" badge comes from `APP_ENV` (or the Supabase URL: local means LOCAL, anything else is treated as PRODUCTION). Set `APP_ENV` correctly on staging.
