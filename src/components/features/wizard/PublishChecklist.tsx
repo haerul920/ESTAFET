@@ -1,16 +1,15 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { Check, Circle, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { CopyLinkButton } from "./CopyLinkButton";
-import type { PublishChecklist as Checklist } from "@/lib/db/creator";
+import type { PublishChecklist as Checklist } from "@/lib/db/owner";
 import { cn } from "@/lib/cn";
 
 function Mark({ state }: { state: "done" | "warn" | "todo" }) {
-  const cls =
-    state === "done" ? "bg-ok-bg text-ok" : state === "warn" ? "bg-warn-bg text-warn" : "bg-chip text-text-2";
+  const cls = state === "done" ? "bg-ok-bg text-ok" : state === "warn" ? "bg-warn-bg text-warn" : "bg-chip text-text-2";
   return (
     <motion.span
       key={state}
@@ -20,7 +19,13 @@ function Mark({ state }: { state: "done" | "warn" | "todo" }) {
       aria-hidden="true"
       className={cn("flex h-6 w-6 flex-none items-center justify-center rounded-full font-semibold", cls)}
     >
-      {state === "done" ? <Check size={14} strokeWidth={3} /> : state === "warn" ? <TriangleAlert size={13} /> : <Circle size={8} />}
+      {state === "done" ? (
+        <Check size={14} strokeWidth={3} />
+      ) : state === "warn" ? (
+        <TriangleAlert size={13} />
+      ) : (
+        <Circle size={8} />
+      )}
     </motion.span>
   );
 }
@@ -29,64 +34,32 @@ function Mark({ state }: { state: "done" | "warn" | "todo" }) {
 export function PublishChecklist({
   projectId,
   checklist,
-  advisorEmail,
   step,
 }: {
   projectId: string;
   checklist: Checklist;
-  advisorEmail: string;
   step: string;
 }) {
-  const { team, advisor, review } = checklist;
-  const advisorText =
-    advisor.status === "approved"
-      ? "Advisor approved"
-      : advisor.status === "declined"
-        ? "Advisor said not now"
-        : advisor.status === "withdrawn"
-          ? "Advisor approval withdrawn"
-          : advisor.status === "pending"
-            ? "Advisor approval pending"
-            : "Advisor approval not requested";
-
+  const t = useTranslations("checklist");
+  const { team, review, policies } = checklist;
   return (
-    <Card as="aside" aria-label="Before you can publish">
-      <h2 className="mb-4 mt-0 text-lg">Before you can publish</h2>
+    <Card as="aside" aria-label={t("title")}>
+      <h2 className="mb-4 mt-0 text-lg">{t("title")}</h2>
       <ul className="m-0 flex list-none flex-col gap-4 p-0">
         <li className="flex gap-3">
           <Mark state={team.done ? "done" : "warn"} />
           <span>
-            <strong>{team.done ? "Team agreed" : "Team agreement pending"}</strong>
+            <strong>{team.done ? t("teamDone") : t("teamPending")}</strong>
             <br />
             <span className="text-sm text-text-2">
-              {team.confirmed} of {team.total} members confirmed
+              {t("teamCount", { confirmed: team.confirmed, total: team.total })}
             </span>
-            {!team.done && step !== "consent" ? (
+            {!team.done && step !== "tim" ? (
               <>
                 <br />
-                <Link href={`/share/${projectId}/consent`} className="text-sm font-semibold">
-                  Go to Consent
+                <Link href={`/bagikan/${projectId}/tim`} className="text-sm font-semibold">
+                  {t("goConsent")}
                 </Link>
-              </>
-            ) : null}
-          </span>
-        </li>
-        <li className="flex gap-3">
-          <Mark state={advisor.done ? "done" : "warn"} />
-          <span>
-            <strong>{advisorText}</strong>
-            <br />
-            <span className="text-sm text-text-2">
-              {advisor.done
-                ? "Publishing is unlocked on this side."
-                : advisor.status === "pending"
-                  ? `Share the private link with ${advisorEmail || "your advisor"}. Publishing stays locked until they approve.`
-                  : "Publishing stays locked until your advisor approves."}
-            </span>
-            {!advisor.done ? (
-              <>
-                <br />
-                {step === "consent" ? null : <CopyLinkButton projectId={projectId} label="Copy consent link" />}
               </>
             ) : null}
           </span>
@@ -94,13 +67,21 @@ export function PublishChecklist({
         <li className="flex gap-3">
           <Mark state={review.done ? "done" : review.total > 0 ? "warn" : "todo"} />
           <span>
-            <strong>Review the AI draft</strong>
+            <strong>{t("reviewTitle")}</strong>
             <br />
             <span className="text-sm text-text-2">
               {review.total === 0
-                ? "Next step: upload files and draft items."
-                : `${review.reviewed} of ${review.total} items reviewed`}
+                ? t("reviewNone")
+                : t("reviewCount", { reviewed: review.reviewed, total: review.total })}
             </span>
+          </span>
+        </li>
+        <li className="flex gap-3">
+          <Mark state={policies.done ? "done" : "warn"} />
+          <span>
+            <strong>{policies.done ? t("policiesOk") : t("policiesNo")}</strong>
+            <br />
+            <span className="text-sm text-text-2">{policies.done ? t("policiesOkText") : t("policiesNoText")}</span>
           </span>
         </li>
       </ul>

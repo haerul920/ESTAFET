@@ -1,6 +1,6 @@
 import type { ExtractedDoc } from "@/lib/ingest/types";
 
-export const SYSTEM_PROMPT = `You are ESTAFET's handover analyst. You read documents from a discontinued student project and draft a structured handover summary for the next team.
+const BASE_PROMPT = `You are ESTAFET's handover analyst. You read documents from a discontinued student project and draft a structured handover summary for the next team.
 
 Rules you must follow:
 1. Use only what the documents say. If something is not stated, omit it. Do not invent tasks, results or objectives.
@@ -18,6 +18,17 @@ Rules you must follow:
   "lessons": [{ "type": "methodology|evaluation_feedback|funding_feedback|blocker", "text": "", "evidence": [{ "file": "", "page": 1, "quote": "" }] }],
   "tech": ["string"]
 }`;
+
+/** The system prompt. The instructions stay in English; only the language of the drafted text follows the person's language. */
+export function systemPrompt(language: "id" | "en" = "en"): string {
+  const line =
+    language === "id"
+      ? "4. Write the summary, titles and descriptions in Indonesian (Bahasa Indonesia). Evidence quotes stay VERBATIM in the language of the document. Keep titles short and concrete."
+      : "4. Write in English. Keep titles short and concrete.";
+  return BASE_PROMPT.replace("4. Write in English. Keep titles short and concrete.", line);
+}
+
+export const SYSTEM_PROMPT = systemPrompt("en");
 
 function escapeAttr(s: string): string {
   return s.replace(/[<>"&]/g, "_");

@@ -1,0 +1,497 @@
+/*
+ * ESTAFET motion (CLAUDE.md 14.8). Loops and reveals are CSS keyframes and transitions.
+ * Only transform and opacity animate. Loops pause off screen (data-offscreen) and while the
+ * tab is hidden (html[data-page-hidden]). prefers-reduced-motion switches every loop off.
+ */
+
+/* ---------- Floating cards and clouds (loops) ---------- */
+@keyframes floating {
+  from {
+    transform: translate3d(0, 0, 0) rotate(var(--rot-a, 0deg));
+  }
+  to {
+    transform: translate3d(0, calc(var(--amp, 10px) * -1), 0) rotate(var(--rot-b, 0deg));
+  }
+}
+.floating {
+  animation: floating var(--dur, 7s) ease-in-out var(--delay, 0s) infinite alternate;
+  will-change: transform; /* the only place will-change is used (hero floating cards) */
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(calc(var(--drift, 30px) * -1), 0, 0);
+  }
+  to {
+    transform: translate3d(var(--drift, 30px), 0, 0);
+  }
+}
+.cloud-drift {
+  animation: drift var(--dur, 55s) linear var(--delay, 0s) infinite alternate;
+}
+
+@keyframes sway {
+  from {
+    transform: translate3d(0, 0, 0) rotate(calc(var(--sway, 3deg) * -1));
+  }
+  to {
+    transform: translate3d(0, 0, 0) rotate(var(--sway, 3deg));
+  }
+}
+.sway {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: sway var(--dur, 4s) ease-in-out var(--delay, 0s) infinite alternate;
+}
+
+/* Parallax: --py is set by ParallaxLayer (max 24px), throttled with requestAnimationFrame. */
+.parallax {
+  transform: translate3d(0, calc(var(--py, 0px) * var(--depth, 1)), 0);
+}
+
+/* Pause loops that are off screen or in a hidden tab. */
+[data-offscreen="true"],
+html[data-page-hidden="true"] [data-loop],
+html[data-page-hidden="true"] [data-loop] * {
+  animation-play-state: paused !important;
+}
+
+/* ---------- Reveal on scroll (once) ---------- */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, var(--reveal-y, 24px), 0);
+  transition:
+    opacity var(--dur-reveal) var(--ease) var(--delay, 0ms),
+    transform var(--dur-reveal) var(--ease) var(--delay, 0ms);
+}
+.reveal[data-in="true"] {
+  opacity: 1;
+  transform: none;
+}
+.stagger > .reveal-item {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  transition:
+    opacity var(--dur-reveal) var(--ease) calc(var(--i, 0) * var(--gap, 80ms) + 50ms),
+    transform var(--dur-reveal) var(--ease) calc(var(--i, 0) * var(--gap, 80ms) + 50ms);
+}
+.stagger[data-in="true"] > .reveal-item {
+  opacity: 1;
+  transform: none;
+}
+.stagger > .reveal-item:nth-child(1) {
+  --i: 0;
+}
+.stagger > .reveal-item:nth-child(2) {
+  --i: 1;
+}
+.stagger > .reveal-item:nth-child(3) {
+  --i: 2;
+}
+.stagger > .reveal-item:nth-child(4) {
+  --i: 3;
+}
+.stagger > .reveal-item:nth-child(5) {
+  --i: 4;
+}
+.stagger > .reveal-item:nth-child(6) {
+  --i: 5;
+}
+.stagger > .reveal-item:nth-child(7) {
+  --i: 6;
+}
+.stagger > .reveal-item:nth-child(8) {
+  --i: 7;
+}
+.stagger > .reveal-item:nth-child(n + 9) {
+  --i: 8;
+}
+
+/* Without scripting nothing may stay hidden. */
+@media (scripting: none) {
+  .reveal,
+  .stagger > .reveal-item {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- Headline: word by word ---------- */
+@keyframes word-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.5em, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.word {
+  display: inline-block;
+  animation: word-in 600ms var(--ease) calc(var(--i, 0) * 70ms + var(--base, 100ms)) both;
+}
+
+/* Plain fade-up on load for hero copy and calls to action (no JavaScript needed). */
+.fade-up {
+  animation: word-in 700ms var(--ease) var(--delay, 0ms) both;
+}
+
+/* A line that draws itself (hero chart). */
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.draw-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1600ms var(--ease) var(--delay, 1200ms) forwards;
+}
+
+/* ---------- Count up (CSS only: an animated integer property) ---------- */
+@property --count-n {
+  syntax: "<integer>";
+  initial-value: 0;
+  inherits: false;
+}
+@keyframes count-up {
+  to {
+    --count-n: var(--to);
+  }
+}
+.count-up {
+  --count-n: 0;
+  counter-reset: cu var(--count-n);
+}
+.count-up::after {
+  content: counter(cu) var(--suffix, "");
+}
+.count-up[data-in="true"] {
+  animation: count-up 1200ms var(--ease) forwards;
+}
+.count-up[data-static="true"]::after {
+  content: var(--final);
+}
+.count-up[data-static="true"] {
+  animation: none;
+}
+
+/* ---------- Interactions (global) ---------- */
+/* Buttons lift and brighten, press scales to 0.98, the arrow nudges. */
+.btn {
+  isolation: isolate;
+  transition:
+    transform var(--dur-micro) var(--ease),
+    background-color var(--dur-micro) var(--ease),
+    filter var(--dur-micro) var(--ease);
+}
+.btn:not(:disabled):not([aria-disabled="true"]):hover {
+  transform: translate3d(0, -2px, 0);
+  filter: brightness(1.05);
+}
+.btn:not(:disabled):not([aria-disabled="true"]):active {
+  transform: scale(0.98);
+  filter: none;
+}
+.btn-arrow {
+  transition: transform var(--dur-std) var(--ease);
+}
+.btn:hover .btn-arrow {
+  transform: translate3d(2px, -2px, 0);
+}
+/* Hover glow: the glow is a layer whose opacity animates (never box-shadow). */
+.btn-glow::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--glow, rgba(205, 245, 75, 0.7));
+  filter: blur(14px);
+  opacity: 0;
+  transition: opacity var(--dur-std) var(--ease);
+}
+.btn-glow:hover::before {
+  opacity: 0.85;
+}
+
+/* Cards lift 4px; the soft shadow grows through an opacity layer. */
+.lift {
+  position: relative;
+  transition: transform var(--dur-std) var(--ease);
+}
+.lift::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 0 18px 40px rgba(10, 60, 150, 0.18);
+  opacity: 0;
+  transition: opacity var(--dur-std) var(--ease);
+  pointer-events: none;
+}
+.lift:hover {
+  transform: translate3d(0, -4px, 0);
+}
+.lift:hover::after {
+  opacity: 1;
+}
+
+/* Pills and chips scale up a little. */
+.chip-hover {
+  transition: transform var(--dur-micro) var(--ease);
+}
+.chip-hover:hover {
+  transform: scale(1.03);
+}
+
+/* Links get an animated underline. */
+.link-anim {
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 1.5px;
+  transition: background-size var(--dur-std) var(--ease);
+}
+.link-anim:hover,
+.link-anim:focus-visible {
+  background-size: 100% 1.5px;
+}
+
+/* Icon buttons rotate or nudge. */
+.icon-btn {
+  transition: transform var(--dur-micro) var(--ease);
+}
+.icon-btn:hover {
+  transform: rotate(8deg) scale(1.06);
+}
+.icon-btn:active {
+  transform: scale(0.96);
+}
+
+/* The focus ring animates in (outline offset and colour transition, no layout change). */
+@keyframes ring-in {
+  from {
+    outline-offset: 0;
+    outline-color: transparent;
+  }
+}
+:focus-visible {
+  animation: ring-in var(--dur-micro) var(--ease);
+}
+
+/* ---------- State changes ---------- */
+.skeleton {
+  background: linear-gradient(90deg, #e9ecef 0%, #f4f5f7 50%, #e9ecef 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 14px;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Success check: the stroke draws itself. */
+@keyframes check-draw {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.check-draw path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: check-draw 400ms var(--ease) 100ms forwards;
+}
+
+/* Radix overlays animate with data-state (dialogs scale from 0.96, toasts slide and fade). */
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes dialog-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    transform: translate3d(-24px, 0, 0);
+  }
+}
+@keyframes drawer-out {
+  to {
+    opacity: 0;
+    transform: translate3d(-24px, 0, 0);
+  }
+}
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+  }
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.97);
+  }
+}
+@keyframes menu-out {
+  to {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.97);
+  }
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate3d(24px, 0, 0);
+  }
+}
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translate3d(24px, 0, 0);
+  }
+}
+.o-overlay[data-state="open"] {
+  animation: overlay-in var(--dur-std) var(--ease);
+}
+.o-overlay[data-state="closed"] {
+  animation: overlay-out var(--dur-micro) var(--ease) forwards;
+}
+.o-dialog[data-state="open"] {
+  animation: dialog-in var(--dur-std) var(--ease);
+}
+.o-dialog[data-state="closed"] {
+  animation: dialog-out var(--dur-micro) var(--ease) forwards;
+}
+.o-drawer[data-state="open"] {
+  animation: drawer-in var(--dur-std) var(--ease);
+}
+.o-drawer[data-state="closed"] {
+  animation: drawer-out var(--dur-micro) var(--ease) forwards;
+}
+.o-sheet[data-state="open"] {
+  animation: sheet-in var(--dur-std) var(--ease);
+}
+.o-menu[data-state="open"] {
+  animation: menu-in var(--dur-micro) var(--ease);
+}
+.o-menu[data-state="closed"] {
+  animation: menu-out 100ms var(--ease) forwards;
+}
+.o-toast[data-state="open"] {
+  animation: toast-in var(--dur-std) var(--ease);
+}
+.o-toast[data-state="closed"] {
+  animation: toast-out var(--dur-micro) var(--ease) forwards;
+}
+
+/* Tab and accordion content slides in. */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+}
+.slide-in {
+  animation: slide-in var(--dur-std) var(--ease);
+}
+
+/* List items enter with a short fade. */
+@keyframes item-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+}
+.item-in {
+  animation: item-in var(--dur-std) var(--ease) both;
+}
+
+/* ---------- Reduced motion: loops off, reveals instant, state changes stay usable ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .floating,
+  .cloud-drift,
+  .sway,
+  .skeleton,
+  .word,
+  .fade-up,
+  .item-in,
+  .slide-in,
+  .check-draw path,
+  .count-up,
+  :focus-visible {
+    animation: none !important;
+  }
+  .check-draw path {
+    stroke-dashoffset: 0;
+  }
+  .draw-path {
+    animation: none !important;
+    stroke-dashoffset: 0;
+  }
+  .reveal,
+  .stagger > .reveal-item {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .count-up::after {
+    content: var(--final) !important;
+  }
+  .parallax {
+    transform: none !important;
+  }
+  .btn,
+  .btn-arrow,
+  .lift,
+  .lift::after,
+  .chip-hover,
+  .icon-btn,
+  .link-anim,
+  .btn-glow::before {
+    transition: none !important;
+  }
+  .btn:hover,
+  .lift:hover,
+  .chip-hover:hover,
+  .icon-btn:hover,
+  .btn:hover .btn-arrow {
+    transform: none !important;
+  }
+  .o-overlay,
+  .o-dialog,
+  .o-drawer,
+  .o-sheet,
+  .o-menu,
+  .o-toast {
+    animation: none !important;
+  }
+}

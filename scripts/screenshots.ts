@@ -8,10 +8,10 @@ const base = process.env.E2E_BASE_URL ?? "http://localhost:3100";
 
 async function login(page: import("@playwright/test").Page, email: string) {
   await page.goto(`${base}/login`);
-  await page.getByLabel("University email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password").fill("Demo-Pass-2026!");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL("**/dashboard");
+  await page.waitForURL("**/dasbor");
 }
 
 async function shot(page: import("@playwright/test").Page, name: string, url: string, full = true) {
@@ -43,11 +43,11 @@ async function main() {
   await shot(p, "04-login", "/login");
 
   await login(p, "creator@estafet.demo");
-  await shot(p, "05-dashboard", "/dashboard");
-  await shot(p, "06-verify", "/share/b0000000-0000-4000-8000-000000000007/verify");
-  await shot(p, "07-files", "/share/b0000000-0000-4000-8000-000000000007/files");
-  await shot(p, "08-consent-step", "/share/b0000000-0000-4000-8000-000000000008/consent");
-  await shot(p, "09-basics", "/share/b0000000-0000-4000-8000-000000000008/basics");
+  await shot(p, "05-dashboard", "/dasbor");
+  await shot(p, "06-verify", "/bagikan/b0000000-0000-4000-8000-000000000007/tinjau");
+  await shot(p, "07-files", "/bagikan/b0000000-0000-4000-8000-000000000007/berkas");
+  await shot(p, "08-consent-step", "/bagikan/b0000000-0000-4000-8000-000000000008/tim");
+  await shot(p, "09-basics", "/bagikan/b0000000-0000-4000-8000-000000000008/info");
   await shot(p, "10-review", "/requests/e0000000-0000-4000-8000-000000000001");
 
   const q = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();

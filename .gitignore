@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
@@ -15,6 +13,7 @@
 
 # next.js
 /.next/
+/.next-*/
 /out/
 
 # production
@@ -52,3 +51,17 @@ next-env.d.ts
 /playwright-report/
 /test-results/
 /blob-report/
+
+# Build & Cache
+.next/
+.next-prod/
+tsconfig.tsbuildinfo
+
+# Dependencies
+node_modules/
+
+# Testing
+test-results/
+
+# Environment Variables
+.env*.local

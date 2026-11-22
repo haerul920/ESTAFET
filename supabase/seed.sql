@@ -4,6 +4,7 @@
 
 -- ---------------------------------------------------------------------------
 -- Demo users (GoTrue-compatible rows). The on_auth_user_created trigger creates the profiles.
+-- Accounts that already exist are kept, so the seed can run again after "Purge demo data" (which keeps the accounts).
 -- ---------------------------------------------------------------------------
 do $$
 declare
@@ -15,6 +16,7 @@ begin
     ('d0000000-0000-4000-8000-000000000001'::uuid, 'alumni@estafet.demo', 'Demo Alumni', 'Engineering', 'Informatics')
   ) as t(id, email, full_name, faculty, program)
   loop
+    continue when exists (select 1 from auth.users where id = u.id or email = u.email);
     insert into auth.users (
       instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
       raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
@@ -37,59 +39,68 @@ end $$;
 -- Demo projects. The creator owns 1, 7, 8. The alumni account owns 2 to 6.
 -- ---------------------------------------------------------------------------
 insert into public.projects
-  (id, slug, title, summary, kind, field, year, stop_reason, status, advisor_name, advisor_email, created_by, is_demo, published_at, stopped_note, tech, team_size)
+  (id, slug, title, summary, kind, field, year, stop_reason, status, created_by, is_demo, published_at, stopped_note, tech, team_size)
 values
   ('b0000000-0000-4000-8000-000000000001', 'mangrove-cover-classifier', 'Mangrove Cover Classifier',
    'A model that classifies mangrove cover from drone images, meant to help coastal teams monitor change between seasons. The team built the data pipeline and a first baseline, then stopped after the first funding review.',
-   'research', 'Forestry', 2025, 'funding_not_granted', 'published', 'Dr. Sari Demo (fictional)', 'advisor.demo@example.invalid',
+   'research', 'Forestry', 2025, 'funding_not_granted', 'published',
    'c0000000-0000-4000-8000-000000000001', true, now() - interval '3 days',
    'Funding was not granted after the first review. Reviewers asked for a clearer sampling plan.',
    array['Python', 'Drone imagery', 'Image segmentation'], 3),
   ('b0000000-0000-4000-8000-000000000002', 'campus-waste-sorting-assistant', 'Campus Waste Sorting Assistant',
    'A phone app that suggests the right bin from a photo of an item.',
-   'hackathon', 'Engineering', 2025, 'team_graduated', 'published', 'Dr. Budi Demo (fictional)', 'advisor.demo@example.invalid',
+   'hackathon', 'Engineering', 2025, 'team_graduated', 'published',
    'd0000000-0000-4000-8000-000000000001', true, now() - interval '12 days',
    'The core team graduated before the app could be tested with real campus bins.',
    array['Flutter', 'Image classification', 'TensorFlow Lite'], 4),
   ('b0000000-0000-4000-8000-000000000003', 'fish-freshness-indicator', 'Fish Freshness Indicator',
    'Estimates freshness from a smartphone photo of the fish eye.',
-   'student_program', 'Marine Science and Fisheries', 2024, 'funding_not_granted', 'published', 'Dr. Laila Demo (fictional)', 'advisor.demo@example.invalid',
+   'student_program', 'Marine Science and Fisheries', 2024, 'funding_not_granted', 'published',
    'd0000000-0000-4000-8000-000000000001', true, now() - interval '20 days',
    'The program did not renew funding, so the field validation never happened.',
    array['Python', 'Color analysis', 'Smartphone photos'], 3),
   ('b0000000-0000-4000-8000-000000000004', 'village-clinic-queue-tracker', 'Village Clinic Queue Tracker',
    'Shows patients a live queue number for a community health post.',
-   'student_program', 'Public Health', 2024, 'time_or_people', 'published', 'Dr. Hana Demo (fictional)', 'advisor.demo@example.invalid',
+   'student_program', 'Public Health', 2024, 'time_or_people', 'published',
    'd0000000-0000-4000-8000-000000000001', true, now() - interval '25 days',
    'The team could not keep up with clinic visits and coursework at the same time.',
    array['Next.js', 'SMS gateway', 'Postgres'], 4),
   ('b0000000-0000-4000-8000-000000000005', 'study-group-matcher', 'Study Group Matcher',
    'Pairs students by course and free time slots.',
-   'hackathon', 'Engineering', 2025, 'time_or_people', 'published', 'Dr. Budi Demo (fictional)', 'advisor.demo@example.invalid',
+   'hackathon', 'Engineering', 2025, 'time_or_people', 'published',
    'd0000000-0000-4000-8000-000000000001', true, now() - interval '30 days',
    'Only two of five teammates stayed after the hackathon weekend.',
    array['TypeScript', 'Constraint matching'], 5),
   ('b0000000-0000-4000-8000-000000000006', 'seaweed-drying-monitor', 'Seaweed Drying Monitor',
    'Sensor node that logs humidity and temperature on drying racks.',
-   'research', 'Marine Science and Fisheries', 2024, 'team_graduated', 'published', 'Dr. Laila Demo (fictional)', 'advisor.demo@example.invalid',
+   'research', 'Marine Science and Fisheries', 2024, 'team_graduated', 'published',
    'd0000000-0000-4000-8000-000000000001', true, now() - interval '40 days',
    'The research team graduated before the second drying season.',
    array['ESP32', 'Humidity sensors', 'Data logging'], 3),
   ('b0000000-0000-4000-8000-000000000007', 'coral-reef-photo-counter', 'Coral Reef Photo Counter',
    'Counts coral colonies in reef photos to speed up survey work.',
-   'research', 'Marine Science and Fisheries', 2025, 'funding_not_granted', 'verifying', 'Dr. Laila Demo (fictional)', 'advisor.demo@example.invalid',
+   'research', 'Marine Science and Fisheries', 2025, 'funding_not_granted', 'draft',
    'c0000000-0000-4000-8000-000000000001', true, null,
    'The survey grant was not renewed after the first season.',
    array['Python', 'Object detection'], 3),
   ('b0000000-0000-4000-8000-000000000008', 'solar-dryer-controller', 'Solar Dryer Controller',
    'Controls vents on a solar dryer based on temperature and humidity.',
-   'student_program', 'Engineering', 2024, 'team_graduated', 'awaiting_advisor', 'Dr. Budi Demo (fictional)', 'advisor.demo@example.invalid',
+   'student_program', 'Engineering', 2024, 'team_graduated', 'draft',
    'c0000000-0000-4000-8000-000000000001', true, null,
    '', array[]::text[], 3);
 
--- Team consent for projects that passed that step.
+-- Team consent for projects that passed that step (published, plus the two drafts that are past the consent step).
 update public.project_members set consented_at = now()
-  where project_id in (select id from public.projects where status <> 'draft');
+  where project_id in (select id from public.projects where status <> 'draft' or slug in ('coral-reef-photo-counter', 'solar-dryer-controller'));
+
+-- One demo project opens without approval (access_mode = open) so both access modes can be tried. The rest need a request.
+update public.projects set access_mode = 'open' where slug = 'campus-waste-sorting-assistant';
+
+-- The demo accounts accepted the current Terms and Privacy Policy (synthetic, demo accounts only).
+insert into public.policy_acceptances (profile_id, kind, version)
+select u.id, k.kind, 1 from auth.users u cross join (select distinct kind from public.policies) k
+where u.email like '%@estafet.demo'
+on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Private file records (objects are uploaded by `pnpm seed:storage`)
@@ -226,22 +237,8 @@ join public.projects p on p.slug = s.slug
 join public.project_files f on f.project_id = p.id and f.original_name = s.fname;
 
 -- ---------------------------------------------------------------------------
--- Advisor consents. Published and verifying projects are approved.
--- The Solar Dryer project has a pending consent with a known DEMO token: demo-advisor-token-solar
--- ---------------------------------------------------------------------------
-insert into public.advisor_consents (project_id, token_hash, status, comment, expires_at, decided_at)
-select id, encode(extensions.digest('demo-approved-' || slug, 'sha256'), 'hex'), 'approved',
-       'Happy to see this continue (demo).', now() + interval '14 days', now() - interval '2 days'
-from public.projects where status in ('published', 'verifying');
-
-insert into public.advisor_consents (project_id, token_hash, status, expires_at)
-select id, encode(extensions.digest('demo-advisor-token-solar', 'sha256'), 'hex'), 'pending', now() + interval '14 days'
-from public.projects where slug = 'solar-dryer-controller';
-
--- ---------------------------------------------------------------------------
 -- Lineage for published projects (created is logged by the insert trigger)
 -- ---------------------------------------------------------------------------
-select public.log_lineage(id, 'advisor_approved', null, null, '{}'::jsonb) from public.projects where status in ('published', 'verifying');
 select public.log_lineage(id, 'published', created_by, null, '{}'::jsonb) from public.projects where status = 'published';
 
 -- ---------------------------------------------------------------------------
@@ -272,12 +269,11 @@ from public.continuation_requests;
 
 insert into public.notifications (user_id, type, payload) values
   ('c0000000-0000-4000-8000-000000000001', 'new_request',
-   '{"project_id":"b0000000-0000-4000-8000-000000000001","request_id":"e0000000-0000-4000-8000-000000000001","title":"Mangrove Cover Classifier","team":"Team Laut Biru"}'),
-  ('c0000000-0000-4000-8000-000000000001', 'advisor_decision',
-   '{"project_id":"b0000000-0000-4000-8000-000000000007","title":"Coral Reef Photo Counter","decision":"approved","comment":"Happy to see this continue (demo)."}');
+   '{"project_id":"b0000000-0000-4000-8000-000000000001","request_id":"e0000000-0000-4000-8000-000000000001","title":"Mangrove Cover Classifier","team":"Team Laut Biru"}');
 
--- Fictional profile details
-update public.profiles set university = 'Universitas Hasanuddin (demo)';
+-- Fictional profile details, for the demo accounts only (a cloud project may also hold real accounts).
+update public.profiles set university = 'Universitas Hasanuddin (demo)'
+where id in (select id from auth.users where email like '%@estafet.demo');
 
 -- ---------------------------------------------------------------------------
 -- Admin demo data. ALL of it is labeled is_demo or belongs to demo projects.
@@ -285,7 +281,7 @@ update public.profiles set university = 'Universitas Hasanuddin (demo)';
 -- ---------------------------------------------------------------------------
 -- One open demo report so the moderation queue is not empty.
 insert into public.reports (project_id, reason, details)
-select id, 'inaccurate', 'Demo report: the summary may overstate how far the classifier got. (Simulated, for the admin demo.)'
+select id, 'false_information', 'Demo report: the summary may overstate how far the classifier got. (Simulated, for the admin demo.)'
 from public.projects where slug = 'fish-freshness-indicator';
 
 -- Illustrative DEMO trial sessions (pseudonym codes only). They are excluded from metrics by default and are not results.

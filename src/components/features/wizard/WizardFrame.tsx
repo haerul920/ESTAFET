@@ -1,9 +1,17 @@
-import { PageShell } from "@/components/ui/PageShell";
+import { useTranslations } from "next-intl";
+import { Breadcrumb, PageShell } from "@/components/ui/PageShell";
 import { Stepper } from "@/components/ui/Stepper";
 
-export const WIZARD_STEPS = ["basics", "consent", "files", "verify", "publish"] as const;
+// Order (R4): info, files, review the AI draft, team and access, preview and publish.
+export const WIZARD_STEPS = ["info", "berkas", "tinjau", "tim", "terbit"] as const;
 export type WizardStep = (typeof WIZARD_STEPS)[number];
-const LABELS: Record<WizardStep, string> = { basics: "Basics", consent: "Consent", files: "Files", verify: "Verify", publish: "Publish" };
+const LABEL_KEY = {
+  info: "stepBasics",
+  berkas: "stepFiles",
+  tinjau: "stepVerify",
+  tim: "stepConsent",
+  terbit: "stepPublish",
+} as const;
 
 export function WizardFrame({
   projectId,
@@ -14,15 +22,17 @@ export function WizardFrame({
   current: WizardStep;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("wizard");
   const index = WIZARD_STEPS.indexOf(current);
   return (
     <PageShell>
+      <Breadcrumb items={[{ label: t("breadcrumbDashboard"), href: "/dasbor" }, { label: t("shareMeta") }]} />
       <Stepper
-        label="Share a project: progress"
+        label={t("frameLabel")}
         current={index}
         steps={WIZARD_STEPS.map((s) => ({
-          label: LABELS[s],
-          href: projectId ? `/share/${projectId}/${s}` : undefined,
+          label: t(LABEL_KEY[s]),
+          href: projectId ? `/bagikan/${projectId}/${s}` : undefined,
         }))}
       />
       {children}

@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -11,14 +12,20 @@ export interface StepDef {
 }
 
 /** Step progress with `aria-current="step"`. Completed steps with an href are links. */
-export function Stepper({ steps, current, label = "Progress", showNumbers = true }: {
+export function Stepper({
+  steps,
+  current,
+  label,
+  showNumbers = true,
+}: {
   steps: StepDef[];
   current: number;
   label?: string;
   showNumbers?: boolean;
 }) {
+  const t = useTranslations("common");
   return (
-    <nav aria-label={label} className="mb-8">
+    <nav aria-label={label ?? t("progress")} className="mb-8">
       <ol className="m-0 flex list-none flex-wrap gap-2 p-0">
         {steps.map((s, i) => {
           const done = i < current;

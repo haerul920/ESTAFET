@@ -7,7 +7,7 @@ const quote = z
   .min(1)
   .refine((q) => wordCount(q) <= 25, "A quote can be at most 25 words.");
 
-export const evidenceSchema = z.object({
+const evidenceSchema = z.object({
   file: z.string().min(1),
   page: z.number().int().min(1),
   quote,
@@ -22,7 +22,13 @@ export const synthesisSchema = z.object({
     .min(1)
     .refine((s) => wordCount(s) <= 90, "The summary can be at most 90 words."),
   objectives: z
-    .array(z.object({ title: z.string().min(1), status: z.enum(["done", "in_progress", "not_started"]), evidence: evidenceList }))
+    .array(
+      z.object({
+        title: z.string().min(1),
+        status: z.enum(["done", "in_progress", "not_started"]),
+        evidence: evidenceList,
+      }),
+    )
     .max(12),
   completed: z
     .array(z.object({ title: z.string().min(1), description: z.string().default(""), evidence: evidenceList }))

@@ -80,12 +80,20 @@ describe("ZIP safety", () => {
 });
 
 describe("secrets scan", () => {
-  it.each([".env", ".env.local", "server.pem", "id_rsa", "id_rsa.pub", "deploy.key", "credentials.json", "credentials-prod.json", "keys.json", "a/b/.env.production"])(
-    "flags the file name %s",
-    (name) => {
-      expect(sensitiveNameReason(name)).not.toBeNull();
-    },
-  );
+  it.each([
+    ".env",
+    ".env.local",
+    "server.pem",
+    "id_rsa",
+    "id_rsa.pub",
+    "deploy.key",
+    "credentials.json",
+    "credentials-prod.json",
+    "keys.json",
+    "a/b/.env.production",
+  ])("flags the file name %s", (name) => {
+    expect(sensitiveNameReason(name)).not.toBeNull();
+  });
   it.each(["README.md", "src/env.ts", "keyboard.ts", "package.json", "notes.md"])("allows the file name %s", (name) => {
     expect(sensitiveNameReason(name)).toBeNull();
   });
@@ -109,7 +117,9 @@ describe("secrets scan", () => {
 
 describe("parsers", () => {
   it("splits Markdown into numbered sections", () => {
-    const pages = parseMarkdownSections("# Overview\nIntro text.\n\n## Labeling\nLabeled so far: canopy.\n\n## Next\n- TODO: more data.\n");
+    const pages = parseMarkdownSections(
+      "# Overview\nIntro text.\n\n## Labeling\nLabeled so far: canopy.\n\n## Next\n- TODO: more data.\n",
+    );
     expect(pages.map((p) => p.label)).toEqual(["Overview", "Labeling", "Next"]);
     expect(pages[1].page).toBe(2);
     expect(pages[2].text).toContain("TODO: more data.");

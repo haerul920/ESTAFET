@@ -1,5 +1,4 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { AGREEMENT_DISCLAIMER, AGREEMENT_TERMS, AGREEMENT_VERSION } from "./terms";
 
 const s = StyleSheet.create({
   page: { padding: 48, fontSize: 11, fontFamily: "Helvetica", color: "#0E1A26", lineHeight: 1.5 },
@@ -14,79 +13,90 @@ const s = StyleSheet.create({
   note: { marginTop: 24, fontSize: 9, color: "#4A5A66" },
 });
 
+/** All text in the language of the person who asked for the PDF. Built by the route from the `pdf` and `agreement` messages. */
+export interface AgreementPdfLabels {
+  title: string;
+  version: string;
+  demoNote: string;
+  project: string;
+  owners: string;
+  notListed: string;
+  team: string;
+  members: string;
+  tasks: string;
+  terms: string;
+  acceptedBy: string;
+  credit: string;
+  lineageRef: string;
+  disclaimer: string;
+  termTexts: string[];
+}
+
 export interface AgreementPdfData {
   projectTitle: string;
-  creators: string[];
-  advisor: string;
+  owners: string[];
   adopterTeam: string;
   adopters: string[];
   tasks: string[];
-  creatorAccepted: { name: string; at: string }[];
-  adopterAccepted: { name: string; at: string }[];
+  /** Each person who accepted the agreement for themselves. Acceptance is per person. */
+  accepted: { name: string; at: string }[];
   lineageId: string;
   creditLine: string;
   isDemo: boolean;
+  labels: AgreementPdfLabels;
 }
 
 export function AgreementDocument({ data }: { data: AgreementPdfData }) {
+  const l = data.labels;
   return (
-    <Document title={`Attribution agreement: ${data.projectTitle}`} author="ESTAFET">
+    <Document title={`${l.title}: ${data.projectTitle}`} author="ESTAFET">
       <Page size="A4" style={s.page}>
         <Text style={s.brand}>ESTAFET</Text>
-        <Text style={s.h1}>Attribution agreement</Text>
+        <Text style={s.h1}>{l.title}</Text>
         <Text style={s.sub}>
-          Version {AGREEMENT_VERSION}
-          {data.isDemo ? " · Demo data, not a real handover" : ""}
+          {l.version}
+          {data.isDemo ? l.demoNote : ""}
         </Text>
 
         <View style={s.row}>
-          <Text style={s.label}>Project</Text>
+          <Text style={s.label}>{l.project}</Text>
           <Text>{data.projectTitle}</Text>
         </View>
         <View style={s.row}>
-          <Text style={s.label}>Original creators</Text>
-          <Text>{data.creators.join(", ") || "Not listed"}</Text>
+          <Text style={s.label}>{l.owners}</Text>
+          <Text>{data.owners.join(", ") || l.notListed}</Text>
         </View>
         <View style={s.row}>
-          <Text style={s.label}>Advisor</Text>
-          <Text>{data.advisor || "Not listed"}</Text>
-        </View>
-        <View style={s.row}>
-          <Text style={s.label}>Adopter team</Text>
+          <Text style={s.label}>{l.team}</Text>
           <Text>{data.adopterTeam}</Text>
         </View>
         <View style={s.row}>
-          <Text style={s.label}>Adopters</Text>
+          <Text style={s.label}>{l.members}</Text>
           <Text>{data.adopters.join(", ")}</Text>
         </View>
         <View style={s.row}>
-          <Text style={s.label}>Tasks taken on</Text>
+          <Text style={s.label}>{l.tasks}</Text>
           <Text style={{ flex: 1 }}>{data.tasks.join("; ")}</Text>
         </View>
 
-        <Text style={s.h2}>Terms</Text>
-        {AGREEMENT_TERMS.map((t, i) => (
+        <Text style={s.h2}>{l.terms}</Text>
+        {l.termTexts.map((t, i) => (
           <Text key={i} style={s.term}>
             {i + 1}. {t}
           </Text>
         ))}
 
-        <Text style={s.h2}>Accepted by</Text>
-        {data.creatorAccepted.map((a, i) => (
-          <Text key={"c" + i}>
-            Creator: {a.name} · {a.at}
-          </Text>
-        ))}
-        {data.adopterAccepted.map((a, i) => (
+        <Text style={s.h2}>{l.acceptedBy}</Text>
+        {data.accepted.map((a, i) => (
           <Text key={"a" + i}>
-            Adopter: {a.name} · {a.at}
+            {a.name} · {a.at}
           </Text>
         ))}
 
-        <Text style={s.h2}>Credit line for future submissions</Text>
+        <Text style={s.h2}>{l.credit}</Text>
         <Text style={s.box}>{data.creditLine}</Text>
-        <Text style={s.note}>Lineage reference: {data.lineageId}</Text>
-        <Text style={s.note}>{AGREEMENT_DISCLAIMER}</Text>
+        <Text style={s.note}>{l.lineageRef}</Text>
+        <Text style={s.note}>{l.disclaimer}</Text>
       </Page>
     </Document>
   );

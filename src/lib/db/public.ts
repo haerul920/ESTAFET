@@ -61,7 +61,3 @@ export async function getTeaserLineage(projectId: string): Promise<TeaserLineage
   if (error) throw new Error(`Could not load lineage: ${error.message}`);
   return (data ?? []) as TeaserLineageEvent[];
 }
-
-export function progressPct(p: Pick<TeaserProject, "objectives_done" | "objectives_total">): number {
-  return p.objectives_total ? Math.round((p.objectives_done / p.objectives_total) * 100) : 0;
-}

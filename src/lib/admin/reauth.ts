@@ -5,7 +5,12 @@ export const REAUTH_COOKIE = "estafet_reauth";
 export const REAUTH_MINUTES = 15;
 
 function secret(): string {
-  return process.env.REAUTH_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "dev-only-reauth-secret";
+  return (
+    process.env.REAUTH_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SECRET_KEY ||
+    "dev-only-reauth-secret"
+  );
 }
 
 export function signReauth(userId: string, now: number = Date.now()): string {
@@ -14,7 +19,12 @@ export function signReauth(userId: string, now: number = Date.now()): string {
   return `${payload}.${sig}`;
 }
 
-export function verifyReauth(value: string | undefined, userId: string, minutes: number = REAUTH_MINUTES, now: number = Date.now()): boolean {
+export function verifyReauth(
+  value: string | undefined,
+  userId: string,
+  minutes: number = REAUTH_MINUTES,
+  now: number = Date.now(),
+): boolean {
   if (!value) return false;
   const parts = value.split(".");
   if (parts.length !== 3) return false;

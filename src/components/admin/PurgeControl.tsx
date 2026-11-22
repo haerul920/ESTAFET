@@ -1,26 +1,29 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ReasonAction } from "./ReasonDialog";
-import { purgeDemoData } from "@/app/admin/actions";
+import { purgeDemoData } from "@/app/[locale]/admin/actions";
 
 export function PurgeControl({ blocked, env }: { blocked: boolean; env: string }) {
+  const t = useTranslations("admin.purge");
+  const code = (chunks: React.ReactNode) => <code className="font-code">{chunks}</code>;
   if (blocked) {
-    return <p className="m-0 rounded-2xl bg-white p-3 text-sm text-text-2">Purging demo data is disabled in the {env} environment.</p>;
+    return <p className="m-0 rounded-2xl bg-white p-3 text-sm text-text-2">{t("blocked", { env })}</p>;
   }
   return (
     <ReasonAction
-      label="Purge demo data"
+      label={t("label")}
       tone="danger"
-      typedPhrase="PURGE DEMO DATA"
+      typedPhrase={t("phrase")}
       consequence={
         <ul className="m-0 list-disc pl-5">
-          <li>Deletes ONLY rows marked demo: demo projects with their files, items, requests and lineage, and demo trial sessions.</li>
-          <li>Real (non-demo) projects, users, reports and the audit log are not touched.</li>
-          <li>This cannot be undone. Run <code className="font-code">pnpm db:reset</code> to bring the demo data back.</li>
+          <li>{t("c1")}</li>
+          <li>{t("c2")}</li>
+          <li>{t.rich("c3", { code })}</li>
         </ul>
       }
       action={purgeDemoData}
-      successMessage="Demo data purged."
+      successMessage={t("done")}
     />
   );
 }

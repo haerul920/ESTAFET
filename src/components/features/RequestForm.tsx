@@ -1,12 +1,13 @@
 "use client";
 
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CheckboxField, FormMessage, SelectField, TextArea, TextField } from "@/components/ui/Field";
 import { submitRequest } from "@/app/actions/requests";
-import { EFFORT_LABEL, PURPOSE_LABEL } from "@/lib/labels";
+import { useLabels } from "@/lib/use-labels";
 import type { FormState } from "@/lib/validation";
 import type { TeaserItem } from "@/lib/db/types";
 
@@ -24,15 +25,9 @@ function Fieldset({ legend, children }: { legend: string; children: React.ReactN
   );
 }
 
-export function RequestForm({
-  projectId,
-  slug,
-  tasks,
-}: {
-  projectId: string;
-  slug: string;
-  tasks: TeaserItem[];
-}) {
+export function RequestForm({ projectId, slug, tasks }: { projectId: string; slug: string; tasks: TeaserItem[] }) {
+  const t = useTranslations("reqForm");
+  const L = useLabels();
   const [state, action, pending] = useActionState<FormState, FormData>(submitRequest, {});
   const fe = state.fieldErrors ?? {};
   const v = state.values ?? {};
@@ -44,34 +39,49 @@ export function RequestForm({
       <input type="hidden" name="slug" value={slug} />
       {state.error ? <FormMessage tone="error">{state.error}</FormMessage> : null}
 
-      <Fieldset legend="1. Your team">
-        <TextField label="Team name" name="team_name" placeholder="Name your team" defaultValue={v.team_name} error={fe.team_name} required />
+      <Fieldset legend={t("f1")}>
         <TextField
-          label="Teammates' university emails"
+          label={t("teamName")}
+          name="team_name"
+          placeholder={t("teamNamePh")}
+          defaultValue={v.team_name}
+          error={fe.team_name}
+          required
+        />
+        <TextField
+          label={t("teammates")}
           name="teammates"
-          placeholder="Separate with commas. Teams have 3 to 4 members."
+          placeholder={t("teammatesPh")}
           defaultValue={v.teammates}
           error={fe.teammates}
-          hint="You are added automatically."
+          hint={t("teammatesHint")}
           required
         />
       </Fieldset>
 
-      <Fieldset legend="2. Which verified tasks will you take on?">
+      <Fieldset legend={t("f2")}>
         {tasks.length === 0 ? (
-          <p className="m-0 text-text-2">This project has no verified next tasks, so it cannot be requested yet.</p>
+          <p className="m-0 text-text-2">{t("noTasks")}</p>
         ) : (
           <div className="flex flex-col gap-3">
-            {tasks.map((t) => (
+            {tasks.map((task) => (
               <label
-                key={t.id}
+                key={task.id}
                 className="flex min-h-[44px] cursor-pointer items-start gap-3 rounded-[14px] border border-line-soft bg-white p-3 transition-colors has-[:checked]:border-blue has-[:checked]:bg-blue-tint"
               >
-                <input type="checkbox" name="task_ids" value={t.id} defaultChecked={chosen.has(t.id)} className="mt-0.5 h-5 w-5 flex-none accent-[#1760d6]" />
+                <input
+                  type="checkbox"
+                  name="task_ids"
+                  value={task.id}
+                  defaultChecked={chosen.has(task.id)}
+                  className="mt-0.5 h-5 w-5 flex-none accent-[#1760d6]"
+                />
                 <span>
-                  <strong>{t.title}</strong>
+                  <strong>{task.title}</strong>
                   <br />
-                  <span className="text-sm text-text-2">{t.effort ? EFFORT_LABEL[t.effort] : "Unsized"} effort</span>
+                  <span className="text-sm text-text-2">
+                    {task.effort ? t("effort", { size: L.effort[task.effort] }) : t("unsized")}
+                  </span>
                 </span>
               </label>
             ))}
@@ -84,34 +94,41 @@ export function RequestForm({
         ) : null}
       </Fieldset>
 
-      <Fieldset legend="3. Your plan">
+      <Fieldset legend={t("f3")}>
         <TextArea
-          label="What will you do in your first month?"
+          label={t("plan")}
           name="plan"
           rows={4}
-          placeholder="For example, which task you start with and what you expect to have at the end."
+          placeholder={t("planPh")}
           defaultValue={v.plan}
           error={fe.plan}
           required
         />
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-4">
-          <SelectField label="What is this for?" name="purpose" defaultValue={v.purpose ?? ""} error={fe.purpose} required>
+          <SelectField label={t("purpose")} name="purpose" defaultValue={v.purpose ?? ""} error={fe.purpose} required>
             <option value="" disabled>
-              Choose one
+              {t("choose")}
             </option>
-            {Object.entries(PURPOSE_LABEL).map(([k, l]) => (
+            {Object.entries(L.purpose).map(([k, l]) => (
               <option key={k} value={k}>
                 {l}
               </option>
             ))}
           </SelectField>
-          <TextField label="Target date" name="target_date" type="date" defaultValue={v.target_date} error={fe.target_date} required />
+          <TextField
+            label={t("targetDate")}
+            name="target_date"
+            type="date"
+            defaultValue={v.target_date}
+            error={fe.target_date}
+            required
+          />
         </div>
         <TextArea
-          label="Why is your team a good fit?"
+          label={t("fit")}
           name="fit_note"
           rows={3}
-          placeholder="Relevant skills, courses or earlier projects."
+          placeholder={t("fitPh")}
           defaultValue={v.fit_note}
           error={fe.fit_note}
         />
@@ -122,16 +139,16 @@ export function RequestForm({
           name="acknowledge"
           defaultChecked={v.acknowledge === "on"}
           error={fe.acknowledge}
-          label="I understand that if this request is approved, my team must credit the original team and advisor in any submission or publication that builds on this project."
+          label={t("ack")}
         />
       </Card>
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit" size="md" disabled={pending || tasks.length === 0} className="px-7">
-          {pending ? "Sending…" : "Send request"}
+          {pending ? t("sending") : t("send")}
         </Button>
         <ButtonLink href={`/projects/${slug}`} variant="outline">
-          Cancel
+          {t("cancel")}
         </ButtonLink>
       </div>
     </form>

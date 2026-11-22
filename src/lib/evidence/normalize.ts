@@ -17,7 +17,9 @@ export function normalize(input: string): string {
 }
 
 export function words(input: string): string[] {
-  return normalize(input).split(/[^a-z0-9]+/).filter(Boolean);
+  return normalize(input)
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
 }
 
 export function wordCount(input: string): number {

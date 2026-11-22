@@ -1,33 +1,76 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
-import { ExternalLink, Menu, Search, X } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Link } from "@/i18n/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
+import * as Popover from "@radix-ui/react-popover";
+import { ExternalLink, Menu, Rows3, Rows4, Search } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
+import type { EnvName } from "@/lib/admin/env";
+import { readDensity, saveDensity, subscribeDensity, type Density } from "@/lib/admin/density";
 import { cn } from "@/lib/cn";
-import { ToastProvider } from "./Toast";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/Dialog";
+import { Tip } from "@/components/ui/Tooltip";
+import { ToastProvider } from "@/components/ui/Toast";
+import { useTranslations } from "next-intl";
 
-const GROUPS: { label: string; items: { href: string; label: string; exact?: boolean }[] }[] = [
-  { label: "Overview", items: [{ href: "/admin", label: "Overview", exact: true }] },
-  { label: "Moderation", items: [{ href: "/admin/projects", label: "Projects" }, { href: "/admin/reports", label: "Reports" }] },
-  { label: "People", items: [{ href: "/admin/users", label: "Users" }] },
-  { label: "Operations", items: [{ href: "/admin/pipeline", label: "Pipeline" }, { href: "/admin/consents", label: "Consents" }, { href: "/admin/requests", label: "Requests" }] },
-  { label: "Evidence", items: [{ href: "/admin/trials", label: "Trials" }] },
-  { label: "Governance", items: [{ href: "/admin/audit", label: "Audit" }, { href: "/admin/settings", label: "Settings" }] },
+const GROUPS: { group: string; items: { href: string; key: string; exact?: boolean }[] }[] = [
+  { group: "groupOverview", items: [{ href: "/admin", key: "navOverview", exact: true }] },
+  {
+    group: "groupModeration",
+    items: [
+      { href: "/admin/projects", key: "navProjects" },
+      { href: "/admin/reports", key: "navReports" },
+      { href: "/admin/appeals", key: "navAppeals" },
+    ],
+  },
+  {
+    group: "groupPeople",
+    items: [
+      { href: "/admin/users", key: "navUsers" },
+      { href: "/admin/policies", key: "navPolicies" },
+      { href: "/admin/announcements", key: "navAnnouncements" },
+    ],
+  },
+  {
+    group: "groupOperations",
+    items: [
+      { href: "/admin/pipeline", key: "navPipeline" },
+      { href: "/admin/emails", key: "navEmails" },
+      { href: "/admin/requests", key: "navRequests" },
+    ],
+  },
+  { group: "groupEvidence", items: [{ href: "/admin/trials", key: "navTrials" }] },
+  {
+    group: "groupGovernance",
+    items: [
+      { href: "/admin/audit", key: "navAudit" },
+      { href: "/admin/settings", key: "navSettings" },
+    ],
+  },
 ];
 
 const SHORTCUTS: [string, string, string][] = [
-  ["g then o", "Overview", "/admin"],
-  ["g then p", "Projects", "/admin/projects"],
-  ["g then r", "Reports", "/admin/reports"],
-  ["g then u", "Users", "/admin/users"],
-  ["g then a", "Audit", "/admin/audit"],
+  ["g then o", "navOverview", "/admin"],
+  ["g then p", "navProjects", "/admin/projects"],
+  ["g then r", "navReports", "/admin/reports"],
+  ["g then u", "navUsers", "/admin/users"],
+  ["g then a", "navAudit", "/admin/audit"],
 ];
-const GO: Record<string, string> = { o: "/admin", p: "/admin/projects", r: "/admin/reports", u: "/admin/users", a: "/admin/audit" };
+const GO: Record<string, string> = {
+  o: "/admin",
+  p: "/admin/projects",
+  r: "/admin/reports",
+  u: "/admin/users",
+  a: "/admin/audit",
+};
 
-const ENV_STYLE = { LOCAL: "bg-ok-bg text-ok", STAGING: "bg-warn-bg text-warn", PRODUCTION: "bg-danger text-white" } as const;
+const ENV_STYLE = {
+  LOCAL: "bg-ok-bg text-ok",
+  DEMO: "bg-blue-tint text-blue-dark",
+  STAGING: "bg-warn-bg text-warn",
+  PRODUCTION: "bg-danger text-white",
+} as const;
 
 interface Hit {
   id: string;
@@ -37,6 +80,7 @@ interface Hit {
 type Results = { projects: Hit[]; users: Hit[]; reports: Hit[] };
 
 function GlobalSearch() {
+  const t = useTranslations("admin.shell");
   const router = useRouter();
   const [q, setQ] = useState("");
   const [res, setRes] = useState<Results | null>(null);
@@ -45,8 +89,9 @@ function GlobalSearch() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      const typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable);
+      const el = e.target as HTMLElement | null;
+      const typing =
+        el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
       if (e.key === "/" && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         input.current?.focus();
@@ -59,7 +104,7 @@ function GlobalSearch() {
   useEffect(() => {
     if (q.trim().length < 2) return;
     const ctl = new AbortController();
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         const r = await fetch(`/api/admin/search?q=${encodeURIComponent(q.trim())}`, { signal: ctl.signal });
         if (r.ok) setRes((await r.json()) as Results);
@@ -68,7 +113,7 @@ function GlobalSearch() {
       }
     }, 200);
     return () => {
-      clearTimeout(t);
+      clearTimeout(timer);
       ctl.abort();
     };
   }, [q]);
@@ -76,53 +121,76 @@ function GlobalSearch() {
   const shown = q.trim().length >= 2 ? res : null;
   const groups: { title: string; hits: Hit[]; href: (h: Hit) => string }[] = shown
     ? [
-        { title: "Projects", hits: shown.projects, href: (h) => `/admin/projects/${h.id}` },
-        { title: "Users", hits: shown.users, href: (h) => `/admin/users/${h.id}` },
-        { title: "Reports", hits: shown.reports, href: (h) => `/admin/reports?open=${h.id}` },
+        { title: t("hitProjects"), hits: shown.projects, href: (h) => `/admin/projects/${h.id}` },
+        { title: t("hitUsers"), hits: shown.users, href: (h) => `/admin/users/${h.id}` },
+        { title: t("hitReports"), hits: shown.reports, href: (h) => `/admin/reports?open=${h.id}` },
       ]
     : [];
   const first = groups.flatMap((g) => g.hits.map((h) => g.href(h)))[0];
 
   return (
-    <div className="relative min-w-0 flex-1 max-w-[420px]">
-      <label htmlFor="admin-global-search" className="sr-only">
-        Search projects, users and reports
-      </label>
-      <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-2" />
-      <input
-        ref={input}
-        id="admin-global-search"
-        type="search"
-        value={q}
-        placeholder="Search (press /)"
-        autoComplete="off"
-        onChange={(e) => {
-          setQ(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && first) {
-            router.push(first);
-            setOpen(false);
-          }
-          if (e.key === "Escape") {
-            setOpen(false);
-            input.current?.blur();
-          }
-        }}
-        className="min-h-[40px] w-full rounded-full border border-line-strong bg-white py-1.5 pl-10 pr-4 text-sm"
-      />
-      {open && shown ? (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 max-h-[60vh] overflow-auto rounded-2xl border border-line bg-white p-2 shadow-[0_20px_50px_rgba(10,60,150,0.2)]">
-          {groups.every((g) => g.hits.length === 0) ? <p className="m-2 text-sm text-text-2">No matches.</p> : null}
+    <Popover.Root open={open && !!shown} onOpenChange={setOpen}>
+      <Popover.Anchor asChild>
+        <div className="relative min-w-0 flex-1 max-w-[420px]">
+          <label htmlFor="admin-global-search" className="sr-only">
+            {t("searchLabel")}
+          </label>
+          <Search
+            size={16}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-2"
+          />
+          <input
+            ref={input}
+            id="admin-global-search"
+            type="search"
+            value={q}
+            placeholder={t("searchPlaceholder")}
+            autoComplete="off"
+            onChange={(e) => {
+              setQ(e.target.value);
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && first) {
+                router.push(first);
+                setOpen(false);
+              }
+              if (e.key === "Escape") {
+                setOpen(false);
+                input.current?.blur();
+              }
+            }}
+            className="min-h-[40px] w-full rounded-full border border-line-strong bg-white py-1.5 pl-10 pr-4 text-sm"
+          />
+        </div>
+      </Popover.Anchor>
+      <Popover.Portal>
+        <Popover.Content
+          align="start"
+          sideOffset={6}
+          collisionPadding={12}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onInteractOutside={(e) => {
+            if (e.target === input.current) e.preventDefault();
+          }}
+          className="o-menu z-dropdown max-h-[60vh] w-[var(--radix-popover-trigger-width)] min-w-[280px] overflow-auto rounded-2xl border border-line bg-white p-2 shadow-[0_20px_50px_rgba(10,60,150,0.2)]"
+        >
+          {groups.every((g) => g.hits.length === 0) ? (
+            <p className="m-2 text-sm text-text-2">{t("noMatches")}</p>
+          ) : null}
           {groups.map((g) =>
             g.hits.length ? (
               <div key={g.title} className="mb-1">
                 <div className="mono-label px-3 py-1 text-[11px] text-text-2">{g.title}</div>
                 {g.hits.map((h) => (
-                  <Link key={h.id} href={g.href(h)} onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm text-ink no-underline hover:bg-surface focus-visible:bg-surface">
+                  <Link
+                    key={h.id}
+                    href={g.href(h)}
+                    onClick={() => setOpen(false)}
+                    className="block rounded-xl px-3 py-2 text-sm text-ink no-underline hover:bg-surface focus-visible:bg-surface"
+                  >
                     <strong>{h.title}</strong>
                     <span className="block text-[13px] text-text-2">{h.sub}</span>
                   </Link>
@@ -130,17 +198,31 @@ function GlobalSearch() {
               </div>
             ) : null,
           )}
-        </div>
-      ) : null}
-    </div>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }
 
-export function AdminShell({ adminName, env, children }: { adminName: string; env: "LOCAL" | "STAGING" | "PRODUCTION"; children: React.ReactNode }) {
+export function AdminShell({
+  adminName,
+  env,
+  children,
+}: {
+  adminName: string;
+  env: EnvName;
+  children: React.ReactNode;
+}) {
+  const t = useTranslations("admin.shell");
   const pathname = usePathname();
   const router = useRouter();
   const [drawer, setDrawer] = useState(false);
   const [help, setHelp] = useState(false);
+  // Table density: stored in this browser only. Kept in memory as well, so the switch works when storage is blocked.
+  const storedDensity = useSyncExternalStore<Density>(subscribeDensity, readDensity, () => "comfortable");
+  const [densityChoice, setDensityChoice] = useState<Density | null>(null);
+  const density = densityChoice ?? storedDensity;
+  const compact = density === "compact";
   const [prevPath, setPrevPath] = useState(pathname);
   if (prevPath !== pathname) {
     setPrevPath(pathname);
@@ -151,8 +233,12 @@ export function AdminShell({ adminName, env, children }: { adminName: string; en
   useEffect(() => {
     let armed = 0;
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      const el = e.target as HTMLElement | null;
+      if (
+        el &&
+        (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)
+      )
+        return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === "?") {
         setHelp((v) => !v);
@@ -170,11 +256,14 @@ export function AdminShell({ adminName, env, children }: { adminName: string; en
     return () => document.removeEventListener("keydown", onKey);
   }, [router]);
 
+  // Navigation labels are picked by key (see messages admin.shell.*).
+  const label = t as unknown as (key: string) => string;
+
   const nav = (
-    <nav aria-label="Admin" className="flex flex-col gap-4">
+    <nav aria-label={t("nav")} className="flex flex-col gap-4">
       {GROUPS.map((g) => (
-        <div key={g.label}>
-          <div className="mono-label px-3 pb-1 text-[11px] text-text-2">{g.label}</div>
+        <div key={g.group}>
+          <div className="mono-label px-3 pb-1 text-[11px] text-text-2">{label(g.group)}</div>
           <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
             {g.items.map((i) => {
               const active = i.exact ? pathname === i.href : pathname === i.href || pathname.startsWith(i.href + "/");
@@ -183,9 +272,12 @@ export function AdminShell({ adminName, env, children }: { adminName: string; en
                   <Link
                     href={i.href}
                     aria-current={active ? "page" : undefined}
-                    className={cn("flex min-h-[38px] items-center rounded-xl px-3 text-sm font-medium no-underline transition-colors", active ? "bg-ink text-white" : "text-ink hover:bg-white")}
+                    className={cn(
+                      "flex min-h-[38px] items-center rounded-xl px-3 text-sm font-medium no-underline transition-colors",
+                      active ? "bg-ink text-white" : "text-ink hover:bg-white",
+                    )}
                   >
-                    {i.label}
+                    {label(i.key)}
                   </Link>
                 </li>
               );
@@ -203,28 +295,62 @@ export function AdminShell({ adminName, env, children }: { adminName: string; en
           <Link href="/admin" className="flex items-center gap-2 px-2 text-ink no-underline">
             <LogoMark size={26} />
             <span className="font-semibold tracking-[0.02em]">ESTAFET</span>
-            <span className="mono-label rounded bg-ink px-1.5 py-0.5 text-[10px] text-white">Admin</span>
+            <span className="mono-label rounded bg-ink px-1.5 py-0.5 text-[10px] text-white">{t("tag")}</span>
           </Link>
           {nav}
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex flex-wrap items-center gap-3 border-b border-line bg-white/90 px-4 py-2.5 backdrop-blur">
-            <button type="button" aria-label="Open menu" aria-expanded={drawer} onClick={() => setDrawer(true)} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full hover:bg-surface min-[900px]:hidden">
-              <Menu size={20} aria-hidden="true" />
-            </button>
+        <div className="flex min-w-0 flex-1 flex-col" data-density={density}>
+          <header className="sticky top-0 z-sticky flex flex-wrap items-center gap-3 border-b border-line bg-white/90 px-4 py-2.5 backdrop-blur">
+            <Dialog open={drawer} onOpenChange={setDrawer}>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={t("openMenu")}
+                  className="icon-btn flex h-11 w-11 cursor-pointer items-center justify-center rounded-full hover:bg-surface min-[900px]:hidden"
+                >
+                  <Menu size={20} aria-hidden="true" />
+                </button>
+              </DialogTrigger>
+              <DialogContent variant="drawer" title={t("menuTitle")} closeLabel={t("closeMenu")} className="bg-surface">
+                <div className="mt-10">{nav}</div>
+              </DialogContent>
+            </Dialog>
             <GlobalSearch />
-            <span className={cn("mono-label rounded-full px-3 py-1 text-[11px]", ENV_STYLE[env])} title="Current environment">
-              {env}
-            </span>
+            <Tip label={t("env")}>
+              <span tabIndex={0} className={cn("mono-label rounded-full px-3 py-1 text-[11px]", ENV_STYLE[env])}>
+                {env}
+              </span>
+            </Tip>
             <div className="ml-auto flex items-center gap-3 text-sm">
-              <button type="button" onClick={() => setHelp(true)} className="hidden cursor-pointer rounded-full px-3 py-1.5 font-semibold text-text-2 hover:bg-surface sm:block">
-                Shortcuts
+              <button
+                type="button"
+                aria-pressed={compact}
+                onClick={() => {
+                  const next: Density = compact ? "comfortable" : "compact";
+                  setDensityChoice(next);
+                  saveDensity(next);
+                }}
+                className="hidden min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full px-3 font-semibold text-text-2 hover:bg-surface aria-pressed:bg-blue-tint aria-pressed:text-blue-dark md:inline-flex"
+              >
+                {compact ? <Rows4 size={16} aria-hidden="true" /> : <Rows3 size={16} aria-hidden="true" />}
+                {t("compactRows")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setHelp(true)}
+                className="hidden cursor-pointer rounded-full px-3 py-1.5 font-semibold text-text-2 hover:bg-surface sm:block"
+              >
+                {t("shortcuts")}
               </button>
               <Link href="/" className="inline-flex items-center gap-1 text-text-2 no-underline hover:text-ink">
-                Public site <ExternalLink size={14} aria-hidden="true" />
+                {t("publicSite")} <ExternalLink size={14} aria-hidden="true" />
               </Link>
-              <span className="font-semibold" title="Signed in as">{adminName}</span>
+              <Tip label={t("signedInAs")}>
+                <span tabIndex={0} className="font-semibold">
+                  {adminName}
+                </span>
+              </Tip>
             </div>
           </header>
           <main id="main" className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 sm:px-6">
@@ -233,51 +359,32 @@ export function AdminShell({ adminName, env, children }: { adminName: string; en
         </div>
       </div>
 
-      <AnimatePresence>
-        {drawer ? (
-          <motion.div className="fixed inset-0 z-50 bg-ink/40 min-[900px]:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDrawer(false)}>
-            <motion.aside
-              role="dialog"
-              aria-modal="true"
-              aria-label="Admin menu"
-              className="h-full w-[260px] overflow-auto bg-surface p-4"
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", stiffness: 380, damping: 36 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <span className="font-semibold">ESTAFET Admin</span>
-                <button type="button" aria-label="Close menu" onClick={() => setDrawer(false)} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full hover:bg-white">
-                  <X size={18} aria-hidden="true" />
-                </button>
-              </div>
-              {nav}
-            </motion.aside>
-          </motion.div>
-        ) : null}
-        {help ? (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setHelp(false)}>
-            <div role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" className="w-full max-w-[380px] rounded-3xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
-              <h2 className="mt-0 text-lg">Keyboard shortcuts</h2>
-              <table className="w-full text-sm">
-                <tbody>
-                  <tr><td className="py-1 font-code">/</td><td>Focus search</td></tr>
-                  {SHORTCUTS.map(([k, l]) => (
-                    <tr key={k}><td className="py-1 font-code">{k}</td><td>Go to {l}</td></tr>
-                  ))}
-                  <tr><td className="py-1 font-code">?</td><td>Show or hide this help</td></tr>
-                  <tr><td className="py-1 font-code">Enter</td><td>Open the focused table row</td></tr>
-                </tbody>
-              </table>
-              <button type="button" autoFocus onClick={() => setHelp(false)} className="mt-4 min-h-[40px] cursor-pointer rounded-full border-[1.5px] border-line-strong px-5 font-semibold hover:bg-surface">
-                Close
-              </button>
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      <Dialog open={help} onOpenChange={setHelp}>
+        <DialogContent title={t("helpTitle")} closeLabel={t("helpClose")} className="max-w-[380px]">
+          <table className="mt-3 w-full text-sm">
+            <tbody>
+              <tr>
+                <td className="py-1 font-code">/</td>
+                <td>{t("helpSearch")}</td>
+              </tr>
+              {SHORTCUTS.map(([k, l]) => (
+                <tr key={k}>
+                  <td className="py-1 font-code">{k}</td>
+                  <td>{t("helpGo", { page: label(l) })}</td>
+                </tr>
+              ))}
+              <tr>
+                <td className="py-1 font-code">?</td>
+                <td>{t("helpToggle")}</td>
+              </tr>
+              <tr>
+                <td className="py-1 font-code">{t("keyEnter")}</td>
+                <td>{t("helpRow")}</td>
+              </tr>
+            </tbody>
+          </table>
+        </DialogContent>
+      </Dialog>
     </ToastProvider>
   );
 }

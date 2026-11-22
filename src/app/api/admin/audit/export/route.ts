@@ -8,6 +8,8 @@ export const runtime = "nodejs";
 export async function GET(req: Request) {
   const sp = new URL(req.url).searchParams;
   const supabase = await createClient();
+  const { data: isAdmin } = await supabase.rpc("is_admin");
+  if (isAdmin !== true) return NextResponse.json({ error: "Not found" }, { status: 404 });
   let q = supabase.from("admin_audit_v").select("*").order("created_at", { ascending: false }).limit(5000);
   const clean = (s: string) => s.replace(/[%,()]/g, " ");
   const text = sp.get("q")?.trim();
@@ -20,6 +22,10 @@ export async function GET(req: Request) {
   const { data, error } = await q;
   if (error) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return new NextResponse(auditCsv((data ?? []) as AuditEvent[]), {
-    headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": 'attachment; filename="estafet-audit.csv"', "cache-control": "private, no-store" },
+    headers: {
+      "content-type": "text/csv; charset=utf-8",
+      "content-disposition": 'attachment; filename="estafet-audit.csv"',
+      "cache-control": "private, no-store",
+    },
   });
 }

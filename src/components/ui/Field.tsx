@@ -11,14 +11,7 @@ interface BaseProps {
   className?: string;
 }
 
-function Wrap({
-  id,
-  label,
-  hint,
-  error,
-  className,
-  children,
-}: BaseProps & { id: string; children: React.ReactNode }) {
+function Wrap({ id, label, hint, error, className, children }: BaseProps & { id: string; children: React.ReactNode }) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       <label htmlFor={id} className="text-sm font-semibold">

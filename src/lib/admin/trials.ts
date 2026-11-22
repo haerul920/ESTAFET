@@ -40,9 +40,33 @@ const esc = (v: string | number | boolean | null) => {
 
 /** CSV of sessions. Contains pseudonym codes only: never names or emails (those are not even in the row type). */
 export function trialsCsv(rows: TrialRow[]): string {
-  const head = ["participant_code", "cohort", "project", "started_at_utc", "minutes_to_understand", "completed", "correct_answers", "total_questions", "sus_score", "is_demo"];
+  const head = [
+    "participant_code",
+    "cohort",
+    "project",
+    "started_at_utc",
+    "minutes_to_understand",
+    "completed",
+    "correct_answers",
+    "total_questions",
+    "sus_score",
+    "is_demo",
+  ];
   const lines = rows.map((r) =>
-    [r.participant_code, r.cohort, r.project_title, r.started_at, r.minutes_to_understand, r.completed, r.correct_answers, r.total_questions, r.sus_score, r.is_demo].map(esc).join(","),
+    [
+      r.participant_code,
+      r.cohort,
+      r.project_title,
+      r.started_at,
+      r.minutes_to_understand,
+      r.completed,
+      r.correct_answers,
+      r.total_questions,
+      r.sus_score,
+      r.is_demo,
+    ]
+      .map(esc)
+      .join(","),
   );
   return [head.join(","), ...lines].join("\n") + "\n";
 }
@@ -51,7 +75,10 @@ const pct = (v: number | null) => (v === null ? "n/a" : `${Math.round(v * 100)}%
 const num = (v: number | null, unit = "") => (v === null ? "n/a" : `${v}${unit}`);
 
 /** One paragraph the team can paste into the proposal. States n, the single university, and that results are indicative. */
-export function methodsParagraph(summary: CohortSummary[], opts: { includesDemo: boolean; first?: string; last?: string }): string {
+export function methodsParagraph(
+  summary: CohortSummary[],
+  opts: { includesDemo: boolean; first?: string; last?: string },
+): string {
   const total = summary.reduce((a, c) => a + c.n, 0);
   if (total === 0) return "No sessions have been recorded yet, so there are no results to report.";
   const b = summary.find((c) => c.cohort === "baseline");

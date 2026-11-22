@@ -1,15 +1,25 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { resumeStep } from "@/lib/db/creator";
-import { pipelineStage, PROJECT_STATUS_LABEL, formatDate, formatMonthYear, timeAgo } from "@/lib/labels";
-import type { ContinuationRequest, NotificationRow, Project, RequestStatus } from "./types";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { resumeStep } from "@/lib/db/owner";
+import { formatDate, formatMonthYear, timeAgo } from "@/lib/format";
+import type { Labels, TFn } from "@/lib/labels";
+import type {
+  ContinuationRequest,
+  NotificationRow,
+  Project,
+  ProjectAccess,
+  ProjectStatus,
+  RequestStatus,
+} from "./types";
 
 export interface DashboardProject {
   id: string;
   title: string;
   slug: string;
   meta: string;
-  stage: number;
+  status: ProjectStatus;
+  statusLabel: string;
   cta: string;
   href: string;
   ctaTone: "lime" | "blue" | "outline";
@@ -25,8 +35,25 @@ export interface DashboardRequest {
   team: string;
   meta: string;
   status: RequestStatus;
+  /** Somebody from this request holds active access. */
   unlocked: boolean;
+  /** The request was approved and the signed-in user has not accepted the agreement yet. */
   needsAgreement: boolean;
+}
+
+/** Access the signed-in user holds on somebody else's project. */
+export interface DashboardAccess {
+  id: string;
+  projectTitle: string;
+  projectSlug: string;
+  meta: string;
+  active: boolean;
+  revokedReason: string | null;
+}
+
+export interface DashboardInvitation {
+  projectId: string;
+  title: string;
 }
 
 export interface DashboardNotification {
@@ -39,215 +66,440 @@ export interface DashboardNotification {
 }
 
 export interface DashboardData {
-  projects: DashboardProject[];
+  /** "Proyek saya": projects I share (as owner or co-owner). */
+  mine: DashboardProject[];
+  /** Requests other people sent to my projects. */
+  incoming: DashboardRequest[];
+  invitations: DashboardInvitation[];
+  /** "Proyek yang saya lanjutkan": access I hold and requests I sent. */
+  access: DashboardAccess[];
   sent: DashboardRequest[];
-  received: DashboardRequest[];
   notifications: DashboardNotification[];
   tiles: { decisions: number; drafts: number; sentPending: number };
   hasDemo: boolean;
 }
 
-export function describeNotification(n: NotificationRow): { text: string; detail: string; href: string } {
+/** `t` is the translator for the `dashboard` namespace. */
+export function describeNotification(n: NotificationRow, t: TFn): { text: string; detail: string; href: string } {
   const p = n.payload as Record<string, string | undefined>;
-  const title = p.title ?? "your project";
+  const title = p.title ?? t("n.titleDefault");
   switch (n.type) {
     case "new_request":
-      return { text: `${p.team ?? "A team"} asked to continue ${title}.`, detail: "Read their plan and decide.", href: `/requests/${p.request_id}` };
+      return {
+        text: t("n.newRequest.text", { team: p.team ?? t("n.teamDefault"), title }),
+        detail: t("n.newRequest.detail"),
+        href: `/requests/${p.request_id}`,
+      };
     case "request_decision":
       return {
-        text: `Your request for ${title} was ${p.decision === "approved" ? "approved" : "declined"}.`,
-        detail: p.decision === "approved" ? "Accept the agreement to unlock the files." : p.note ? `Message: “${p.note}”` : "The project stays published.",
+        text: t(p.decision === "approved" ? "n.decision.approved" : "n.decision.declined", { title }),
+        detail:
+          p.decision === "approved"
+            ? t("n.decision.detailApproved")
+            : p.note
+              ? t("n.decision.detailNote", { note: p.note })
+              : t("n.decision.detailDeclined"),
         href: `/requests/${p.request_id}`,
       };
     case "request_question":
-      return { text: `The creators of ${title} asked you a question.`, detail: `“${p.message ?? ""}”`, href: `/requests/${p.request_id}` };
-    case "agreement_accepted":
       return {
-        text: `The ${p.side === "creator" ? "creators" : "adopter team"} accepted the agreement for ${title}.`,
-        detail: "The files unlock when both sides have accepted.",
+        text: t("n.question.text", { title }),
+        detail: t("n.question.detail", { message: p.message ?? "" }),
         href: `/requests/${p.request_id}`,
       };
-    case "files_unlocked":
-      return { text: `Files are unlocked for ${title}.`, detail: "Open the workspace.", href: `/requests/${p.request_id}` };
-    case "advisor_decision":
+    case "request_expired":
       return {
-        text:
-          p.decision === "approved"
-            ? `Your advisor approved ${title}.`
-            : p.decision === "withdrawn"
-              ? `Your advisor withdrew approval for ${title}.`
-              : `Your advisor said “Not now” for ${title}.`,
-        detail: p.comment ? `Comment: “${p.comment}”` : p.decision === "approved" ? "Review your draft and publish." : "Create a new consent link when you are ready.",
-        href: `/share/${p.project_id}/consent`,
+        text: t("n.expired.text", { team: p.team ?? t("n.teamDefault"), title }),
+        detail: t("n.expired.detail"),
+        href: `/requests/${p.request_id}`,
       };
-    case "moderation":
+    case "agreement_accepted":
       return {
-        text: `${title} was ${p.action === "restored" ? "restored" : p.action === "removed" ? "removed from public view" : "hidden from public view"} by the ESTAFET team.`,
-        detail: `Reason: “${p.reason ?? ""}”. Your data and any signed agreement are unchanged.`,
-        href: "/dashboard",
+        text: t("n.agreement.text", { name: p.name ?? t("n.nameDefault"), title }),
+        detail: t("n.agreement.detail"),
+        href: `/requests/${p.request_id}`,
+      };
+    case "access_taken":
+      return {
+        text: t("n.accessTaken.text", { name: p.name ?? t("n.nameDefault"), title }),
+        detail: t("n.accessTaken.detail"),
+        href: "/dasbor",
+      };
+    case "access_revoked":
+      return {
+        text: t("n.accessRevoked.text", { title }),
+        detail: t("n.accessRevoked.detail", { reason: p.reason ?? "" }),
+        href: "/dasbor",
+      };
+    case "files_unlocked":
+      return {
+        text: t("n.filesUnlocked.text", { title }),
+        detail: t("n.filesUnlocked.detail"),
+        href: `/requests/${p.request_id}`,
+      };
+    case "moderation": {
+      const href = p.slug ? `/proyek/${p.slug}/keputusan` : "/dasbor";
+      if (p.action === "restored")
+        return {
+          text: t("n.moderation.restored", { title }),
+          detail: t("n.moderation.detail", { reason: p.reason ?? "" }),
+          href,
+        };
+      if (p.action === "held")
+        return { text: t("n.moderation.held", { title }), detail: t("n.moderation.detailHeld"), href };
+      return {
+        text: t(p.action === "removed" ? "n.moderation.removed" : "n.moderation.hidden", { title }),
+        detail: t("n.moderation.detailAppeal", { reason: p.reason ?? "" }),
+        href,
+      };
+    }
+    case "appeal_outcome":
+      return {
+        text: t(p.outcome === "accepted" ? "n.appeal.accepted" : "n.appeal.rejected", { title }),
+        detail: t("n.appeal.detail", { note: p.note ?? "" }),
+        href: p.slug ? `/proyek/${p.slug}/keputusan` : "/dasbor",
+      };
+    case "admin_hold":
+      return {
+        text: t("n.adminHold.text", { title, reason: p.reason ?? "" }),
+        detail: t("n.adminHold.detail"),
+        href: `/admin/projects/${p.project_id}`,
+      };
+    case "admin_appeal":
+      return { text: t("n.adminAppeal.text", { title }), detail: t("n.adminAppeal.detail"), href: "/admin/appeals" };
+    case "admin_hold_overdue":
+      return {
+        text: t("n.adminOverdue.text", { title }),
+        detail: t("n.adminOverdue.detail"),
+        href: `/admin/projects/${p.project_id}`,
       };
     case "break_glass":
       return {
-        text: `An admin opened a private file of ${title} for an emergency review.`,
-        detail: `File: ${p.file ?? "a file"}. Reason: “${p.reason ?? ""}”. This access is logged and expires after 5 minutes.`,
-        href: "/dashboard",
+        text: t("n.breakGlass.text", { title }),
+        detail: t("n.breakGlass.detail", { file: p.file ?? t("n.fileDefault"), reason: p.reason ?? "" }),
+        href: "/dasbor",
       };
     case "team_invite":
-      return { text: "You were added to a project team.", detail: "Confirm that you agree to share it.", href: `/share/${p.project_id}/consent` };
+      return { text: t("n.invite.text", { title }), detail: t("n.invite.detail"), href: "/dasbor#undangan" };
+    case "watch_open":
+      return {
+        text: t("n.watch.text", { title }),
+        detail: t(p.reason === "quota" ? "n.watch.detailQuota" : "n.watch.detailMode"),
+        href: `/projects/${p.slug ?? ""}`,
+      };
+    case "request_reply":
+      return {
+        text: t("n.reply.text", { team: p.team ?? t("n.teamDefault"), title }),
+        detail: t("n.reply.detail", { message: p.message ?? "" }),
+        href: `/requests/${p.request_id}`,
+      };
+    case "item_progress":
+      return {
+        text: t("n.progress.text", {
+          task: p.task ?? "",
+          title,
+          status: t(
+            p.status === "done"
+              ? "n.progress.done"
+              : p.status === "in_progress"
+                ? "n.progress.inProgress"
+                : "n.progress.none",
+          ),
+        }),
+        detail: t("n.progress.detail"),
+        href: `/projects/${p.slug ?? ""}/workspace`,
+      };
+    case "request_expiring":
+      return {
+        text: t("n.expiring.text", { team: p.team ?? t("n.teamDefault"), title }),
+        detail: t("n.expiring.detail", { date: (p.expires_at ?? "").slice(0, 10) }),
+        href: `/requests/${p.request_id}`,
+      };
+    case "ownership_offer":
+      return {
+        text: t("n.ownerOffer.text", { title }),
+        detail: t("n.ownerOffer.detail"),
+        href: `/proyek/${p.slug ?? ""}/pengaturan`,
+      };
+    case "ownership_accepted":
+      return { text: t("n.ownerAccepted.text", { title }), detail: t("n.ownerAccepted.detail"), href: "/dasbor" };
+    case "ownership_declined":
+      return { text: t("n.ownerDeclined.text", { title }), detail: t("n.ownerDeclined.detail"), href: "/dasbor" };
+    case "co_owner_joined":
+      return {
+        text: t("n.joined.text", { title }),
+        detail: t("n.joined.detail"),
+        href: `/bagikan/${p.project_id}/tim`,
+      };
     default:
-      return { text: "You have a new notification.", detail: "", href: "/dashboard" };
+      return { text: t("n.default"), detail: "", href: "/dasbor" };
   }
 }
 
-export async function loadDashboard(userId: string, email: string): Promise<DashboardData> {
+/** `ctx.t` is the `dashboard` translator and `ctx.L` the enum labels, both in the active language. */
+export async function loadDashboard(
+  userId: string,
+  email: string,
+  ctx: { t: TFn; L: Labels; locale: string },
+): Promise<DashboardData> {
+  const { t, L, locale } = ctx;
   const supabase = await createClient();
+  const admin = createAdminClient();
 
   const { data: memberRows } = await supabase
     .from("project_members")
-    .select("project_id, consented_at")
+    .select("project_id, status, consented_at")
     .eq("profile_id", userId)
-    .eq("role", "creator");
-  const projectIds = (memberRows ?? []).map((m: { project_id: string }) => m.project_id);
-  const consentedByMe = new Map((memberRows ?? []).map((m: { project_id: string; consented_at: string | null }) => [m.project_id, m.consented_at]));
+    .in("status", ["active", "invited"]);
+  const members = (memberRows ?? []) as { project_id: string; status: string; consented_at: string | null }[];
+  const projectIds = members.filter((m) => m.status === "active").map((m) => m.project_id);
+  const invitedIds = members.filter((m) => m.status === "invited").map((m) => m.project_id);
+  const consentedByMe = new Map(members.map((m) => [m.project_id, m.consented_at]));
 
-  const [{ data: projectRows }, { data: itemRows }, { data: filesRows }, { data: reqRows }, { data: notifRows }] = await Promise.all([
-    projectIds.length ? supabase.from("projects").select("*").in("id", projectIds).order("updated_at", { ascending: false }) : Promise.resolve({ data: [] }),
-    projectIds.length ? supabase.from("draft_items").select("project_id, review_status").in("project_id", projectIds) : Promise.resolve({ data: [] }),
-    projectIds.length ? supabase.from("project_files").select("project_id").in("project_id", projectIds) : Promise.resolve({ data: [] }),
+  const [
+    { data: projectRows },
+    { data: itemRows },
+    { data: filesRows },
+    { data: reqRows },
+    { data: accessRows },
+    { data: notifRows },
+    { data: invitedProjects },
+  ] = await Promise.all([
+    projectIds.length
+      ? supabase.from("projects").select("*").in("id", projectIds).order("updated_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase.from("draft_items").select("project_id, review_status").in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase.from("project_files").select("project_id").in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
     supabase.from("continuation_requests").select("*").order("created_at", { ascending: false }),
-    supabase.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(50),
+    supabase.from("project_access").select("*").eq("profile_id", userId).order("accepted_at", { ascending: false }),
+    supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    // An invitee is not a member yet, so RLS hides the project. The server reads only the title, after the membership row proved the invitation.
+    invitedIds.length ? admin.from("projects").select("id, title").in("id", invitedIds) : Promise.resolve({ data: [] }),
   ]);
 
   const projects = (projectRows ?? []) as Project[];
   const items = (itemRows ?? []) as { project_id: string; review_status: string }[];
   const fileCount = new Map<string, number>();
-  for (const f of (filesRows ?? []) as { project_id: string }[]) fileCount.set(f.project_id, (fileCount.get(f.project_id) ?? 0) + 1);
+  for (const f of (filesRows ?? []) as { project_id: string }[])
+    fileCount.set(f.project_id, (fileCount.get(f.project_id) ?? 0) + 1);
   const requests = (reqRows ?? []) as ContinuationRequest[];
+  const myAccess = (accessRows ?? []) as ProjectAccess[];
+  const activeAccessByRequest = new Map<string, number>();
+  const accessByProject = new Map<string, number>();
 
-  const titleIds = [...new Set(requests.map((r) => r.project_id))];
-  const { data: teasers } = titleIds.length
-    ? await supabase.from("public_project_teaser").select("id, title, slug").in("id", titleIds)
+  // Titles for requests and access: the service role reads only title and slug, after RLS returned the rows.
+  const titleIds = [...new Set([...requests.map((r) => r.project_id), ...myAccess.map((a) => a.project_id)])];
+  const { data: titleRows } = titleIds.length
+    ? await admin.from("projects").select("id, title, slug").in("id", titleIds)
     : { data: [] };
-  const teaserById = new Map((teasers ?? []).map((t: { id: string; title: string; slug: string }) => [t.id, t]));
-  const unlockedSet = new Set<string>();
-  await Promise.all(
-    requests
-      .filter((r) => r.status === "approved")
-      .map(async (r) => {
-        const { data } = await supabase.rpc("request_unlocked", { rid: r.id });
-        if (data === true) unlockedSet.add(r.id);
-      }),
-  );
-  const myAccepted = new Set<string>();
-  if (requests.some((r) => r.status === "approved")) {
-    const { data: acc } = await supabase.from("agreement_acceptances").select("request_id").eq("profile_id", userId);
-    for (const a of (acc ?? []) as { request_id: string }[]) myAccepted.add(a.request_id);
-  }
+  const titleById = new Map((titleRows ?? []).map((t: { id: string; title: string; slug: string }) => [t.id, t]));
 
-  const pendingByProject = new Map<string, ContinuationRequest[]>();
+  // Which requests already produced access (for any person), and how many active access rows each of my projects has.
+  const reqIds = requests.map((r) => r.id);
+  if (reqIds.length) {
+    const { data: forRequests } = await admin
+      .from("project_access")
+      .select("request_id")
+      .in("request_id", reqIds)
+      .eq("status", "active");
+    for (const a of (forRequests ?? []) as { request_id: string | null }[]) {
+      if (a.request_id) activeAccessByRequest.set(a.request_id, (activeAccessByRequest.get(a.request_id) ?? 0) + 1);
+    }
+  }
+  if (projectIds.length) {
+    const { data: onMine } = await supabase
+      .from("project_access")
+      .select("project_id")
+      .in("project_id", projectIds)
+      .eq("status", "active");
+    for (const a of (onMine ?? []) as { project_id: string }[])
+      accessByProject.set(a.project_id, (accessByProject.get(a.project_id) ?? 0) + 1);
+  }
+  const myAcceptedRequests = new Set(
+    myAccess.filter((a) => a.status === "active" && a.request_id).map((a) => a.request_id as string),
+  );
+
+  const unsignedByProject = new Map<string, ContinuationRequest[]>();
   for (const r of requests) {
     if (!projectIds.includes(r.project_id)) continue;
-    if (r.status === "pending" || (r.status === "approved" && !unlockedSet.has(r.id))) {
-      pendingByProject.set(r.project_id, [...(pendingByProject.get(r.project_id) ?? []), r]);
+    if (r.status === "pending" || (r.status === "approved" && !activeAccessByRequest.has(r.id))) {
+      unsignedByProject.set(r.project_id, [...(unsignedByProject.get(r.project_id) ?? []), r]);
     }
   }
 
-  const dashProjects: DashboardProject[] = projects.map((p) => {
+  const mine: DashboardProject[] = projects.map((p) => {
     const its = items.filter((i) => i.project_id === p.id);
     const reviewed = its.filter((i) => i.review_status !== "pending").length;
-    const pendingReq = (pendingByProject.get(p.id) ?? []).filter((r) => r.status === "pending");
-    const approvedReq = (pendingByProject.get(p.id) ?? []).filter((r) => r.status === "approved");
+    const open = unsignedByProject.get(p.id) ?? [];
+    const pendingReq = open.filter((r) => r.status === "pending");
+    const approvedReq = open.filter((r) => r.status === "approved");
     const myConsent = consentedByMe.get(p.id);
-    const stage = pipelineStage(p.status);
+    const statusLabel = L.projectStatus[p.status];
+    const when = formatMonthYear(p.published_at, locale);
+    const base = { id: p.id, title: p.title, slug: p.slug, isDemo: p.is_demo, status: p.status, statusLabel };
+
     if (p.moderation_status && p.moderation_status !== "ok") {
       return {
-        id: p.id, title: p.title, slug: p.slug, stage, isDemo: p.is_demo,
-        meta: `${PROJECT_STATUS_LABEL[p.status]} · ${p.moderation_status === "removed" ? "removed" : "hidden"} by moderation`,
-        cta: "See notifications", href: "/dashboard?tab=notifications", ctaTone: "outline" as const,
-        note: `The ESTAFET team ${p.moderation_status === "removed" ? "removed" : "hid"} this project from public view. Reason: ${p.moderation_reason ?? "not given"}. Your data is kept.`,
+        ...base,
+        meta: t("p.moderatedMeta", {
+          status: statusLabel,
+          state: p.moderation_status === "removed" ? t("p.stateRemoved") : t("p.stateHidden"),
+        }),
+        cta: t("p.moderatedCta"),
+        href: "/dasbor#notifikasi",
+        ctaTone: "outline" as const,
+        note: t("p.moderatedNote", {
+          action: p.moderation_status === "removed" ? t("p.actionRemoved") : t("p.actionHidden"),
+          reason: p.moderation_reason ?? t("p.reasonDefault"),
+        }),
         noteTone: "warn" as const,
       };
     }
-
+    if (p.status === "archived") {
+      return {
+        ...base,
+        meta: t("p.archivedMeta", { count: accessByProject.get(p.id) ?? 0 }),
+        cta: t("p.archivedCta"),
+        href: `/projects/${p.slug}`,
+        ctaTone: "outline" as const,
+        note: t("p.archivedNote"),
+        noteTone: "grey" as const,
+      };
+    }
     if (pendingReq.length > 0) {
       return {
-        id: p.id, title: p.title, slug: p.slug, stage, isDemo: p.is_demo,
-        meta: `${PROJECT_STATUS_LABEL[p.status]} ${formatMonthYear(p.published_at)} · ${pendingReq.length} new request${pendingReq.length > 1 ? "s" : ""}`,
-        cta: "Review request", href: `/requests/${pendingReq[0].id}`, ctaTone: "lime",
-        note: "A team asked to continue this project. Read their plan and decide.", noteTone: "warn",
+        ...base,
+        meta: t("p.pendingMeta", { status: statusLabel, when, count: pendingReq.length }),
+        cta: t("p.pendingCta"),
+        href: `/requests/${pendingReq[0].id}`,
+        ctaTone: "lime" as const,
+        note: t("p.pendingNote"),
+        noteTone: "warn" as const,
       };
     }
     if (approvedReq.length > 0) {
       return {
-        id: p.id, title: p.title, slug: p.slug, stage, isDemo: p.is_demo,
-        meta: `Published ${formatMonthYear(p.published_at)} · request approved`,
-        cta: "Accept the agreement", href: `/requests/${approvedReq[0].id}`, ctaTone: "lime",
-        note: "You approved a request. Accept the attribution agreement so the files can unlock.", noteTone: "warn",
+        ...base,
+        meta: t("p.approvedMeta", { when }),
+        cta: t("p.approvedCta"),
+        href: `/requests/${approvedReq[0].id}`,
+        ctaTone: "outline" as const,
+        note: t("p.approvedNote"),
+        noteTone: "blue" as const,
       };
     }
-    if (p.status === "published" || p.status === "adopted") {
+    if (p.status === "published" || p.status === "unpublished") {
+      const holders = accessByProject.get(p.id) ?? 0;
+      const limit = p.max_active_adopters === null ? t("p.limitNone") : t("p.limitN", { count: p.max_active_adopters });
       return {
-        id: p.id, title: p.title, slug: p.slug, stage, isDemo: p.is_demo,
-        meta: `${PROJECT_STATUS_LABEL[p.status]} ${formatMonthYear(p.published_at)}`,
-        cta: p.status === "adopted" ? "Open workspace" : "View teaser",
-        href: p.status === "adopted" ? `/projects/${p.slug}/workspace` : `/projects/${p.slug}`, ctaTone: "outline",
-        note: p.status === "adopted" ? "Another team is continuing this project. The lineage is recorded." : "Live on Explore. You will be notified when a team asks to continue.",
-        noteTone: "grey",
+        ...base,
+        meta: t("p.liveMeta", { status: statusLabel, when, mode: L.accessMode[p.access_mode] }),
+        cta: p.status === "unpublished" ? t("p.republishCta") : holders > 0 ? t("p.workspaceCta") : t("p.teaserCta"),
+        href:
+          p.status === "unpublished"
+            ? `/bagikan/${p.id}/terbit`
+            : holders > 0
+              ? `/projects/${p.slug}/workspace`
+              : `/projects/${p.slug}`,
+        ctaTone: "outline" as const,
+        note:
+          p.status === "unpublished"
+            ? t("p.unpublishedNote")
+            : holders > 0
+              ? t("p.holdersNote", { count: holders, limit })
+              : t("p.liveNote"),
+        noteTone: "grey" as const,
       };
     }
-    const step = resumeStep(p, (fileCount.get(p.id) ?? 0) > 0, its.length > 0);
-    const note =
-      myConsent === null && p.created_by !== userId
-        ? "You were added to this team. Confirm that you agree to share it."
-        : p.status === "verifying" && its.length > 0
-          ? `${reviewed} of ${its.length} drafted items reviewed. Publishing unlocks when all are reviewed.`
-          : p.status === "awaiting_advisor"
-            ? "Waiting for your advisor. Share the private consent link with them."
-            : its.length === 0 && p.status === "verifying"
-              ? "Your advisor approved. Upload files to draft the summary and tasks."
-              : "Finish the steps to publish your teaser.";
+    const hasFiles = (fileCount.get(p.id) ?? 0) > 0;
+    const step = resumeStep(p, hasFiles, its.length > 0);
+    const joinedLate = myConsent === null && p.created_by !== userId;
+    const note = joinedLate
+      ? t("p.joinedLate")
+      : its.length > 0
+        ? t("p.reviewed", { reviewed, total: its.length })
+        : hasFiles
+          ? t("p.filesUploaded")
+          : t("p.draftDefault");
     return {
-      id: p.id, title: p.title, slug: p.slug, stage, isDemo: p.is_demo,
-      meta: `Draft saved ${timeAgo(p.updated_at)}`,
-      cta: "Continue", href: `/share/${p.id}/${myConsent === null && p.created_by !== userId ? "consent" : step}`, ctaTone: "blue",
-      note, noteTone: "blue",
+      ...base,
+      meta: t("p.draftMeta", { when: timeAgo(p.updated_at, locale) }),
+      cta: t("p.draftCta"),
+      href: `/bagikan/${p.id}/${joinedLate ? "tim" : step}`,
+      ctaTone: "blue" as const,
+      note,
+      noteTone: "blue" as const,
     };
   });
 
   const toReq = (r: ContinuationRequest): DashboardRequest => {
-    const t = teaserById.get(r.project_id);
-    const unlocked = unlockedSet.has(r.id);
+    const ti = titleById.get(r.project_id);
     return {
       id: r.id,
-      projectTitle: t?.title ?? "Project",
-      projectSlug: t?.slug ?? "",
+      projectTitle: ti?.title ?? t("r.projectDefault"),
+      projectSlug: ti?.slug ?? "",
       team: r.adopter_team_name,
-      meta: `Sent ${timeAgo(r.created_at)}${r.decided_at ? ` · decided ${formatDate(r.decided_at)}` : ""}`,
+      meta: `${t("r.sent", { when: timeAgo(r.created_at, locale) })}${r.decided_at ? t("r.decided", { date: formatDate(r.decided_at, locale) }) : ""}${r.status === "pending" && r.expires_at ? t("r.expires", { date: formatDate(r.expires_at, locale) }) : ""}`,
       status: r.status,
-      unlocked,
-      needsAgreement: r.status === "approved" && !unlocked && !myAccepted.has(r.id),
+      unlocked: activeAccessByRequest.has(r.id),
+      needsAgreement: r.status === "approved" && !myAcceptedRequests.has(r.id),
     };
   };
-  const sent = requests.filter((r) => r.created_by === userId || r.members.some((m) => m.email.toLowerCase() === email.toLowerCase())).map(toReq);
-  const received = requests.filter((r) => projectIds.includes(r.project_id)).map(toReq);
+  const lower = email.toLowerCase();
+  const sent = requests
+    .filter((r) => r.created_by === userId || r.members.some((m) => m.email.toLowerCase() === lower))
+    .map(toReq);
+  const incoming = requests.filter((r) => projectIds.includes(r.project_id)).map(toReq);
+
+  const access: DashboardAccess[] = myAccess.map((a) => {
+    const ti = titleById.get(a.project_id);
+    return {
+      id: a.id,
+      projectTitle: ti?.title ?? t("r.projectDefault"),
+      projectSlug: ti?.slug ?? "",
+      meta:
+        a.status === "active"
+          ? t("a.since", {
+              date: formatDate(a.accepted_at, locale),
+              source: a.source === "open" ? t("a.sourceOpen") : t("a.sourceRequest"),
+            })
+          : t("a.revoked", { date: formatDate(a.revoked_at, locale) }),
+      active: a.status === "active",
+      revokedReason: a.revoked_reason,
+    };
+  });
 
   const notifications = ((notifRows ?? []) as NotificationRow[]).map((n) => ({
     id: n.id,
-    ...describeNotification(n),
+    ...describeNotification(n, t),
     unread: !n.read_at,
-    when: timeAgo(n.created_at),
+    when: timeAgo(n.created_at, locale),
   }));
 
   return {
-    projects: dashProjects,
+    mine,
+    incoming,
+    invitations: ((invitedProjects ?? []) as { id: string; title: string }[]).map((p) => ({
+      projectId: p.id,
+      title: p.title,
+    })),
+    access,
     sent,
-    received,
     notifications,
     tiles: {
-      decisions: received.filter((r) => r.status === "pending").length,
-      drafts: dashProjects.filter((p) => p.ctaTone === "blue").length,
+      decisions: incoming.filter((r) => r.status === "pending").length,
+      drafts: mine.filter((p) => p.ctaTone === "blue").length,
       sentPending: sent.filter((r) => r.status === "pending").length,
     },
-    hasDemo: dashProjects.some((p) => p.isDemo) || sent.length > 0,
+    hasDemo: mine.some((p) => p.isDemo) || sent.length > 0 || access.length > 0,
   };
 }

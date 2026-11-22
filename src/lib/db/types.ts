@@ -2,14 +2,20 @@
 
 export type ProjectKind = "student_program" | "hackathon" | "research";
 export type StopReason = "funding_not_granted" | "team_graduated" | "time_or_people" | "other";
-export type ProjectStatus = "draft" | "awaiting_advisor" | "verifying" | "published" | "adopted" | "archived";
+export type ProjectStatus = "draft" | "published" | "unpublished" | "archived";
+export type ModerationStatus = "ok" | "held" | "hidden" | "removed";
+export type AccessMode = "open" | "by_request" | "paused";
+export type MemberRole = "owner" | "co_owner";
+export type MemberStatus = "invited" | "active" | "left";
+export type AccessSource = "open" | "approved_request";
+export type AccessStatus = "active" | "revoked";
 export type ItemKind = "objective" | "completed" | "next_task" | "lesson";
 export type Effort = "small" | "medium" | "large";
 export type LessonType = "methodology" | "evaluation_feedback" | "funding_feedback" | "blocker";
 export type EvidenceStatus = "matched" | "not_found" | "partial";
 export type ReviewStatus = "pending" | "kept" | "removed";
 export type ObjectiveStatus = "done" | "in_progress" | "not_started";
-export type RequestStatus = "pending" | "approved" | "declined" | "withdrawn";
+export type RequestStatus = "pending" | "approved" | "declined" | "withdrawn" | "expired";
 export type RequestPurpose = "competition" | "research" | "course" | "other";
 export type ConsentStatus = "pending" | "approved" | "declined" | "withdrawn";
 export type LineageType =
@@ -22,7 +28,16 @@ export type LineageType =
   | "continued"
   | "resubmitted"
   | "declined"
-  | "advisor_withdrawn";
+  | "advisor_withdrawn"
+  | "access_taken"
+  | "access_revoked"
+  | "request_expired"
+  | "unpublished"
+  | "republished"
+  | "archived"
+  | "access_settings_changed"
+  | "item_progress"
+  | "ownership_transferred";
 
 export interface Profile {
   id: string;
@@ -47,7 +62,6 @@ export interface TeaserProject {
   year: number;
   stop_reason: StopReason;
   status: ProjectStatus;
-  advisor_name: string;
   is_demo: boolean;
   published_at: string | null;
   stopped_note: string;
@@ -56,6 +70,10 @@ export interface TeaserProject {
   objectives_total: number;
   objectives_done: number;
   tasks_count: number;
+  access_mode: AccessMode;
+  /** null means unlimited */
+  max_active_adopters: number | null;
+  active_adopters: number;
 }
 
 export interface TeaserItem {
@@ -89,16 +107,18 @@ export interface Project {
   year: number;
   stop_reason: StopReason;
   status: ProjectStatus;
-  advisor_name: string;
-  advisor_email: string;
   created_by: string;
   is_demo: boolean;
   published_at: string | null;
   stopped_note: string;
   tech: string[];
   team_size: number;
-  moderation_status?: "ok" | "hidden" | "removed";
+  moderation_status?: ModerationStatus;
   moderation_reason?: string | null;
+  access_mode: AccessMode;
+  max_active_adopters: number | null;
+  /** null = not chosen yet. manual = the owners write the items by hand and nothing goes to AI. */
+  fill_mode?: "ai" | "manual" | null;
   created_at: string;
   updated_at: string;
 }
@@ -106,19 +126,10 @@ export interface Project {
 export interface ProjectMember {
   project_id: string;
   profile_id: string;
-  role: "creator" | "adopter";
+  role: MemberRole;
+  status: MemberStatus;
   consented_at: string | null;
   profiles?: Pick<Profile, "full_name"> | null;
-}
-
-export interface AdvisorConsent {
-  id: string;
-  project_id: string;
-  status: ConsentStatus;
-  comment: string | null;
-  expires_at: string;
-  decided_at: string | null;
-  created_at: string;
 }
 
 export interface EvidenceRef {
@@ -173,8 +184,22 @@ export interface ContinuationRequest {
   decision_note: string | null;
   decided_by: string | null;
   decided_at: string | null;
+  expires_at: string | null;
   created_by: string;
   created_at: string;
+}
+
+export interface ProjectAccess {
+  id: string;
+  project_id: string;
+  profile_id: string;
+  source: AccessSource;
+  status: AccessStatus;
+  agreement_version: number;
+  accepted_at: string;
+  revoked_at: string | null;
+  revoked_reason: string | null;
+  request_id: string | null;
 }
 
 export interface AgreementAcceptance {

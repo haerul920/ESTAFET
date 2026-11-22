@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { TFn } from "@/lib/labels";
 
 export interface FormState {
   ok?: boolean;
@@ -28,24 +29,11 @@ export function formValues(fd: FormData): Record<string, string> {
 }
 
 /** Only allow same-site relative redirects. */
-export function safeNext(next: string | null | undefined, fallback = "/dashboard"): string {
+export function safeNext(next: string | null | undefined, fallback = "/dasbor"): string {
   if (!next) return fallback;
   if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return fallback;
   return next;
 }
 
-export function allowedEmailDomains(): string[] {
-  return (process.env.ALLOWED_EMAIL_DOMAINS ?? "")
-    .split(",")
-    .map((d) => d.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-export function isEmailAllowed(email: string): boolean {
-  const domains = allowedEmailDomains();
-  if (domains.length === 0) return true;
-  const domain = email.split("@")[1]?.toLowerCase() ?? "";
-  return domains.some((d) => domain === d || domain.endsWith("." + d));
-}
-
-export const emailSchema = z.string().trim().toLowerCase().email("Enter a valid email address.");
+/** `t` is the translator for the `validation` namespace. */
+export const emailSchema = (t: TFn) => z.string().trim().toLowerCase().email(t("email"));

@@ -1,0 +1,10 @@
+import type { Metadata } from "next";
+import { LegalDocument, legalMetadata } from "@/components/features/LegalDocument";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  return legalMetadata((await params).locale, "terms");
+}
+
+export default function TermsPage() {
+  return <LegalDocument doc="terms" sections={8} />;
+}
