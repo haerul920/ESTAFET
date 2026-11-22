@@ -7,12 +7,13 @@ import { ExploreFilters } from "@/components/features/ExploreFilters";
 import { ProjectGrid } from "@/components/features/ProjectGrid";
 import { ButtonLink } from "@/components/ui/Button";
 import { listTeasers } from "@/lib/db/public";
+import { pageAlternates } from "@/lib/seo";
 import type { ProjectKind, StopReason } from "@/lib/db/types";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "explore.meta" });
-  return { title: t("title"), description: t("description") };
+  return { title: t("title"), description: t("description"), alternates: pageAlternates(locale, "/explore") };
 }
 
 type Search = Record<string, string | string[] | undefined>;

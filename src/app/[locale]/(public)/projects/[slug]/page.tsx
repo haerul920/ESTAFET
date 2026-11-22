@@ -15,6 +15,7 @@ import { ReportDialog } from "@/components/features/ReportDialog";
 import { ProjectMenu } from "@/components/features/ProjectMenu";
 import type { TFn } from "@/lib/labels";
 import type { TeaserProject } from "@/lib/db/types";
+import { jsonLd, pageAlternates, projectJsonLd } from "@/lib/seo";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -26,10 +27,12 @@ export async function generateMetadata({
   const { slug, locale } = await params;
   const tm = await getTranslations({ locale, namespace: "teaser" });
   const project = await getTeaserBySlug(slug).catch(() => null);
-  if (!project) return { title: tm("notFoundTitle") };
+  // A project that is not public (held, hidden, unpublished, missing) is never indexed.
+  if (!project) return { title: tm("notFoundTitle"), robots: { index: false, follow: false } };
   return {
     title: project.title,
     description: project.summary,
+    alternates: pageAlternates(locale, `/projects/${project.slug}`),
     openGraph: { title: `${project.title} · ESTAFET`, description: project.summary, type: "article" },
   };
 }
@@ -114,6 +117,8 @@ export default async function ProjectTeaserPage({
 
   return (
     <PageShell footerNote={project.is_demo ? t("demoFooter") : undefined}>
+      {/* Structured data for search engines. A data block is not executed, so the script policy does not apply to it. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(projectJsonLd(project, locale)) }} />
       {asVisitor ? (
         <div
           role="status"

@@ -51,5 +51,7 @@ async function route(request: NextRequest) {
 
 export const config = {
   // Pages, plus the admin API (guard only). Other API routes, Next internals and static files are untouched.
-  matcher: ["/((?!api/(?!admin/)|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  matcher: [
+    "/((?!api/(?!admin/)|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+  ],
 };

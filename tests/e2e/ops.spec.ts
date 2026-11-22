@@ -54,3 +54,44 @@ test("the email preview lists templates and renders them (outside production)", 
   expect(await text.text()).toContain("Report LP-1A2B3C4D was reviewed");
   expect((await request.get("/api/dev/email-preview?template=nope")).status()).toBe(404);
 });
+
+test("the sitemap lists the public pages with language alternates", async ({ request }) => {
+  const res = await request.get("/sitemap.xml");
+  expect(res.status()).toBe(200);
+  const xml = await res.text();
+  expect(xml).toContain("/explore");
+  expect(xml).toContain('hreflang="en"');
+  // No address of the admin area (a project whose slug merely starts with "admin" is fine).
+  expect(xml).not.toMatch(/<loc>[^<]*\/admin(\/|<)/);
+});
+
+test("a public project page has a canonical address, structured data and a share picture; a missing one is not indexed", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/en/projects/campus-waste-sorting-assistant");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    /\/en\/projects\/campus-waste-sorting-assistant$/,
+  );
+  await expect(page.locator('link[rel="alternate"][hreflang="id"]')).toHaveCount(1);
+  const ld = JSON.parse((await page.locator('script[type="application/ld+json"]').first().textContent()) ?? "{}");
+  expect(ld).toMatchObject({ "@type": "CreativeWork", inLanguage: "en" });
+  const og = await page.locator('meta[property="og:image"]').first().getAttribute("content");
+  expect(og).toBeTruthy();
+
+  const image = await request.get(new URL(og!).pathname + new URL(og!).search);
+  expect(image.status()).toBe(200);
+  expect(image.headers()["content-type"]).toContain("image/png");
+
+  await page.goto("/en/projects/this-project-does-not-exist");
+  const robots = await page.locator('meta[name="robots"]').evaluateAll((m) => m.map((x) => x.getAttribute("content")));
+  expect(robots.join(" ")).toMatch(/noindex/);
+});
+
+test("local, staging and demo are closed to search engines", async ({ request }) => {
+  const robots = await (await request.get("/robots.txt")).text();
+  expect(robots).toMatch(/Disallow: \//);
+  const res = await request.get("/explore");
+  expect(res.status()).toBe(200);
+});
