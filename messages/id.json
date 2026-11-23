@@ -1932,7 +1932,9 @@
       "viewAll": "Lihat semua",
       "noAudit": "Belum ada peristiwa audit",
       "noAuditText": "Setiap tindakan admin akan muncul di sini.",
-      "failedEmails": "Email gagal"
+      "failedEmails": "Email gagal",
+      "configTitle": "Konfigurasi production belum lengkap",
+      "configText": "Situs tetap jalan karena APP_ENV tidak diisi, tapi pengaturan berikut belum aman untuk production. Lengkapi di Vercel lalu isi APP_ENV=PRODUCTION, atau isi APP_ENV=DEMO kalau ini situs demo."
     },
     "reasons": {
       "copyright": "hak cipta",
