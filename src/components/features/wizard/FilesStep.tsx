@@ -41,7 +41,7 @@ function DataNotice() {
         </li>
         <li>
           <strong>{t("skippedLabel")}</strong>{" "}
-          {t.rich("skippedText", { env: () => <code className="font-code">.env</code> })}
+          {t.rich("skippedText", { env: (chunks) => <code className="font-code">{chunks}</code> })}
         </li>
       </ul>
     </Card>
@@ -359,7 +359,13 @@ function FillChoice({
             <p className="mb-0 mt-2 font-semibold text-ok">{t("consentDone")}</p>
           ) : (
             <div className="mt-3">
-              <Button variant="outlineBlue" size="md" onClick={consent} disabled={pending}>
+              <Button
+                variant="outlineBlue"
+                size="md"
+                onClick={consent}
+                disabled={pending}
+                className="h-auto max-w-full whitespace-normal text-center"
+              >
                 {t("consentBtn")}
               </Button>
             </div>

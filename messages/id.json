@@ -14,6 +14,7 @@
     "home": "Beranda ESTAFET",
     "explore": "Jelajahi",
     "dashboard": "Dasbor",
+    "admin": "Admin",
     "how": "Cara kerja",
     "share": "Bagikan proyek",
     "signIn": "Masuk",
@@ -1194,7 +1195,7 @@
     "privateLabel": "Yang tetap pribadi:",
     "privateText": "berkasmu disimpan secara pribadi. Hanya judul, ringkasan, tujuan, tugas terverifikasi, dan pelajaran yang kamu setujui yang menjadi publik.",
     "skippedLabel": "Dilewati demi keamanan:",
-    "skippedText": "berkas seperti {env}, kunci dan kredensial, serta teks yang terlihat seperti rahasia.",
+    "skippedText": "berkas seperti <env>.env</env>, kunci dan kredensial, serta teks yang terlihat seperti rahasia.",
     "uploadFailed": "Unggahan gagal. Coba lagi.",
     "uploadOffline": "Unggahan gagal. Periksa koneksimu lalu coba lagi.",
     "draftFailed": "Draf tidak bisa dibuat.",
@@ -1226,7 +1227,17 @@
     "noFiles": "Unggah setidaknya satu berkas yang bisa dibaca dulu.",
     "unreadable": "Berkas yang diunggah tidak bisa dibaca. Unggah ulang.",
     "startFailed": "Proses tidak bisa dimulai.",
-    "globalLimit": "Layanan AI sedang mencapai batas harian untuk semua pengguna. Coba lagi besok, atau isi draf secara manual."
+    "globalLimit": "Layanan AI sedang mencapai batas harian untuk semua pengguna. Coba lagi besok, atau isi draf secara manual.",
+    "error": {
+      "busy": "Layanan AI sedang sibuk. Tunggu sebentar lalu coba lagi, atau isi draf secara manual.",
+      "timeout": "AI terlalu lama menjawab. Coba lagi; kalau terus terjadi, unggah lebih sedikit atau berkas yang lebih kecil.",
+      "quota": "Layanan AI sedang mencapai batas pemakaian. Coba lagi nanti, atau isi draf secara manual.",
+      "config": "Layanan AI belum diatur dengan benar. Tim ESTAFET sudah diberi tahu. Untuk sementara, isi draf secara manual.",
+      "blocked": "AI menolak memproses berkas ini. Pastikan isinya hanya dokumen proyek, atau isi draf secara manual.",
+      "failed": "Draf tidak bisa dibuat. Coba lagi, atau isi draf secara manual.",
+      "format": "Jawaban AI tidak sesuai format, bahkan setelah dicoba dua kali. Coba lagi, atau isi draf secara manual.",
+      "empty": "Berkas yang diunggah tidak berisi teks yang bisa dibaca. Unggah PDF dengan teks yang bisa dipilih atau berkas Markdown."
+    }
   },
   "ui": {
     "close": "Tutup",

@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getConfig, synthesize, SynthesisError, type SynthesisOutput } from "@/lib/llm";
+import { getConfig, synthesize, SynthesisError, type SynthesisErrorCode, type SynthesisOutput } from "@/lib/llm";
 import { checkItemEvidence } from "@/lib/evidence/match";
 import { normalize } from "@/lib/evidence/normalize";
 import { getSettings } from "@/lib/settings";
@@ -184,8 +184,9 @@ export async function runSynthesis(
     .single();
   if (runError || !run) return { ok: false, status: 500, error: t("startFailed") };
 
+  const meta: { model?: string } = {};
   try {
-    const output = await synthesize(docs, config, undefined, locale);
+    const output = await synthesize(docs, config, undefined, locale, meta);
     const idByName = new Map(files.map((f) => [f.original_name, f.id]));
     const pagesByFile = new Map<string, Map<number, string>>();
     for (const f of files) {
@@ -236,15 +237,36 @@ export async function runSynthesis(
     }
     await admin
       .from("synthesis_runs")
-      .update({ status: "done", finished_at: new Date().toISOString(), summary_draft: output.summary })
+      .update({
+        status: "done",
+        finished_at: new Date().toISOString(),
+        summary_draft: output.summary,
+        // The fallback model when the first one was busy, so the pipeline and cost numbers stay honest.
+        model: meta.model ?? config.model,
+      })
       .eq("id", run.id);
     return { ok: true, runId: run.id, mode: config.mode, items: rows.length };
   } catch (e) {
-    const message = e instanceof SynthesisError ? e.message : "The draft could not be created. Please try again.";
+    // The run keeps the technical reason (English, no file contents) for the admin pipeline; people get a short,
+    // translated explanation with what to do next.
+    const code: SynthesisErrorCode = e instanceof SynthesisError ? e.code : "failed";
+    const technical = e instanceof Error ? e.message : String(e);
     await admin
       .from("synthesis_runs")
-      .update({ status: "failed", finished_at: new Date().toISOString(), error: message })
+      .update({ status: "failed", finished_at: new Date().toISOString(), error: `${code}: ${technical}`.slice(0, 500) })
       .eq("id", run.id);
-    return { ok: false, status: 502, error: message };
+    // A wrong key, a retired model or a used-up quota needs a person. Tell the team once a day, not on every run.
+    if (
+      (code === "quota" || code === "config") &&
+      (await allow({
+        scope: "alert-ai-provider",
+        identity: new Date().toISOString().slice(0, 10),
+        max: 1,
+        windowSeconds: 86_400,
+      }))
+    ) {
+      await alert("synthesis_provider", "Live AI runs fail because of the provider key, model or quota.", { code });
+    }
+    return { ok: false, status: code === "busy" || code === "quota" ? 503 : 502, error: t(`error.${code}`) };
   }
 }
