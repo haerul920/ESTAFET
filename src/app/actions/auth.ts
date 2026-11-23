@@ -52,7 +52,10 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
     await supabase.auth.signOut();
     return { error: suspendedMessage, values };
   }
-  redirect({ href: safeNext(values.next), locale });
+  // Admins work in /admin (user pages send them there anyway); everyone else lands on the dashboard by default.
+  const next = safeNext(values.next);
+  const { data: admin } = await supabase.rpc("is_admin");
+  redirect({ href: admin === true && next === "/dasbor" ? "/admin" : next, locale });
 }
 
 export async function signup(_prev: FormState, formData: FormData): Promise<FormState> {

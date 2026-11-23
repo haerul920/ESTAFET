@@ -14,6 +14,7 @@
     "home": "ESTAFET home",
     "explore": "Explore",
     "dashboard": "Dashboard",
+    "admin": "Admin",
     "how": "How it works",
     "share": "Share a project",
     "signIn": "Sign in",
@@ -1194,7 +1195,7 @@
     "privateLabel": "What stays private:",
     "privateText": "your files are stored privately. Only the title, summary, objectives, verified tasks and lessons you approve become public.",
     "skippedLabel": "Skipped for safety:",
-    "skippedText": "files such as {env}, keys and credentials, and text that looks like a secret.",
+    "skippedText": "files such as <env>.env</env>, keys and credentials, and text that looks like a secret.",
     "uploadFailed": "The upload failed. Please try again.",
     "uploadOffline": "The upload failed. Check your connection and try again.",
     "draftFailed": "The draft could not be created.",
@@ -1226,7 +1227,17 @@
     "noFiles": "Upload at least one readable file first.",
     "unreadable": "The uploaded files could not be read. Upload them again.",
     "startFailed": "Could not start the run.",
-    "globalLimit": "The AI service has reached its daily limit for all users. Try again tomorrow, or fill the draft in by hand."
+    "globalLimit": "The AI service has reached its daily limit for all users. Try again tomorrow, or fill the draft in by hand.",
+    "error": {
+      "busy": "The AI service is busy right now. Wait a minute and try again, or fill the draft in by hand.",
+      "timeout": "The AI took too long to answer. Try again; if it keeps happening, upload fewer or smaller files.",
+      "quota": "The AI service has reached its usage limit for now. Try again later, or fill the draft in by hand.",
+      "config": "The AI service is not set up correctly. The ESTAFET team has been told. Fill the draft in by hand for now.",
+      "blocked": "The AI declined to process these files. Check that they contain only project documents, or fill the draft in by hand.",
+      "failed": "The draft could not be created. Try again, or fill the draft in by hand.",
+      "format": "The AI answer was not in the expected format, even after a second try. Try again, or fill the draft in by hand.",
+      "empty": "The uploaded files contain no readable text. Upload a PDF with selectable text or a Markdown file."
+    }
   },
   "ui": {
     "close": "Close",

@@ -99,6 +99,12 @@ export function checkConfig(env: Env = process.env): ConfigReport {
   if (v?.LLM_PROVIDER === "anthropic" && !env.ANTHROPIC_API_KEY)
     errors.push("LLM_PROVIDER=anthropic needs ANTHROPIC_API_KEY.");
   if (v && v.LLM_PROVIDER !== "mock" && !env.LLM_MODEL) errors.push("LLM_MODEL is required with a live LLM provider.");
+  if (v && v.LLM_PROVIDER !== "mock" && env.LLM_MODEL && !env.LLM_FALLBACK_MODEL && deployed)
+    warnings.push(
+      "LLM_FALLBACK_MODEL is not set: when the AI model is busy, a run is retried once on the same model only.",
+    );
+  if (/(^|-)latest$/.test(env.LLM_MODEL ?? ""))
+    warnings.push("LLM_MODEL is a moving alias (*-latest): the model can change without a deploy. Pin a version.");
   if (v?.EMAIL_PROVIDER === "smtp") {
     for (const k of ["SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD"])
       if (!env[k]) errors.push(`EMAIL_PROVIDER=smtp needs ${k}.`);

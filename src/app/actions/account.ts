@@ -15,7 +15,7 @@ export async function requestAccountDeletion(): Promise<{ error?: string }> {
     getTranslations("errors"),
     getTranslations("account.delete"),
   ])) as unknown as [TFn, TFn];
-  await requireUser("/akun/privasi");
+  await requireUser("/akun/privasi", { allowAdmin: true });
   const supabase = await createClient();
   const { error } = await supabase.rpc("request_account_deletion");
   if (error) return { error: dbErrorMessage(errors, error) || t("failed") };
@@ -27,7 +27,7 @@ export async function requestAccountDeletion(): Promise<{ error?: string }> {
 /** Cancels a scheduled deletion (possible until the date). */
 export async function cancelAccountDeletion(): Promise<{ error?: string }> {
   const errors = (await getTranslations("errors")) as unknown as TFn;
-  await requireUser("/akun/privasi");
+  await requireUser("/akun/privasi", { allowAdmin: true });
   const supabase = await createClient();
   const { error } = await supabase.rpc("cancel_account_deletion");
   if (error) return { error: dbErrorMessage(errors, error) };
@@ -39,7 +39,7 @@ export async function cancelAccountDeletion(): Promise<{ error?: string }> {
 /** Saves the person's own choice: notification emails on or off, and the language of the emails. */
 export async function saveEmailPreferences(formData: FormData): Promise<{ error?: string }> {
   const t = await getTranslations("account.email");
-  await requireUser("/akun/privasi");
+  await requireUser("/akun/privasi", { allowAdmin: true });
   const locale = String(formData.get("locale") ?? "id") === "en" ? "en" : "id";
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_email_preferences", {
@@ -55,7 +55,7 @@ export async function saveEmailPreferences(formData: FormData): Promise<{ error?
 export async function acceptPoliciesAndContinue(formData: FormData): Promise<void> {
   const locale = await getLocale();
   const next = safeNext(String(formData.get("next") ?? ""));
-  await requireUser(`/kebijakan/setujui?next=${encodeURIComponent(next)}`, { skipPolicyCheck: true });
+  await requireUser(`/kebijakan/setujui?next=${encodeURIComponent(next)}`, { skipPolicyCheck: true, allowAdmin: true });
   if (formData.get("accept") !== "on")
     redirect({ href: `/kebijakan/setujui?next=${encodeURIComponent(next)}`, locale });
   const supabase = await createClient();

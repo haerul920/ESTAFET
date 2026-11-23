@@ -58,4 +58,16 @@ export const synthesisSchema = z.object({
 export type SynthesisOutput = z.infer<typeof synthesisSchema>;
 export type SynthesisEvidence = z.infer<typeof evidenceSchema>;
 
-export class SynthesisError extends Error {}
+/** Why a synthesis failed, so the app can show a translated, useful message. Provider codes come from providers.ts. */
+export type SynthesisErrorCode = "busy" | "timeout" | "quota" | "config" | "blocked" | "failed" | "format" | "empty";
+
+/** `message` is technical English for the run record and the admin pipeline; people see a translated text per `code`. */
+export class SynthesisError extends Error {
+  constructor(
+    message: string,
+    readonly code: SynthesisErrorCode = "failed",
+  ) {
+    super(message);
+    this.name = "SynthesisError";
+  }
+}

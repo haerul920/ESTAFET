@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function PolicyGatePage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next: rawNext } = await searchParams;
   const next = safeNext(rawNext);
-  await requireUser(`/kebijakan/setujui?next=${encodeURIComponent(next)}`, { skipPolicyCheck: true });
+  await requireUser(`/kebijakan/setujui?next=${encodeURIComponent(next)}`, { skipPolicyCheck: true, allowAdmin: true });
   const locale = await getLocale();
   if (await hasAcceptedPolicies()) redirect({ href: next, locale });
 

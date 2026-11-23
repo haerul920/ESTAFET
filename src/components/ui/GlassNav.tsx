@@ -17,6 +17,8 @@ export interface NavUser {
   name: string;
   initials: string;
   unread: number;
+  /** Admin accounts work in /admin only: the nav links there instead of the dashboard and hides user-only entries. */
+  isAdmin: boolean;
 }
 
 const LINKS = [
@@ -43,11 +45,14 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
   }
 
   const textColor = hero ? "text-white" : "text-ink";
-  const base = LINKS.map((l) => ({ href: l.href as string, label: t(l.key) }));
+  const admin = user?.isAdmin === true;
+  const base = LINKS.map((l) =>
+    admin && l.href === "/dasbor" ? { href: "/admin", label: t("admin") } : { href: l.href as string, label: t(l.key) },
+  );
   const links = hero ? [base[0], { href: "/#how", label: t("how") }, base[1]] : base;
   const drawerLinks = [
     ...links,
-    { href: "/bagikan", label: t("share") },
+    ...(admin ? [] : [{ href: "/bagikan", label: t("share") }]),
     ...(user ? [] : [{ href: "/login", label: t("signIn") }]),
   ];
 
@@ -93,9 +98,11 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
 
       <div className="flex items-center gap-2">
         <LanguageSwitcher tone={hero ? "light" : "dark"} className="hidden md:flex" />
-        <ButtonLink href="/bagikan" size="sm" arrow className="hidden md:inline-flex">
-          {t("share")}
-        </ButtonLink>
+        {admin ? null : (
+          <ButtonLink href="/bagikan" size="sm" arrow className="hidden md:inline-flex">
+            {t("share")}
+          </ButtonLink>
+        )}
 
         {user ? (
           <Menu>
@@ -121,24 +128,34 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
             </MenuTrigger>
             <MenuContent>
               <MenuLabel>{user.name}</MenuLabel>
-              <MenuItem asChild>
-                <Link href="/dasbor">
-                  <LayoutDashboard size={18} aria-hidden="true" /> {t("dashboard")}
-                </Link>
-              </MenuItem>
-              <MenuItem asChild>
-                <Link href="/dasbor#notifikasi">
-                  <Bell size={18} aria-hidden="true" /> {t("notifications")}
-                  {user.unread > 0 ? (
-                    <span className="ml-auto rounded-full bg-lime px-2 text-xs font-semibold">{user.unread}</span>
-                  ) : null}
-                </Link>
-              </MenuItem>
-              <MenuItem asChild>
-                <Link href="/laporan-saya">
-                  <Flag size={18} aria-hidden="true" /> {t("myReports")}
-                </Link>
-              </MenuItem>
+              {admin ? (
+                <MenuItem asChild>
+                  <Link href="/admin">
+                    <LayoutDashboard size={18} aria-hidden="true" /> {t("admin")}
+                  </Link>
+                </MenuItem>
+              ) : (
+                <>
+                  <MenuItem asChild>
+                    <Link href="/dasbor">
+                      <LayoutDashboard size={18} aria-hidden="true" /> {t("dashboard")}
+                    </Link>
+                  </MenuItem>
+                  <MenuItem asChild>
+                    <Link href="/dasbor#notifikasi">
+                      <Bell size={18} aria-hidden="true" /> {t("notifications")}
+                      {user.unread > 0 ? (
+                        <span className="ml-auto rounded-full bg-lime px-2 text-xs font-semibold">{user.unread}</span>
+                      ) : null}
+                    </Link>
+                  </MenuItem>
+                  <MenuItem asChild>
+                    <Link href="/laporan-saya">
+                      <Flag size={18} aria-hidden="true" /> {t("myReports")}
+                    </Link>
+                  </MenuItem>
+                </>
+              )}
               <MenuItem asChild>
                 <Link href="/akun/privasi">
                   <ShieldCheck size={18} aria-hidden="true" /> {t("accountPrivacy")}

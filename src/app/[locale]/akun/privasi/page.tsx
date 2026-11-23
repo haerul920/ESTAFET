@@ -20,7 +20,7 @@ const LISTED = ["l1", "l2", "l3", "l4", "l5"] as const;
 
 /** Account privacy: download your data, or schedule the deletion of your account (30 day grace period). */
 export default async function AccountPrivacyPage() {
-  await requireUser("/akun/privasi");
+  await requireUser("/akun/privasi", { allowAdmin: true });
   const [locale, t, td, te] = await Promise.all([
     getLocale(),
     getTranslations("account"),
