@@ -15,6 +15,15 @@ If `APP_ENV` is not set, a local Supabase URL means `LOCAL` and anything else is
 
 `src/instrumentation.ts` runs `assertConfig()` (`src/lib/config.ts`) when the server starts. In `STAGING`, `DEMO` and `PRODUCTION` any problem below stops the boot, and the message names each variable (never a value). `LOCAL` only logs them.
 
+On **Vercel** (`src/lib/boot.ts`) there is no long-lived process to stop, so:
+
+- `PRODUCTION` still refuses: the start-up hook fails and **every request answers 500** until the configuration is fixed. The Vercel function logs show `Refusing to start in PRODUCTION` with the list of problems. A Vercel *Production* deployment without `APP_ENV` counts as `PRODUCTION`, so set `APP_ENV=STAGING` (or `DEMO`) explicitly when that deployment is not the public product.
+- `STAGING` and `DEMO` only log the problems (`config.invalid`) and keep serving, so a preview with a partial configuration still opens.
+- Without `APP_ENV`, a Vercel *Preview* deployment counts as `DEMO`.
+- Without `APP_URL`, the address comes from Vercel: the production domain (`VERCEL_PROJECT_PRODUCTION_URL`) on production deployments, the deployment URL (`VERCEL_URL`) on previews. Set `APP_URL` by hand once there is a custom domain.
+
+Checked against a local production build with `VERCEL=1` (not on Vercel itself): an unsafe `PRODUCTION` configuration answered 500 on every route, and a preview without `APP_ENV` started as `DEMO` with `noindex`.
+
 | Rule | Production | Staging, Demo |
 |---|---|---|
 | Supabase URL, public key and service key are set | required | required |

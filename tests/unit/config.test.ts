@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { assertConfig, checkConfig } from "@/lib/config";
+import { applyPlatformDefaults, bootCheck } from "@/lib/boot";
 import { scrub } from "@/lib/log";
 import { environmentName, shouldNoIndex } from "@/lib/admin/env";
 
@@ -116,5 +117,86 @@ describe("test-only switches", () => {
     expect(checkConfig({ APP_ENV: "LOCAL", RATE_LIMIT_MULTIPLIER: "1000" }).errors.join()).not.toMatch(
       /RATE_LIMIT_MULTIPLIER/,
     );
+  });
+});
+
+describe("boot on Vercel", () => {
+  const quiet = () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    return vi.spyOn(process, "exit").mockImplementation((() => undefined) as never);
+  };
+  afterEach(() => vi.restoreAllMocks());
+
+  it("still refuses an unsafe PRODUCTION configuration, without exiting the process", () => {
+    const exit = quiet();
+    const env = {
+      ...SAFE_PRODUCTION,
+      VERCEL: "1",
+      VERCEL_ENV: "production",
+      NODE_ENV: "production",
+      LLM_PROVIDER: "mock",
+    };
+    expect(() => bootCheck(env)).toThrow(/Refusing to start in PRODUCTION/);
+    expect(exit).not.toHaveBeenCalled();
+  });
+
+  it("treats a production deployment without APP_ENV as PRODUCTION", () => {
+    quiet();
+    const env: Record<string, string | undefined> = {
+      ...SAFE_PRODUCTION,
+      APP_ENV: undefined,
+      VERCEL: "1",
+      VERCEL_ENV: "production",
+      NODE_ENV: "production",
+      SEED_DEMO: "true",
+    };
+    expect(() => bootCheck(env)).toThrow(/SEED_DEMO/);
+  });
+
+  it("lets a preview with a partial configuration open as DEMO and only logs the problem", () => {
+    const exit = quiet();
+    const env: Record<string, string | undefined> = {
+      NEXT_PUBLIC_SUPABASE_URL: "https://abc.supabase.co",
+      VERCEL: "1",
+      VERCEL_ENV: "preview",
+      VERCEL_URL: "estafet-git-x.vercel.app",
+      NODE_ENV: "production",
+    };
+    expect(() => bootCheck(env)).not.toThrow();
+    expect(env.APP_ENV).toBe("DEMO");
+    expect(env.APP_URL).toBe("https://estafet-git-x.vercel.app");
+    expect(exit).not.toHaveBeenCalled();
+  });
+
+  it("uses the production domain, not the per-deployment URL, for APP_URL in production", () => {
+    const env: Record<string, string | undefined> = {
+      VERCEL_ENV: "production",
+      VERCEL_URL: "estafet-abc123.vercel.app",
+      VERCEL_PROJECT_PRODUCTION_URL: "estafet.vercel.app",
+    };
+    applyPlatformDefaults(env);
+    expect(env.APP_URL).toBe("https://estafet.vercel.app");
+    expect(env.APP_ENV).toBeUndefined();
+  });
+
+  it("keeps an APP_URL and APP_ENV that were set by hand", () => {
+    const env: Record<string, string | undefined> = {
+      APP_URL: "https://estafet.example",
+      APP_ENV: "STAGING",
+      VERCEL_ENV: "preview",
+      VERCEL_URL: "x.vercel.app",
+    };
+    applyPlatformDefaults(env);
+    expect(env).toMatchObject({ APP_URL: "https://estafet.example", APP_ENV: "STAGING" });
+  });
+
+  it("a standalone production server still exits with code 1", () => {
+    const exit = quiet();
+    const env = { ...SAFE_PRODUCTION, NODE_ENV: "production", LLM_PROVIDER: "mock" };
+    // The mocked exit returns, so the rethrow after it runs; a real exit never gets there.
+    expect(() => bootCheck(env)).toThrow();
+    expect(exit).toHaveBeenCalledWith(1);
   });
 });
