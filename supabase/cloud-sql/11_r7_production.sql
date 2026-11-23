@@ -1,4 +1,4 @@
--- ESTAFET database, step 11 of 11: r7_production.
+-- ESTAFET database, step 11 of 12: r7_production.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 10 succeeded.
 -- Generated from supabase/migrations/20261125000001_r7_production.sql. Do not edit by hand.
 

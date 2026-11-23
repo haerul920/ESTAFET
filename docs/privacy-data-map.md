@@ -19,13 +19,14 @@ Processors named here are the services the code is written to use. None of them 
 | Reports and appeals | `reports`, `moderation_appeals` | admins; the reporter sees their own status | Supabase | Kept while needed for moderation [to confirm: 2 years] |
 | Reporter's network address | only as a one-way hash in `rate_limit_hits` and the report's reporter key | nobody (not reversible) | Supabase | Rate limit rows are removed after 2 days; the report keeps its grouping key |
 | Notifications | `notifications` | the person | Supabase | While the account exists |
-| **Email outbox** | `email_outbox`: template, language, notification content. **No address** | nobody except the sender job and admins with database access | Supabase | Sent and skipped rows are removed after 90 days (`housekeeping`); failed rows stay until looked at |
+| **Email outbox** | `email_outbox`: template, language, notification content. **No address** | the sender job; admins see metadata only in `/admin/emails` (template, status, attempts, error code, recipient name; no content, no address) | Supabase | Sent and skipped rows are removed after 90 days (`housekeeping`); failed rows stay until looked at |
 | The email itself | sent through the email provider | the recipient; the provider processes name, address and text | SMTP service or Resend, as configured | Per the provider's retention |
 | Audit log (admin actions with reasons) | `audit_log` | admins | Supabase | Kept: evidence. Append-only |
 | Trial sessions (onboarding research) | `trial_sessions` | admins | Supabase | Pseudonyms (P01), no names or emails |
 | Bot check | Cloudflare Turnstile sees the visitor's browser and address on guest forms and sign-up | Cloudflare | Cloudflare | Per Cloudflare's terms |
 | Server logs | the host's log drain | the team | the host and log service | 30 days suggested [to confirm]. No names, emails, file contents or tokens by design (`src/lib/log.ts`) |
 | Cookies | Supabase session cookie, language cookie | the browser | n/a | Session lifetime; language 1 year. No analytics, no advertising |
+| Browser storage (localStorage, not cookies, never sent to the server) | ids of announcements the person dismissed (`estafet.dismissed-announcements`); for admins, the table density choice (`estafet.admin.density`) | that browser only | the person's device | Until the person clears site data |
 
 ## Rights
 

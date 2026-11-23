@@ -138,13 +138,14 @@ const ADMIN_RPCS: [string, Record<string, unknown>][] = [
   ["admin_project_detail", { p_id: "00000000-0000-0000-0000-000000000000" }],
   ["admin_user_detail", { p_id: "00000000-0000-0000-0000-000000000000" }],
   ["admin_search", { p_q: "test" }],
+  ["admin_resend_email", { p_id: "00000000-0000-0000-0000-000000000000", p_reason: REASON }],
 ];
 const ADMIN_VIEWS = [
   "admin_projects_v",
   "admin_users_v",
   "admin_reports_v",
   "admin_runs_v",
-  "admin_consents_v",
+  "admin_email_log_v",
   "admin_requests_v",
   "admin_audit_v",
   "admin_trials_v",

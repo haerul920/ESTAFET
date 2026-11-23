@@ -23,6 +23,33 @@ Measured with `scripts/perf-check.ts` against a **production build** (`NEXT_DIST
 
 Both are under the targets. LCP is read **before** scrolling (a first version of the script scrolled first, which made a heading far down the page count as LCP and gave a false 8.8 s; that was a measuring mistake, not a page problem).
 
+## Navigation feedback (loading states, R9)
+
+Every page is dynamic (it reads the session cookie), so Next.js cannot prefetch a whole page. Without a `loading.tsx`
+the browser waits for the server to render the next page before anything changes. Every route folder with a page now
+has a `loading.tsx` (shared shapes in `src/components/ui/PageSkeleton.tsx`, admin in `src/components/admin/AdminSkeleton.tsx`).
+Next wraps the page in `<Suspense>` with it and prefetches the skeleton, so a click switches the page at once and the
+content streams in. The home page sits in its own route group, `(public)/(home)`, so its skeleton also appears when coming
+from another public page. The wizard steps (`/bagikan/[id]/[step]`) have no skeleton on purpose: they move after a save,
+with the button's pending state and the wizard's own transition.
+
+Measured on a local production build against the local stack, Chromium, desktop, clicking links on public pages
+(22 November 2026). "Slow server" adds 1.5 s to each page render in the browser to imitate a slow host.
+
+| Click to | Page switched, normal | Content shown, normal | Page switched, slow server | Content shown, slow server |
+|---|---|---|---|---|
+| Project teaser | 148 ms | 211 ms | 76 ms | 1644 ms |
+| Contact | 90 ms | 134 ms | 45 ms | 1565 ms |
+| Terms | 50 ms | 355 ms | 48 ms | 1607 ms |
+| Explore | 99 ms | 523 ms | 78 ms | 1943 ms |
+| Sign in | 86 ms | 121 ms | 114 ms | 1643 ms |
+| Home | 73 ms | 160 ms | 65 ms | (not measured) |
+
+Before this change the home page, with the slow server, switched only after 1604 ms. Not measured: signed-in and
+admin pages (the production build sends `upgrade-insecure-requests`, so signing in over plain http on localhost fails),
+a real phone, a real network. **In `pnpm dev` there is no prefetching and every page compiles on first visit, so
+navigation there stays slower; judge speed on a production build.**
+
 ## What these numbers do not prove
 
 - The server and the browser ran on the same computer. Real latency to a hosted site (Vercel, Supabase Singapore) adds time. Re-measure on staging in R7.

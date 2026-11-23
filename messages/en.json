@@ -65,7 +65,8 @@
     "home": "Back to home"
   },
   "common": {
-    "progress": "Progress"
+    "progress": "Progress",
+    "loadingPage": "Loading the page"
   },
   "labels": {
     "kind": {
@@ -234,7 +235,9 @@
       "bad_range": "The end time must be after the start time.",
       "too_many": "Select at most 50 reports at once.",
       "not_spam": "Only spam reports can be dismissed in bulk.",
-      "self_action": "You cannot do this to your own account."
+      "self_action": "You cannot do this to your own account.",
+      "email_not_found": "This email is no longer in the outbox.",
+      "email_not_resendable": "Only a failed essential email can be sent again."
     },
     "generic": "Something went wrong. Try again, or contact the ESTAFET team if it keeps happening.",
     "suspended": "Your account is suspended.",
@@ -1768,7 +1771,9 @@
       "helpToggle": "Show or hide this help",
       "helpRow": "Open the focused table row",
       "tag": "Admin",
-      "keyEnter": "Enter"
+      "keyEnter": "Enter",
+      "navEmails": "Email log",
+      "compactRows": "Compact rows"
     },
     "reason": {
       "reasonDefault": "Reason (kept in the audit log)",
@@ -1907,7 +1912,8 @@
       "recentAudit": "Recent audit events",
       "viewAll": "View all",
       "noAudit": "No audit events yet",
-      "noAuditText": "Every admin action will appear here."
+      "noAuditText": "Every admin action will appear here.",
+      "failedEmails": "Failed emails"
     },
     "reasons": {
       "copyright": "copyright",
@@ -2430,7 +2436,8 @@
       "request": "request",
       "announcement": "announcement",
       "appeal": "appeal",
-      "policy": "policy"
+      "policy": "policy",
+      "email": "email"
     },
     "settings": {
       "title": "Settings",
@@ -2500,6 +2507,63 @@
         "effect": "<strong>{label}</strong> changes from <code>{from}</code> to <code>{to}</code>. It applies immediately without a redeploy, and the before and after values are written to the audit log.",
         "saved": "{label} saved.",
         "domainsExample": "student.unhas.ac.id"
+      }
+    },
+    "emails": {
+      "title": "Email log",
+      "intro": "Product emails from the outbox. Never shows addresses or message text, only the template, status, attempts and short error codes.",
+      "st": {
+        "sending": "sending",
+        "sent": "sent",
+        "skipped": "skipped"
+      },
+      "colTemplate": "Template",
+      "essential": "essential",
+      "colRecipient": "Recipient",
+      "colStatus": "Status",
+      "colAttempts": "Attempts",
+      "colError": "Error code",
+      "colCreated": "Queued",
+      "sent7": "Sent, 7 days",
+      "failed7": "Failed, 7 days",
+      "waiting7": "Waiting, 7 days",
+      "waitingHint": "Pending or being sent",
+      "skipped7": "Skipped, 7 days",
+      "skippedHint": "The person turned notification emails off",
+      "provider": "Email provider",
+      "providerOff": "Nothing is delivered",
+      "providerBanner": "EMAIL_PROVIDER is {provider}: emails are queued but no real email is delivered.",
+      "panelLabel": "Email details",
+      "unnamed": "(no name)",
+      "kind": "Kind",
+      "kindEssential": "Essential: sent even when the person turned notification emails off",
+      "kindRegular": "Notification: follows the person's preference",
+      "source": "Source",
+      "sourceReport": "Outcome of a report",
+      "sourceNotification": "In-app notification",
+      "language": "Language",
+      "none": "none",
+      "sentAt": "Sent",
+      "notSent": "not sent",
+      "nextAttempt": "Next attempt",
+      "resend": "Send again",
+      "resendEffect": "Puts this email back in the queue with 5 new attempts. The next run of the email job sends it to the address the account has now.",
+      "resendReason": "Why do you send it again? (saved in the audit log)",
+      "resent": "Queued again. It goes out with the next email run.",
+      "resendOnlyEssential": "Only essential emails can be sent again. The in-app notification is still there.",
+      "search": "Search template, recipient or error code",
+      "onlyEssential": "Essential only",
+      "caption": "Email outbox",
+      "emptyTitle": "No emails match",
+      "emptyText": "Emails appear after the scheduled email job turns notifications into outbox rows.",
+      "footnote": "Bounces are not tracked: no provider webhook is connected, so \"sent\" means the provider accepted the email, not that it reached the inbox. Sent and skipped rows are removed after 90 days.",
+      "err": {
+        "no_address": "The account has no email address any more (for example, it was deleted).",
+        "unknown_template": "The sender does not know this template. This is a bug: report it to the developers.",
+        "no_provider": "No email provider is configured.",
+        "resend": "Resend refused the email. The number is the HTTP status from Resend.",
+        "smtp": "The SMTP server refused the email or could not be reached.",
+        "other": "An unexpected error while sending. Check the server logs for email.failed."
       }
     }
   },
@@ -2617,6 +2681,140 @@
       "subject": "[Admin] New appeal for {title}",
       "intro": "The owners of {title} appealed a moderation decision.",
       "detail": "One appeal is open per decision. Review it and give an outcome."
+    }
+  },
+  "styleguide": {
+    "metaTitle": "Styleguide (internal)",
+    "eyebrow": "Internal page",
+    "title": "Styleguide",
+    "lead": "Every design token and shared component of ESTAFET in one place, to compare against the approved design.",
+    "notice": "This page is not in the navigation, is not indexed by search engines and does not exist in production.",
+    "tokenCol": "Token",
+    "valueCol": "Value",
+    "colors": {
+      "title": "Colors",
+      "lead": "Tokens from src/styles/tokens.css. Use the token, never the raw hex value."
+    },
+    "type": {
+      "title": "Typography",
+      "lead": "Instrument Sans for headings and text, DM Mono for small labels and buttons, JetBrains Mono for code and file names.",
+      "display": "Hand over what you started",
+      "heading": "Where the project stopped",
+      "body": "A new team should understand the objectives, the finished work and the verified next steps without digging through old chats.",
+      "secondary": "Secondary text for hints and metadata.",
+      "label": "Small mono label",
+      "code": "File names use the code font."
+    },
+    "buttons": {
+      "title": "Buttons",
+      "lead": "Pills with mono labels. One primary action per screen. The sky row shows the variants made for the sky background.",
+      "v": {
+        "primary": "Primary",
+        "darkSolid": "Dark",
+        "outline": "Outline",
+        "outlineBlue": "Blue outline",
+        "danger": "Destructive",
+        "ghost": "Ghost",
+        "dark": "Glass dark",
+        "white": "White"
+      },
+      "hero": "Hero action",
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "disabled": "Disabled"
+    },
+    "badges": {
+      "title": "Badges and chips",
+      "lead": "Status language from the design: owner verified, sample data and the evidence check.",
+      "tone": {
+        "ok": "Success",
+        "info": "Information",
+        "warn": "Warning",
+        "neutral": "Neutral",
+        "danger": "Danger",
+        "lime": "Accent"
+      },
+      "evidenceDetail": "{file}, page {page}"
+    },
+    "cards": {
+      "title": "Cards",
+      "lead": "Soft rounded cards (28 px). Pick the tone by meaning, not by taste.",
+      "tone": {
+        "surface": "Default grey surface",
+        "white": "White card on a grey area",
+        "lime": "Highlighted choice",
+        "blue": "Information",
+        "warn": "Needs attention",
+        "grey": "Bento grey",
+        "dashed": "Empty state"
+      }
+    },
+    "fields": {
+      "title": "Form fields",
+      "lead": "Every field has a visible label. Hints and errors are linked to the field for screen readers.",
+      "title1": "Project title",
+      "title1Hint": "Short and specific, up to 80 characters.",
+      "title1Value": "Mangrove cover classifier",
+      "email": "Email",
+      "emailError": "This email address is incomplete. Check the part after @.",
+      "kind": "Type of work",
+      "kindA": "Student program",
+      "kindB": "Hackathon",
+      "kindC": "Research",
+      "disabled": "Disabled field",
+      "disabledValue": "Cannot be changed",
+      "notes": "Notes for the next team",
+      "notesHint": "Optional.",
+      "check": "I confirm that my team agrees to share this project.",
+      "success": "Saved. Your changes are kept.",
+      "error": "Could not save. Check the fields marked in red and try again."
+    },
+    "stepper": {
+      "title": "Stepper",
+      "lead": "Shows progress in a flow. The current step carries aria-current.",
+      "label": "Example progress",
+      "s1": "Basics",
+      "s2": "Files",
+      "s3": "Review the AI draft",
+      "s4": "Team and access",
+      "s5": "Preview and publish"
+    },
+    "interactive": {
+      "title": "Interactive components",
+      "lead": "Built on Radix: they render in portals, trap focus, close with Escape and return focus to the trigger.",
+      "tabsLabel": "Example tabs",
+      "tabOne": "Projects I share",
+      "tabTwo": "Projects I continue",
+      "panelOne": "The first panel. Use the arrow keys to move between tabs.",
+      "panelTwo": "The second panel slides in when the tab changes.",
+      "openDialog": "Open dialog",
+      "dialogTitle": "Publish this summary?",
+      "dialogText": "The public summary becomes visible on Explore. Your files stay private.",
+      "cancel": "Cancel",
+      "confirm": "Publish",
+      "openDrawer": "Open drawer",
+      "drawerTitle": "Drawer",
+      "drawerText": "The phone navigation uses this panel.",
+      "openMenu": "Open menu",
+      "menuLabel": "Project",
+      "menuOne": "Watch this project",
+      "menuTwo": "Report this project",
+      "menuPicked": "You picked: {item}",
+      "tooltipTrigger": "Show a tip",
+      "tooltipText": "A short hint for a control or a value.",
+      "toastSuccess": "Show a success toast",
+      "toastSaved": "Saved. You can undo this for 10 seconds.",
+      "toastError": "Show an error toast",
+      "toastFailed": "Something went wrong. Try again."
+    },
+    "layers": {
+      "title": "Layers",
+      "lead": "The only allowed z-index values (CLAUDE.md 14.9). Overlays live in portals on these layers."
+    },
+    "motion": {
+      "title": "Motion",
+      "lead": "Animate transform and opacity only. Reduced motion turns off floating, drifting and reveals."
     }
   }
 }

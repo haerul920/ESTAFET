@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Link } from "@/i18n/navigation";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import * as Popover from "@radix-ui/react-popover";
-import { ExternalLink, Menu, Search } from "lucide-react";
+import { ExternalLink, Menu, Rows3, Rows4, Search } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
 import type { EnvName } from "@/lib/admin/env";
+import { readDensity, saveDensity, subscribeDensity, type Density } from "@/lib/admin/density";
 import { cn } from "@/lib/cn";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/Dialog";
 import { Tip } from "@/components/ui/Tooltip";
@@ -35,6 +36,7 @@ const GROUPS: { group: string; items: { href: string; key: string; exact?: boole
     group: "groupOperations",
     items: [
       { href: "/admin/pipeline", key: "navPipeline" },
+      { href: "/admin/emails", key: "navEmails" },
       { href: "/admin/requests", key: "navRequests" },
     ],
   },
@@ -216,6 +218,11 @@ export function AdminShell({
   const router = useRouter();
   const [drawer, setDrawer] = useState(false);
   const [help, setHelp] = useState(false);
+  // Table density: stored in this browser only. Kept in memory as well, so the switch works when storage is blocked.
+  const storedDensity = useSyncExternalStore<Density>(subscribeDensity, readDensity, () => "comfortable");
+  const [densityChoice, setDensityChoice] = useState<Density | null>(null);
+  const density = densityChoice ?? storedDensity;
+  const compact = density === "compact";
   const [prevPath, setPrevPath] = useState(pathname);
   if (prevPath !== pathname) {
     setPrevPath(pathname);
@@ -293,7 +300,7 @@ export function AdminShell({
           {nav}
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col" data-density={density}>
           <header className="sticky top-0 z-sticky flex flex-wrap items-center gap-3 border-b border-line bg-white/90 px-4 py-2.5 backdrop-blur">
             <Dialog open={drawer} onOpenChange={setDrawer}>
               <DialogTrigger asChild>
@@ -316,6 +323,19 @@ export function AdminShell({
               </span>
             </Tip>
             <div className="ml-auto flex items-center gap-3 text-sm">
+              <button
+                type="button"
+                aria-pressed={compact}
+                onClick={() => {
+                  const next: Density = compact ? "comfortable" : "compact";
+                  setDensityChoice(next);
+                  saveDensity(next);
+                }}
+                className="hidden min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full px-3 font-semibold text-text-2 hover:bg-surface aria-pressed:bg-blue-tint aria-pressed:text-blue-dark md:inline-flex"
+              >
+                {compact ? <Rows4 size={16} aria-hidden="true" /> : <Rows3 size={16} aria-hidden="true" />}
+                {t("compactRows")}
+              </button>
               <button
                 type="button"
                 onClick={() => setHelp(true)}

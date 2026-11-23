@@ -7,6 +7,7 @@
 
 -- ---------------------------------------------------------------------------
 -- Demo users (GoTrue-compatible rows). The on_auth_user_created trigger creates the profiles.
+-- Accounts that already exist are kept, so the seed can run again after "Purge demo data" (which keeps the accounts).
 -- ---------------------------------------------------------------------------
 do $$
 declare
@@ -18,6 +19,7 @@ begin
     ('d0000000-0000-4000-8000-000000000001'::uuid, 'alumni@estafet.demo', 'Demo Alumni', 'Engineering', 'Informatics')
   ) as t(id, email, full_name, faculty, program)
   loop
+    continue when exists (select 1 from auth.users where id = u.id or email = u.email);
     insert into auth.users (
       instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
       raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
@@ -100,7 +102,8 @@ update public.projects set access_mode = 'open' where slug = 'campus-waste-sorti
 -- The demo accounts accepted the current Terms and Privacy Policy (synthetic, demo accounts only).
 insert into public.policy_acceptances (profile_id, kind, version)
 select u.id, k.kind, 1 from auth.users u cross join (select distinct kind from public.policies) k
-where u.email like '%@estafet.demo';
+where u.email like '%@estafet.demo'
+on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Private file records (objects are uploaded by `pnpm seed:storage`)
@@ -271,8 +274,9 @@ insert into public.notifications (user_id, type, payload) values
   ('c0000000-0000-4000-8000-000000000001', 'new_request',
    '{"project_id":"b0000000-0000-4000-8000-000000000001","request_id":"e0000000-0000-4000-8000-000000000001","title":"Mangrove Cover Classifier","team":"Team Laut Biru"}');
 
--- Fictional profile details
-update public.profiles set university = 'Universitas Hasanuddin (demo)';
+-- Fictional profile details, for the demo accounts only (a cloud project may also hold real accounts).
+update public.profiles set university = 'Universitas Hasanuddin (demo)'
+where id in (select id from auth.users where email like '%@estafet.demo');
 
 -- ---------------------------------------------------------------------------
 -- Admin demo data. ALL of it is labeled is_demo or belongs to demo projects.

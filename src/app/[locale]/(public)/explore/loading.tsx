@@ -10,6 +10,7 @@ export default function Loading() {
       <div className="skeleton mb-8 h-12 w-full" />
       <div
         className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4"
+        role="status"
         aria-busy="true"
         aria-label={t("loading")}
       >
