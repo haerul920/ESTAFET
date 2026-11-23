@@ -6,7 +6,7 @@ Baca dalam: **Bahasa Indonesia** · [English](README.md)
 
 ESTAFET adalah platform web serah terima proyek lomba dan riset mahasiswa yang berhenti di Universitas Hasanuddin, sehingga tim mahasiswa berikutnya dapat memahami posisi proyek dan melanjutkannya dengan atribusi yang jelas.
 
-Dibuat oleh tim **Beban Server** (Haerulumu, Universitas Hasanuddin) untuk **STACK 2026**, Kasus 1: *Smarter Campus and Learning*.
+Dibuat oleh tim **Beban Server** (Haerulumu, Universitas Hasanuddin) untuk **STACK 2026**, Kasus 1: _Smarter Campus and Learning_.
 
 ---
 
@@ -24,7 +24,7 @@ Masalahnya bukan kurangnya proyek, melainkan tidak adanya cara terstruktur untuk
    - **Terbuka dengan perjanjian (`open`)**: siapa pun yang sudah masuk dan memverifikasi email dapat menyetujui perjanjian atribusi dan langsung membuka berkas pribadi.
    - **Dengan persetujuan (`by_request`)**: tim penerus mengirim rencana singkat dan pemilik memutuskan tiap permintaan.
    - **Dijeda (`paused`)**: ringkasan publik tetap tayang, tetapi akses baru dijeda sementara dan pengunjung dapat menekan **Beri tahu saya**.
-4. **Lanjutkan dengan atribusi & jejak estafet.** Setiap penerus menyetujui Perjanjian Atribusi untuk dirinya sendiri. Berkas pribadi terbuka melalui tautan bertanda tangan berumur 60 detik, kalimat kredit siap salin beserta PDF perjanjian disediakan, dan setiap peristiwa tercatat secara *append-only* di jejak estafet proyek.
+4. **Lanjutkan dengan atribusi & jejak estafet.** Setiap penerus menyetujui Perjanjian Atribusi untuk dirinya sendiri. Berkas pribadi terbuka melalui tautan bertanda tangan berumur 60 detik, kalimat kredit siap salin beserta PDF perjanjian disediakan, dan setiap peristiwa tercatat secara _append-only_ di jejak estafet proyek.
 
 ---
 
@@ -40,16 +40,19 @@ Masalahnya bukan kurangnya proyek, melainkan tidak adanya cara terstruktur untuk
 ## Menjalankan Secara Lokal
 
 ### Prasyarat
+
 - Node.js 20+ dan `pnpm` 10+
 - Docker Desktop (untuk stack Supabase lokal)
 
 ### Langkah Cepat (Stack Lokal)
 
 1. Nyalakan stack Supabase lokal (atau gunakan `pnpm db:reset` pada proyek Supabase kosong):
+
    ```bash
    pnpm install
    pnpm dev:local
    ```
+
    `pnpm dev:local` memuat `.env.localstack` (Supabase lokal di `127.0.0.1:54321`, `AI_PROVIDER=mock`, `EMAIL_PROVIDER=console`) dan menjalankan aplikasi di [http://localhost:3100](http://localhost:3100).
 
 2. **Akun Demo** (kata sandi untuk semuanya: `Demo-Pass-2026!`):
@@ -89,15 +92,38 @@ pnpm perf           # Pengukuran LCP, CLS, dan ukuran JS pada profil ponsel mid-
 
 ## Status Fase Rilis
 
-| Fase | Ruang Lingkup | Status |
-|---|---|---|
-| **R0** | Penjaga kejujuran bukti & penghapusan metrik yang belum diukur | Selesai |
-| **R1** | Bahasa Indonesia sebagai bahasa bawaan & peralihan bahasa ID/EN (`next-intl`) | Selesai |
-| **R2** | Satu jenis akun, verifikasi email, pemilik bersama, mode akses (`open`, `by_request`, `paused`), siklus hidup proyek | Selesai |
-| **R3** | Keamanan, pembatas laju, pemeriksaan bot ramah-aksesibilitas, pemindaian unggahan, penegakan versi kebijakan | Selesai |
-| **R4** | Pengalaman pemilik & penerus: mode isi manual tanpa AI, simpan otomatis, "Beri tahu saya", utas pesan permintaan, kemajuan tugas, pengalihan kepemilikan | Selesai |
-| **R5** | Kepercayaan, moderasi & privasi: penghapusan langkah dosen pembimbing, laporan & kode referensi, penahanan otomatis dari pelapor berbeda, halaman keputusan & banding, ekspor data JSON, penghapusan akun masa tunggu 30 hari | Selesai |
-| **R6** | Area admin penuh (`/admin`), spanduk pengumuman, manajemen versi kebijakan, uji coba onboarding (`/admin/trials`), catatan audit *append-only* & break-glass 5 menit | Selesai |
-| **R7** | Operasional produksi: antrean email transaksional (`email_outbox` + Resend), jadwal cron (`/api/cron/emails`, `/api/cron/daily`), pemeriksaan kesehatan (`/api/health`), log terstruktur & `docs/runbook.md` | Selesai |
-| **R8** | Gerbang kualitas: matriks otorisasi & uji IDOR (`tests/security/authz.matrix.ts`, `tests/db/r8-authz.test.ts`), uji E2E bahasa Indonesia & Inggris, audit tumpang-tindih 39 rute × 6 viewport, audit aksesibilitas & keyboard, pengukuran performa produksi, skrip uji beban k6, dan `docs/qa-report.md` | Selesai |
-| **R9** | Peluncuran bertahap: daftar periksa Tahap A/B/C (`docs/launch-checklist.md`), templat log beta (`docs/beta-log.md`), `README.id.md` — menunggu eksekusi staging & beta tertutup oleh pemilik | Siap untuk pemilik |
+| Fase   | Ruang Lingkup                                                                                                                                                                                                                                                                                            | Status             |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| **R0** | Penjaga kejujuran bukti & penghapusan metrik yang belum diukur                                                                                                                                                                                                                                           | Selesai            |
+| **R1** | Bahasa Indonesia sebagai bahasa bawaan & peralihan bahasa ID/EN (`next-intl`)                                                                                                                                                                                                                            | Selesai            |
+| **R2** | Satu jenis akun, verifikasi email, pemilik bersama, mode akses (`open`, `by_request`, `paused`), siklus hidup proyek                                                                                                                                                                                     | Selesai            |
+| **R3** | Keamanan, pembatas laju, pemeriksaan bot ramah-aksesibilitas, pemindaian unggahan, penegakan versi kebijakan                                                                                                                                                                                             | Selesai            |
+| **R4** | Pengalaman pemilik & penerus: mode isi manual tanpa AI, simpan otomatis, "Beri tahu saya", utas pesan permintaan, kemajuan tugas, pengalihan kepemilikan                                                                                                                                                 | Selesai            |
+| **R5** | Kepercayaan, moderasi & privasi: penghapusan langkah dosen pembimbing, laporan & kode referensi, penahanan otomatis dari pelapor berbeda, halaman keputusan & banding, ekspor data JSON, penghapusan akun masa tunggu 30 hari                                                                            | Selesai            |
+| **R6** | Area admin penuh (`/admin`), spanduk pengumuman, manajemen versi kebijakan, uji coba onboarding (`/admin/trials`), catatan audit _append-only_ & break-glass 5 menit                                                                                                                                     | Selesai            |
+| **R7** | Operasional produksi: antrean email transaksional (`email_outbox` + Resend), jadwal cron (`/api/cron/emails`, `/api/cron/daily`), pemeriksaan kesehatan (`/api/health`), log terstruktur & `docs/runbook.md`                                                                                             | Selesai            |
+| **R8** | Gerbang kualitas: matriks otorisasi & uji IDOR (`tests/security/authz.matrix.ts`, `tests/db/r8-authz.test.ts`), uji E2E bahasa Indonesia & Inggris, audit tumpang-tindih 39 rute × 6 viewport, audit aksesibilitas & keyboard, pengukuran performa produksi, skrip uji beban k6, dan `docs/qa-report.md` | Selesai            |
+| **R9** | Peluncuran bertahap: daftar periksa Tahap A/B/C (`docs/launch-checklist.md`), templat log beta (`docs/beta-log.md`), `README.id.md` — menunggu eksekusi staging & beta tertutup oleh pemilik                                                                                                             | Siap untuk pemilik |
+
+## Pengembangan selanjutnya (direncanakan, belum dibangun)
+
+Prototipe semifinal sudah menjalankan seluruh alur inti. Fitur berikut **direncanakan untuk tahap berikutnya dan belum dibangun**. Tidak ada yang ditampilkan seolah sudah selesai di aplikasi.
+
+**Draf AI yang lebih cerdas**
+
+- AI live di aplikasi untuk setiap proyek, dengan biaya per proses yang diukur dan ditampilkan ke admin (saat ini: Gemini baru diuji live dengan data karangan, mode mock di demo).
+- Penyusunan draf di latar belakang dengan tampilan progres, supaya laporan besar tidak menunggu dalam satu request.
+- OCR untuk PDF hasil pindaian (saat ini ditandai "Periksa" dan tidak bisa dibaca).
+
+**Serah terima dan kolaborasi**
+
+- PDF perjanjian atribusi untuk akses mode terbuka (saat ini hanya akses lewat permintaan yang mendapat PDF).
+- Mengundang anggota tim dan pemilik bersama yang belum punya akun ESTAFET, lewat email.
+- Notifikasi email lewat penyedia sungguhan (keputusan permintaan, pengingat, hasil moderasi), halaman preferensi notifikasi, dan pelacakan email gagal kirim (saat ini: notifikasi di aplikasi, email dibangun dan diuji lokal saja).
+
+**Menjalankannya sungguhan**
+
+- Tugas terjadwal di platform hosting (pengingat permintaan kedaluwarsa, eskalasi penahanan, penghapusan akun setelah masa tenggang); saat ini dijalankan manual atau di stack lokal.
+- Studi onboarding terukur untuk target "memahami proyek dalam 30 menit" (saat ini masih target, bukan hasil).
+- Tinjauan teks Indonesia oleh penutur asli dan tinjauan hukum Syarat, Kebijakan Privasi, dan Perjanjian Atribusi oleh pihak kampus.
+- URL berbahasa Inggris (`/en/dashboard`) di samping URL Indonesia.

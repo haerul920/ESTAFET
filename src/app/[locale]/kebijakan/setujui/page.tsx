@@ -9,6 +9,7 @@ import { safeNext } from "@/lib/validation";
 import { PageShell } from "@/components/ui/PageShell";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { FormMessage } from "@/components/ui/Field";
 import { acceptPoliciesAndContinue } from "@/app/actions/account";
 import { signOut } from "@/app/actions/auth";
 
@@ -22,8 +23,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
  * Shown to a signed-in person when a newer version of the Terms or the Privacy Policy exists than the one they accepted.
  * Until they accept, protected pages send them here (see `requireUser`).
  */
-export default async function PolicyGatePage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  const { next: rawNext } = await searchParams;
+export default async function PolicyGatePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; error?: string }>;
+}) {
+  const { next: rawNext, error } = await searchParams;
   const next = safeNext(rawNext);
   await requireUser(`/kebijakan/setujui?next=${encodeURIComponent(next)}`, { skipPolicyCheck: true, allowAdmin: true });
   const locale = await getLocale();
@@ -54,6 +59,9 @@ export default async function PolicyGatePage({ searchParams }: { searchParams: P
           </li>
         </ul>
         <p className="m-0 rounded-[14px] bg-warn-bg p-3 text-sm text-warn-ink">{t("draft")}</p>
+        {error === "unchecked" || error === "failed" ? (
+          <FormMessage tone="error">{t(error === "unchecked" ? "errorUnchecked" : "errorFailed")}</FormMessage>
+        ) : null}
         <form action={acceptPoliciesAndContinue} className="flex flex-col gap-4">
           <input type="hidden" name="next" value={next} />
           <label className="flex min-h-[44px] cursor-pointer items-start gap-3">

@@ -157,7 +157,7 @@ Phases R0 to R7 are merged into `release/next`, and **Phase R8 (quality gate) pl
 
 - Account deletion: the database step and the cleanup script (`pnpm deletions:process`) are tested with unit tests and database tests, but the cleanup has not been run against a real Supabase project. If the script fails after the database step, it prints the account id so the cleanup can be finished by hand.
 - Reports: a guest's bot check without Cloudflare Turnstile keys only stops simple scripts.
-- **Live AI path is untested** (see Status). Mock mode is the verified path.
+- **Live AI is only partly tested**: Gemini ran live on synthetic data through `pnpm ai:smoke`, not yet through the app with a real report (see Status and `docs/ai-live.md`). Mock mode is the fully verified path.
 - Synthesis runs inside the request (no background queue, no status polling). Large live runs may take tens of seconds.
 - Scanned PDFs (no text layer) are flagged "Check" and cannot be read. There is no OCR.
 - Co-owners and teammates must already have an ESTAFET account to be invited. A co-owner joins only when they accept.
@@ -174,6 +174,29 @@ Phases R0 to R7 are merged into `release/next`, and **Phase R8 (quality gate) pl
 - All sample projects, people, requests and files are synthetic (`is_demo = true`). Names are fictional.
 - Mock synthesis is rule-based text extraction, not AI.
 - Demo PDFs are generated programmatically and contain placeholder text.
+
+## Next development (planned, not built)
+
+The semifinal prototype runs the whole core flow. These features are **planned for the next stage and are not built yet**. None of them is shown as finished in the app.
+
+**Smarter AI drafting**
+
+- Live AI in the app for every project, with the cost of each run measured and shown to admins (today: Gemini tested live on synthetic data only, mock mode in the demo).
+- Drafting in the background with a progress view, so large reports do not wait inside one request.
+- OCR for scanned PDFs (today they are flagged "Check" and cannot be read).
+
+**Handover and collaboration**
+
+- An attribution agreement PDF for open-mode access (today only access through a request gets a PDF).
+- Inviting teammates and co-owners who do not have an ESTAFET account yet, by email.
+- Email notifications through a real provider (request decisions, reminders, moderation outcomes), a notification preferences page and bounce tracking (today: in-app notifications, email built and tested locally only).
+
+**Running it for real**
+
+- Scheduled jobs on the hosted platform (request expiry reminders, hold escalation, account deletion after the grace period); today they run by hand or on the local stack.
+- A measured onboarding study for the "understand a project in 30 minutes" target (today it is a target, not a result).
+- A native-speaker review of the Indonesian text and a legal review of the Terms, Privacy Policy and Attribution Agreement by the university.
+- English URLs (`/en/dashboard`) next to the Indonesian ones.
 
 ## Data model changes beyond `CLAUDE.md` section 6
 
