@@ -140,13 +140,16 @@ function InvitationRow({ i }: { i: DashboardInvitation }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
-  const answer = (accept: boolean) =>
+  const [choice, setChoice] = useState<boolean | null>(null);
+  const answer = (accept: boolean) => {
+    setChoice(accept);
     start(async () => {
       setError("");
       const r = await respondToInvite(i.projectId, accept);
       if (r.error) setError(r.error);
       else router.refresh();
     });
+  };
   return (
     <StaggerItem>
       <Card className="flex flex-col gap-3">
@@ -157,10 +160,16 @@ function InvitationRow({ i }: { i: DashboardInvitation }) {
             <span className="text-sm text-text-2">{t("inviteText")}</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="md" disabled={pending} onClick={() => answer(true)}>
+            <Button size="md" disabled={pending} pending={pending && choice === true} onClick={() => answer(true)}>
               {t("accept")}
             </Button>
-            <Button variant="outline" size="md" disabled={pending} onClick={() => answer(false)}>
+            <Button
+              variant="outline"
+              size="md"
+              disabled={pending}
+              pending={pending && choice === false}
+              onClick={() => answer(false)}
+            >
               {t("decline")}
             </Button>
           </div>

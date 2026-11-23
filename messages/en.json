@@ -443,7 +443,6 @@
     "results": "Results",
     "updating": "Updating results…",
     "clear": "Clear filters",
-    "loading": "Loading projects",
     "count": "{count, plural, one {# project} other {# projects}}",
     "none": {
       "title": "No projects are published yet",
@@ -1029,7 +1028,6 @@
     "stepFiles": "Files",
     "stepVerify": "Review the AI draft",
     "stepPublish": "Preview and publish",
-    "loadingDashboard": "Loading dashboard",
     "shareMeta": "Share a project",
     "basicsTitle": "Tell us about your project",
     "newIntro": "Start with the basics. ESTAFET saves a private draft when you continue, and you can come back from your dashboard at any time.",

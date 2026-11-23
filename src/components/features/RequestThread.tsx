@@ -99,7 +99,12 @@ export function RequestThread({
           </span>
           {error ? <FormMessage tone="error">{error}</FormMessage> : null}
           <div>
-            <Button type="submit" variant="outlineBlue" disabled={pending || body.trim().length === 0}>
+            <Button
+              type="submit"
+              variant="outlineBlue"
+              disabled={pending || body.trim().length === 0}
+              pending={pending}
+            >
               {pending ? t("sending") : t("send")}
             </Button>
           </div>

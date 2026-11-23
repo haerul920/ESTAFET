@@ -29,7 +29,7 @@ export function EmailPreferences({ enabled, locale }: { enabled: boolean; locale
       {state.error ? <FormMessage tone="error">{state.error}</FormMessage> : null}
       {state.ok ? <FormMessage tone="success">{t("saved")}</FormMessage> : null}
       <div>
-        <Button type="submit" variant="outlineBlue" disabled={pending}>
+        <Button type="submit" variant="outlineBlue" pending={pending}>
           {t("save")}
         </Button>
       </div>

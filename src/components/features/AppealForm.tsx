@@ -67,7 +67,7 @@ export function AppealForm({ decisionId, slug }: { decisionId: string; slug: str
         </span>
         {error ? <FormMessage tone="error">{error}</FormMessage> : null}
         <div>
-          <Button type="submit" disabled={pending || !ok}>
+          <Button type="submit" disabled={pending || !ok} pending={pending}>
             {pending ? t("sending") : t("send")}
           </Button>
         </div>

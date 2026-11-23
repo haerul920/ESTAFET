@@ -22,7 +22,7 @@ export function DeletionControls({ scheduled }: { scheduled: boolean }) {
         <div>
           <Button
             variant="outlineBlue"
-            disabled={pending}
+            pending={pending}
             onClick={() =>
               start(async () => {
                 const r = await cancelAccountDeletion();

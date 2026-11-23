@@ -122,7 +122,7 @@ export function AccessSettings({
 
       {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
       <div>
-        <Button onClick={save} disabled={!changed || pending}>
+        <Button onClick={save} disabled={!changed || pending} pending={pending}>
           {pending ? t("saving") : t("save")}
         </Button>
       </div>

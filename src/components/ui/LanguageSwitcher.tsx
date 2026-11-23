@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { cn } from "@/lib/cn";
+import { startNavProgress } from "./NavProgress";
 
 function rememberLocale(next: Locale) {
   document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=31536000; samesite=lax`;
@@ -25,6 +26,7 @@ export function LanguageSwitcher({ tone = "dark", className }: { tone?: "dark" |
     const qs = params.toString();
     // Remember the choice first, so the page that opens does not bounce back to the old language.
     rememberLocale(next);
+    startNavProgress();
     start(() => router.replace(qs ? `${pathname}?${qs}` : pathname, { locale: next }));
   }
 

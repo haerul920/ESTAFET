@@ -32,7 +32,7 @@ export function VerifyEmailNotice({ email, compact = false }: { email: string; c
       <Button
         variant="outline"
         size="md"
-        disabled={pending}
+        pending={pending}
         onClick={() =>
           start(async () => {
             setMessage("");

@@ -110,7 +110,7 @@ export function TeamControls({
             error={state.fieldErrors?.email}
             className="min-w-[240px] flex-1"
           />
-          <Button type="submit" variant="outlineBlue" disabled={pending}>
+          <Button type="submit" variant="outlineBlue" pending={pending}>
             {t("inviteBtn")}
           </Button>
         </div>

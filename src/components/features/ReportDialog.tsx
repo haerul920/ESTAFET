@@ -178,7 +178,7 @@ function ReportForm({ projectId, signedIn, onClose }: { projectId: string; signe
           <Button variant="outline" onClick={onClose}>
             {t("cancel")}
           </Button>
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" pending={pending}>
             {pending ? t("sending") : t("send")}
           </Button>
         </div>

@@ -167,7 +167,7 @@ export function TrialForm({
       />
       <CheckboxField label={t("demo")} checked={v.is_demo} onChange={(e) => set("is_demo", e.target.checked)} />
       <div className="flex gap-2">
-        <Button type="submit" size="md" disabled={pending}>
+        <Button type="submit" size="md" pending={pending}>
           {pending ? t("saving") : t("save")}
         </Button>
         <Button type="button" size="md" variant="outline" onClick={onClose}>

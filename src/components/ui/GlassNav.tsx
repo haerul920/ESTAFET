@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { motion } from "framer-motion";
-import { Bell, Flag, LogOut, Menu as MenuIcon, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { Bell, Flag, Loader2, LogOut, Menu as MenuIcon, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { LogoMark } from "./Logo";
 import { ButtonLink } from "./Button";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from "./Dialog";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuTrigger } from "./Menu";
 import { signOut } from "@/app/actions/auth";
+import { startNavProgress } from "./NavProgress";
 import { cn } from "@/lib/cn";
 
 export interface NavUser {
@@ -43,6 +44,13 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
     setPrevPath(pathname);
     setDrawerOpen(false);
   }
+
+  // Signing out: instant feedback (top bar plus a spinner on the avatar) while the redirect is on its way.
+  const [signingOut, startSignOut] = useTransition();
+  const onSignOut = () => {
+    startNavProgress();
+    startSignOut(() => signOut());
+  };
 
   const textColor = hero ? "text-white" : "text-ink";
   const admin = user?.isAdmin === true;
@@ -109,13 +117,18 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
             <MenuTrigger asChild>
               <button
                 type="button"
+                aria-busy={signingOut || undefined}
                 className="icon-btn relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-black text-[13px] font-semibold text-lime"
               >
                 <span className="sr-only">
                   {t("account", { name: user.name })}
                   {user.unread > 0 ? t("accountUnread", { count: user.unread }) : ""}
                 </span>
-                <span aria-hidden="true">{user.initials}</span>
+                {signingOut ? (
+                  <Loader2 size={18} strokeWidth={2.5} aria-hidden="true" className="animate-spin" />
+                ) : (
+                  <span aria-hidden="true">{user.initials}</span>
+                )}
                 {user.unread > 0 ? (
                   <span
                     aria-hidden="true"
@@ -161,13 +174,9 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
                   <ShieldCheck size={18} aria-hidden="true" /> {t("accountPrivacy")}
                 </Link>
               </MenuItem>
-              <form action={signOut}>
-                <MenuItem asChild>
-                  <button type="submit">
-                    <LogOut size={18} aria-hidden="true" /> {t("signOut")}
-                  </button>
-                </MenuItem>
-              </form>
+              <MenuItem onSelect={onSignOut} disabled={signingOut}>
+                <LogOut size={18} aria-hidden="true" /> {t("signOut")}
+              </MenuItem>
             </MenuContent>
           </Menu>
         ) : (

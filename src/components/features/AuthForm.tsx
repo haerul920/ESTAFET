@@ -93,7 +93,7 @@ export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; act
           })}
         />
       ) : null}
-      <Button type="submit" variant="primary" disabled={pending} className="mt-2 justify-center">
+      <Button type="submit" variant="primary" pending={pending} className="mt-2 justify-center">
         {pending ? t("wait") : login ? t("signIn") : t("create")}
       </Button>
       <p className="m-0 text-center text-[15px] text-text-2">

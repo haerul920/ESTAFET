@@ -290,6 +290,10 @@ html[data-page-hidden="true"] [data-loop] * {
   animation: shimmer 1.4s linear infinite;
   border-radius: 14px;
 }
+/* On grey surfaces (cards, panels) the default shade almost disappears: use a darker one there. */
+.sk-surface .skeleton {
+  background-image: linear-gradient(90deg, #dde1e6 0%, #eceef1 50%, #dde1e6 100%);
+}
 @keyframes shimmer {
   to {
     background-position: -200% 0;

@@ -152,7 +152,7 @@ export function BasicsForm({ project }: { project: Project | null }) {
         hint={t("stoppedHint")}
       />
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" arrow size="lg" disabled={pending}>
+        <Button type="submit" arrow size="lg" pending={pending}>
           {pending ? t("saving") : t("save")}
         </Button>
         {project ? (

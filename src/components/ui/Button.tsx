@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
-import { ArrowUpRight } from "lucide-react";
+import { Children } from "react";
+import { ArrowUpRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export type ButtonVariant = "primary" | "dark" | "darkSolid" | "outline" | "outlineBlue" | "danger" | "ghost" | "white";
@@ -66,7 +67,14 @@ function ArrowCircle({ variant, size }: { variant: ButtonVariant; size: ButtonSi
   );
 }
 
-type ButtonProps = Shared & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children" | "className">;
+type ButtonProps = Shared &
+  Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children" | "className"> & {
+    /**
+     * The action this button started is running: shows a spinner in place of the label (same size, so nothing moves),
+     * disables the button and sets `aria-busy`. The label stays in the accessibility tree.
+     */
+    pending?: boolean;
+  };
 
 export function Button({
   variant = "primary",
@@ -76,15 +84,47 @@ export function Button({
   className,
   children,
   type = "button",
+  pending = false,
+  disabled,
   ...rest
 }: ButtonProps) {
   const showArrow = arrow ?? false;
   return (
-    <button type={type} className={cn(styles(variant, size, showArrow, glow), className)} {...rest}>
-      {children}
-      {showArrow ? <ArrowCircle variant={variant} size={size} /> : null}
+    <button
+      type={type}
+      className={cn(styles(variant, size, showArrow, glow), pending && "cursor-progress", className)}
+      disabled={disabled || pending}
+      aria-busy={pending || undefined}
+      {...rest}
+    >
+      <ButtonContent pending={pending}>
+        {children}
+        {showArrow ? <ArrowCircle variant={variant} size={size} /> : null}
+      </ButtonContent>
     </button>
   );
+}
+
+/** Label plus an overlaid spinner while pending. The label only fades, so the button keeps its width. */
+function ButtonContent({ pending, children }: { pending: boolean; children: React.ReactNode }) {
+  if (!pending) return <>{children}</>;
+  return (
+    <>
+      <span className="contents [&>*]:opacity-0">{wrapText(children)}</span>
+      <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
+        <Loader2
+          size={18}
+          strokeWidth={2.5}
+          className="animate-spin motion-reduce:animate-[spin_1.5s_linear_infinite]"
+        />
+      </span>
+    </>
+  );
+}
+
+/** Text children become a span so the `opacity-0` rule above reaches them. */
+function wrapText(children: React.ReactNode): React.ReactNode {
+  return Children.map(children, (c) => (typeof c === "string" || typeof c === "number" ? <span>{c}</span> : c));
 }
 
 type ButtonLinkProps = Shared & {

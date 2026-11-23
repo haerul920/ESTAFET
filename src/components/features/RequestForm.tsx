@@ -144,7 +144,7 @@ export function RequestForm({ projectId, slug, tasks }: { projectId: string; slu
       </Card>
 
       <div className="flex flex-wrap gap-3">
-        <Button type="submit" size="md" disabled={pending || tasks.length === 0} className="px-7">
+        <Button type="submit" size="md" disabled={pending || tasks.length === 0} pending={pending} className="px-7">
           {pending ? t("sending") : t("send")}
         </Button>
         <ButtonLink href={`/projects/${slug}`} variant="outline">

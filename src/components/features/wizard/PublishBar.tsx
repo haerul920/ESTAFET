@@ -67,6 +67,7 @@ export function PublishBar({
         <Button
           size="md"
           disabled={!canPublish || !confirmed || !policies || pending}
+          pending={pending}
           onClick={() =>
             start(async () => {
               setError("");
