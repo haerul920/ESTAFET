@@ -36,7 +36,8 @@
     "nav": "Tautan bagian bawah halaman",
     "guidelines": "Pedoman",
     "attribution": "Atribusi",
-    "contact": "Kontak"
+    "contact": "Kontak",
+    "noteProduction": "Dibangun untuk STACK 2026 oleh tim Beban Server."
   },
   "lang": {
     "label": "Bahasa",
@@ -443,7 +444,12 @@
     "updating": "Memperbarui hasil…",
     "clear": "Hapus filter",
     "loading": "Memuat proyek",
-    "count": "{count} proyek"
+    "count": "{count} proyek",
+    "none": {
+      "title": "Belum ada proyek yang terbit",
+      "text": "Jadilah yang pertama membagikan proyek yang berhenti, supaya tim berikutnya bisa melanjutkannya.",
+      "cta": "Bagikan proyek"
+    }
   },
   "card": {
     "objectivesDone": "{done} dari {total} tujuan selesai",
@@ -1476,7 +1482,9 @@
     "draft": "Kedua dokumen masih draf dan belum ditinjau pihak berwenang.",
     "accept": "Saya sudah membaca dan menyetujui versi terbaru Syarat dan Kebijakan Privasi.",
     "button": "Setujui dan lanjutkan",
-    "signOut": "Keluar saja"
+    "signOut": "Keluar saja",
+    "errorUnchecked": "Centang kotak persetujuan dulu, lalu tekan tombolnya lagi.",
+    "errorFailed": "Persetujuanmu belum tersimpan. Muat ulang halaman lalu coba lagi. Kalau masih gagal, hubungi kami lewat halaman Kontak."
   },
   "account": {
     "metaTitle": "Privasi akun",
@@ -1924,7 +1932,9 @@
       "viewAll": "Lihat semua",
       "noAudit": "Belum ada peristiwa audit",
       "noAuditText": "Setiap tindakan admin akan muncul di sini.",
-      "failedEmails": "Email gagal"
+      "failedEmails": "Email gagal",
+      "configTitle": "Konfigurasi production belum lengkap",
+      "configText": "Situs tetap jalan karena APP_ENV tidak diisi, tapi pengaturan berikut belum aman untuk production. Lengkapi di Vercel lalu isi APP_ENV=PRODUCTION, atau isi APP_ENV=DEMO kalau ini situs demo."
     },
     "reasons": {
       "copyright": "hak cipta",

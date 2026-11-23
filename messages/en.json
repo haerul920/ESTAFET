@@ -36,7 +36,8 @@
     "nav": "Footer links",
     "guidelines": "Guidelines",
     "attribution": "Attribution",
-    "contact": "Contact"
+    "contact": "Contact",
+    "noteProduction": "Built for STACK 2026 by team Beban Server."
   },
   "lang": {
     "label": "Language",
@@ -443,7 +444,12 @@
     "updating": "Updating results…",
     "clear": "Clear filters",
     "loading": "Loading projects",
-    "count": "{count, plural, one {# project} other {# projects}}"
+    "count": "{count, plural, one {# project} other {# projects}}",
+    "none": {
+      "title": "No projects are published yet",
+      "text": "Be the first to share a project that stopped, so the next team can continue it.",
+      "cta": "Share a project"
+    }
   },
   "card": {
     "objectivesDone": "{done} of {total} objectives done",
@@ -1476,7 +1482,9 @@
     "draft": "Both documents are still drafts and have not been reviewed by the competent authority.",
     "accept": "I have read and accept the latest versions of the Terms and the Privacy Policy.",
     "button": "Accept and continue",
-    "signOut": "Just sign out"
+    "signOut": "Just sign out",
+    "errorUnchecked": "Tick the agreement box first, then press the button again.",
+    "errorFailed": "Your agreement was not saved. Reload the page and try again. If it still fails, contact us through the Contact page."
   },
   "account": {
     "metaTitle": "Account privacy",
@@ -1924,7 +1932,9 @@
       "viewAll": "View all",
       "noAudit": "No audit events yet",
       "noAuditText": "Every admin action will appear here.",
-      "failedEmails": "Failed emails"
+      "failedEmails": "Failed emails",
+      "configTitle": "Production configuration is incomplete",
+      "configText": "The site keeps running because APP_ENV is not set, but these settings are not safe for production. Complete them in Vercel and set APP_ENV=PRODUCTION, or set APP_ENV=DEMO if this is a demo site."
     },
     "reasons": {
       "copyright": "copyright",

@@ -5,6 +5,8 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
+import { hasAcceptedPolicies } from "@/lib/db/access";
+import { log } from "@/lib/log";
 import { dbErrorMessage } from "@/lib/errors";
 import { safeNext } from "@/lib/validation";
 import type { TFn } from "@/lib/labels";
@@ -55,11 +57,17 @@ export async function saveEmailPreferences(formData: FormData): Promise<{ error?
 export async function acceptPoliciesAndContinue(formData: FormData): Promise<void> {
   const locale = await getLocale();
   const next = safeNext(String(formData.get("next") ?? ""));
+  const gate = (reason: "unchecked" | "failed") =>
+    `/kebijakan/setujui?next=${encodeURIComponent(next)}&error=${reason}`;
   await requireUser(`/kebijakan/setujui?next=${encodeURIComponent(next)}`, { skipPolicyCheck: true, allowAdmin: true });
-  if (formData.get("accept") !== "on")
-    redirect({ href: `/kebijakan/setujui?next=${encodeURIComponent(next)}`, locale });
+  if (formData.get("accept") !== "on") redirect({ href: gate("unchecked"), locale });
   const supabase = await createClient();
   const { error } = await supabase.rpc("accept_current_policies");
-  if (error) redirect({ href: `/kebijakan/setujui?next=${encodeURIComponent(next)}`, locale });
+  // Check the result too: if saving or the check fails, protected pages would send the person straight back here,
+  // which looks like a button that does nothing. Say so on the page and leave a trace in the logs instead.
+  if (error || !(await hasAcceptedPolicies())) {
+    log.error("policy.accept_failed", { code: error?.code ?? "check_false", hint: error?.hint ?? null });
+    redirect({ href: gate("failed"), locale });
+  }
   redirect({ href: next, locale });
 }

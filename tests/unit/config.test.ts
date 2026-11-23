@@ -142,8 +142,9 @@ describe("boot on Vercel", () => {
     expect(exit).not.toHaveBeenCalled();
   });
 
-  it("treats a production deployment without APP_ENV as PRODUCTION", () => {
-    quiet();
+  it("keeps serving a production deployment without APP_ENV and only logs the problems", () => {
+    const exit = quiet();
+    const errors = vi.spyOn(console, "error");
     const env: Record<string, string | undefined> = {
       ...SAFE_PRODUCTION,
       APP_ENV: undefined,
@@ -152,7 +153,18 @@ describe("boot on Vercel", () => {
       NODE_ENV: "production",
       SEED_DEMO: "true",
     };
-    expect(() => bootCheck(env)).toThrow(/SEED_DEMO/);
+    expect(() => bootCheck(env)).not.toThrow();
+    expect(environmentName(env)).toBe("PRODUCTION");
+    expect(env.APP_ENV).toBeUndefined();
+    expect(errors.mock.calls.flat().join(" ")).toMatch(/SEED_DEMO/);
+    expect(exit).not.toHaveBeenCalled();
+  });
+
+  it("a standalone server without APP_ENV keeps serving too", () => {
+    const exit = quiet();
+    const env = { ...SAFE_PRODUCTION, APP_ENV: undefined, NODE_ENV: "production", LLM_PROVIDER: "mock" };
+    expect(() => bootCheck(env)).not.toThrow();
+    expect(exit).not.toHaveBeenCalled();
   });
 
   it("lets a preview with a partial configuration open as DEMO and only logs the problem", () => {
