@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/validation";
 import { PageShell } from "@/components/ui/PageShell";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FormMessage } from "@/components/ui/Field";
 import { acceptPoliciesAndContinue } from "@/app/actions/account";
 import { signOut } from "@/app/actions/auth";
@@ -69,13 +69,11 @@ export default async function PolicyGatePage({
             <span className="text-[15px]">{t("accept")}</span>
           </label>
           <div className="flex flex-wrap items-center gap-3">
-            <Button type="submit">{t("button")}</Button>
+            <SubmitButton>{t("button")}</SubmitButton>
           </div>
         </form>
         <form action={signOut}>
-          <Button type="submit" variant="outline">
-            {t("signOut")}
-          </Button>
+          <SubmitButton variant="outline">{t("signOut")}</SubmitButton>
         </form>
       </Card>
     </PageShell>

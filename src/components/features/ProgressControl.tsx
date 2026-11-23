@@ -50,7 +50,12 @@ export function ProgressControl({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div role="radiogroup" aria-label={t("progressLabel", { title })} className="flex flex-wrap gap-2">
+      <div
+        role="radiogroup"
+        aria-label={t("progressLabel", { title })}
+        aria-busy={pending || undefined}
+        className="flex flex-wrap gap-2"
+      >
         {OPTIONS.map((o) => (
           <button
             key={o}
@@ -60,7 +65,7 @@ export function ProgressControl({
             disabled={pending}
             onClick={() => choose(o)}
             className={cn(
-              "chip-hover min-h-[44px] cursor-pointer rounded-full border-[1.5px] px-4 text-sm font-semibold",
+              "chip-hover min-h-[44px] cursor-pointer rounded-full border-[1.5px] px-4 text-sm font-semibold transition-opacity disabled:cursor-progress disabled:opacity-60",
               value === o
                 ? o === "done"
                   ? "border-ok bg-ok-bg text-ok"

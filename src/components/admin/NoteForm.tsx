@@ -52,6 +52,7 @@ export function NoteForm({ targetType, targetId }: { targetType: "request" | "pr
         size="md"
         variant="outline"
         disabled={pending || note.trim().length < 3}
+        pending={pending}
         className="self-start"
       >
         {pending ? t("saving") : t("add")}

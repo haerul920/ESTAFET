@@ -443,7 +443,6 @@
     "results": "Hasil",
     "updating": "Memperbarui hasil…",
     "clear": "Hapus filter",
-    "loading": "Memuat proyek",
     "count": "{count} proyek",
     "none": {
       "title": "Belum ada proyek yang terbit",
@@ -1029,7 +1028,6 @@
     "stepFiles": "Berkas",
     "stepVerify": "Tinjau draf AI",
     "stepPublish": "Pratinjau dan terbitkan",
-    "loadingDashboard": "Memuat dasbor",
     "shareMeta": "Bagikan proyek",
     "basicsTitle": "Ceritakan tentang proyekmu",
     "newIntro": "Mulai dari info dasar. ESTAFET menyimpan draf pribadi saat kamu lanjut, dan kamu bisa kembali dari dasbor kapan saja.",

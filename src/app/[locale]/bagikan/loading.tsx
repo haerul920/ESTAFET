@@ -1,5 +1,5 @@
-import { PageSkeleton } from "@/components/ui/PageSkeleton";
+import { WizardBasicsSkeleton } from "@/components/features/wizard/WizardSkeleton";
 
 export default function Loading() {
-  return <PageSkeleton variant="form" />;
+  return <WizardBasicsSkeleton />;
 }

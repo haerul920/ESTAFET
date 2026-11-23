@@ -1,5 +1,8 @@
 "use server";
 
+import { after } from "next/server";
+import { cookies } from "next/headers";
+import { createClient as createPlainClient } from "@supabase/supabase-js";
 import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { redirect } from "@/i18n/navigation";
@@ -10,6 +13,7 @@ import { isSuspendedProfile } from "@/lib/auth";
 import { botSignalsFrom, verifyBot } from "@/lib/botcheck";
 import { allow, clientIp } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { SUPABASE_PUBLIC_KEY, SUPABASE_URL } from "@/lib/supabase/keys";
 import type { TFn } from "@/lib/labels";
 
 async function tr() {
@@ -55,7 +59,17 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   // Admins work in /admin (user pages send them there anyway); everyone else lands on the dashboard by default.
   const next = safeNext(values.next);
   const { data: admin } = await supabase.rpc("is_admin");
-  redirect({ href: admin === true && next === "/dasbor" ? "/admin" : next, locale });
+  const target = admin === true && next === "/dasbor" ? "/admin" : next;
+  // A newer Terms or Privacy Policy: go straight to the re-acceptance screen. Redirecting to `next` and letting that
+  // page redirect again happens inside this action's response, so the address bar keeps the old URL, and the form
+  // on the re-acceptance screen then posts to the wrong route ("Server Action not found").
+  if (!target.startsWith("/admin")) {
+    const { data: accepted, error: policyError } = await supabase.rpc("i_accepted_current_policies");
+    if (!policyError && accepted === false) {
+      redirect({ href: `/kebijakan/setujui?next=${encodeURIComponent(target)}`, locale });
+    }
+  }
+  redirect({ href: target, locale });
 }
 
 export async function signup(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -135,9 +149,30 @@ export async function resendVerification(): Promise<{ error?: string }> {
   return {};
 }
 
+/** Supabase session cookies, also when split into chunks (`.0`, `.1`, ...). */
+const SESSION_COOKIE = /^sb-.+-auth-token(?:-code-verifier)?(?:.d+)?$/;
+
+/**
+ * Signs out without making the person wait for Supabase: the session cookies are removed at once and the redirect
+ * leaves immediately. Revoking the session at Supabase (one network round trip) runs after the response is sent.
+ */
 export async function signOut() {
   const locale = await getLocale();
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  // Read from the cookie only (no network call), before the cookie goes.
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  const store = await cookies();
+  for (const c of store.getAll()) {
+    if (SESSION_COOKIE.test(c.name)) store.set(c.name, "", { path: "/", maxAge: 0 });
+  }
+  if (token) {
+    after(async () => {
+      const plain = createPlainClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, { auth: { persistSession: false } });
+      await plain.auth.admin.signOut(token, "local").catch(() => undefined);
+    });
+  }
   redirect({ href: "/", locale });
 }

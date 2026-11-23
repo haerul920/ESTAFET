@@ -1,5 +1,5 @@
-import { PageSkeleton } from "@/components/ui/PageSkeleton";
+import { LegalSkeleton } from "@/components/features/LegalSkeleton";
 
 export default function Loading() {
-  return <PageSkeleton variant="document" />;
+  return <LegalSkeleton sections={8} />;
 }

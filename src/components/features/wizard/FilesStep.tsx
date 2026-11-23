@@ -323,7 +323,11 @@ function FillChoice({
   const router = useRouter();
   const [pending, start] = useTransition();
 
+  // Which of the two buttons started the running action, so only that one shows the spinner.
+  const [choice, setChoice] = useState<"ai" | "manual" | null>(null);
+
   function consent() {
+    setChoice("ai");
     start(async () => {
       onError("");
       const r = await confirmTeamConsent(projectId);
@@ -334,6 +338,7 @@ function FillChoice({
   }
 
   function manual() {
+    setChoice("manual");
     start(async () => {
       onError("");
       const r = await setFillMode(projectId, "manual");
@@ -364,6 +369,7 @@ function FillChoice({
                 size="md"
                 onClick={consent}
                 disabled={pending}
+                pending={pending && choice === "ai"}
                 className="h-auto max-w-full whitespace-normal text-center"
               >
                 {t("consentBtn")}
@@ -380,7 +386,13 @@ function FillChoice({
         <p className="m-0 text-[15px] text-text-3">{t("manualText")}</p>
         <div className="mt-auto">
           {hasItems && fillMode !== "manual" ? null : (
-            <Button variant="outline" size="md" onClick={manual} disabled={pending}>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={manual}
+              disabled={pending}
+              pending={pending && choice === "manual"}
+            >
               {t("manualBtn")}
             </Button>
           )}

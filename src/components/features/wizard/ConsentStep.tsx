@@ -82,7 +82,7 @@ export function ConsentStep({
                     ) : m.profile_id === currentUserId ? (
                       <Button
                         size="md"
-                        disabled={pending}
+                        pending={pending}
                         onClick={() =>
                           start(async () => {
                             const r = await confirmTeamConsent(project.id);

@@ -177,6 +177,7 @@ function OpenAccessCard({
       <Button
         className="justify-center"
         disabled={!accepted || pending || !verified}
+        pending={pending}
         onClick={() =>
           start(async () => {
             setError("");
@@ -204,7 +205,7 @@ function WatchButton({ projectId, slug, watching }: { projectId: string; slug: s
       <Button
         variant={watching ? "outline" : "primary"}
         className="justify-center"
-        disabled={pending}
+        pending={pending}
         aria-pressed={watching}
         onClick={() =>
           start(async () => {
