@@ -1,4 +1,4 @@
--- ESTAFET database, step 13 of 24: pending_team_invites.
+-- ESTAFET database, step 13 of 26: pending_team_invites.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 12 succeeded.
 -- Generated from supabase/migrations/20261126000002_pending_team_invites.sql. Do not edit by hand.
 

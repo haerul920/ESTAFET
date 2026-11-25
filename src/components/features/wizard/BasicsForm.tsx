@@ -27,8 +27,10 @@ export function BasicsForm({ project }: { project: Project | null }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveBasics, {});
   const [dirty, setDirty] = useState(false);
   const fe = state.fieldErrors ?? {};
-  const v = (k: string, fallback: string | number | undefined) =>
-    state.values?.[k] ?? (fallback === undefined ? "" : String(fallback));
+  const v = (k: string, fallback: string | number | null | undefined) =>
+    state.values?.[k] ?? (fallback === undefined || fallback === null ? "" : String(fallback));
+  // The chosen kind, so the name field for "Lainnya" can appear as soon as it is picked.
+  const [kind, setKind] = useState(() => v("kind", project?.kind ?? ""));
 
   // Warn before leaving with unsaved changes (the wizard saves a draft at the end of each step).
   useEffect(() => {
@@ -72,6 +74,7 @@ export function BasicsForm({ project }: { project: Project | null }) {
   const FIELD_LABELS: Record<string, string> = {
     title: t("title"),
     kind: t("kind"),
+    kind_other: t("kindOther"),
     field: t("field"),
     year: t("year"),
     stopped_note: t("stoppedNote"),
@@ -127,8 +130,22 @@ export function BasicsForm({ project }: { project: Project | null }) {
           searchPlaceholder={t("searchKind")}
           clearLabel={ta("facultySearchClear")}
           emptyText={t("noKind")}
-          onValueChange={edited}
+          onValueChange={(value) => {
+            setKind(value);
+            edited();
+          }}
         />
+        {kind === "other" ? (
+          <TextField
+            label={t("kindOther")}
+            name="kind_other"
+            defaultValue={v("kind_other", project?.kind_other)}
+            error={fe.kind_other}
+            hint={t("kindOtherHint")}
+            required
+            maxLength={60}
+          />
+        ) : null}
         <SearchableSelect
           label={t("field")}
           name="field"
@@ -146,6 +163,8 @@ export function BasicsForm({ project }: { project: Project | null }) {
           name="year"
           type="number"
           inputMode="numeric"
+          min={2015}
+          max={new Date().getFullYear()}
           defaultValue={v("year", project?.year ?? new Date().getFullYear())}
           error={fe.year}
           required

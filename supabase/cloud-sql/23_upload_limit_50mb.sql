@@ -1,4 +1,4 @@
--- ESTAFET database, step 23 of 24: upload_limit_50mb.
+-- ESTAFET database, step 23 of 26: upload_limit_50mb.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 22 succeeded.
 -- Generated from supabase/migrations/20261130000002_upload_limit_50mb.sql. Do not edit by hand.
 

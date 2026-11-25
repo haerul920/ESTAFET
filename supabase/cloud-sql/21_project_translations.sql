@@ -1,4 +1,4 @@
--- ESTAFET database, step 21 of 24: project_translations.
+-- ESTAFET database, step 21 of 26: project_translations.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 20 succeeded.
 -- Generated from supabase/migrations/20261129000003_project_translations.sql. Do not edit by hand.
 

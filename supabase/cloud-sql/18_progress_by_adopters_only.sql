@@ -1,4 +1,4 @@
--- ESTAFET database, step 18 of 24: progress_by_adopters_only.
+-- ESTAFET database, step 18 of 26: progress_by_adopters_only.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 17 succeeded.
 -- Generated from supabase/migrations/20261128000004_progress_by_adopters_only.sql. Do not edit by hand.
 

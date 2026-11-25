@@ -58,6 +58,8 @@ export interface TeaserProject {
   title: string;
   summary: string;
   kind: ProjectKind;
+  /** The owner's own name for the kind of work when kind is "other", otherwise null. */
+  kind_other: string | null;
   field: string;
   year: number;
   status: ProjectStatus;
@@ -101,6 +103,8 @@ export interface Project {
   title: string;
   summary: string;
   kind: ProjectKind;
+  /** The owner's own name for the kind of work when kind is "other", otherwise null. */
+  kind_other: string | null;
   field: string;
   year: number;
   status: ProjectStatus;

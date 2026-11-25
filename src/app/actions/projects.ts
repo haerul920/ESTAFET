@@ -1,9 +1,8 @@
 "use server";
 
-import { PROJECT_KINDS } from "@/lib/db/types";
+import { basicsSchema } from "@/lib/basics";
 import { revalidatePath } from "next/cache";
 import { getLocale, getTranslations } from "next-intl/server";
-import { z } from "zod";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -25,20 +24,6 @@ async function tr() {
   return { v: v as unknown as TFn, a: a as unknown as TFn, e: e as unknown as TFn };
 }
 
-function basicsSchema(v: TFn) {
-  return z.object({
-    title: z.string().trim().min(3, v("titleMin")).max(120, v("titleMax")),
-    kind: z.enum(PROJECT_KINDS, { message: v("kind") }),
-    field: z.string().trim().min(2, v("field")),
-    year: z.coerce
-      .number()
-      .int()
-      .min(2015, v("yearMin"))
-      .max(new Date().getFullYear() + 1, v("yearMax")),
-    stopped_note: z.string().trim().max(400, v("stoppedNoteMax")).optional(),
-  });
-}
-
 /** Step 1. Creates the draft on first save, updates it afterwards, then moves to the Files step. */
 export async function saveBasics(_prev: FormState, formData: FormData): Promise<FormState> {
   const t = await tr();
@@ -49,10 +34,7 @@ export async function saveBasics(_prev: FormState, formData: FormData): Promise<
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error), values, error: t.v("fixAndSave") };
 
   const supabase = await createClient();
-  const input = {
-    ...parsed.data,
-    stopped_note: parsed.data.stopped_note ?? "",
-  };
+  const input = parsed.data;
   const id = values.id;
 
   if (id) {

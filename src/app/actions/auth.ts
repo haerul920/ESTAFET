@@ -56,7 +56,17 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
     return { error: suspendedMessage, values };
   }
   revalidatePath("/", "layout");
-  redirect({ href: safeNext(values.next), locale });
+  const next = safeNext(values.next);
+  // A newer Terms or Privacy Policy: go straight to the re-acceptance screen. Redirecting to `next` and letting that
+  // page redirect again happens inside this action's response, so the address bar keeps the old URL, and the form
+  // on the re-acceptance screen then posts to the wrong route ("Server Action not found").
+  if (!next.startsWith("/admin")) {
+    const { data: accepted, error: policyError } = await supabase.rpc("i_accepted_current_policies");
+    if (!policyError && accepted === false) {
+      redirect({ href: `/kebijakan/setujui?next=${encodeURIComponent(next)}`, locale });
+    }
+  }
+  redirect({ href: next, locale });
 }
 
 export async function signup(_prev: FormState, formData: FormData): Promise<FormState> {

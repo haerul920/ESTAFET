@@ -1,4 +1,4 @@
--- ESTAFET database, step 07 of 24: r5_no_advisor.
+-- ESTAFET database, step 07 of 26: r5_no_advisor.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 06 succeeded.
 -- Generated from supabase/migrations/20261123000001_r5_no_advisor.sql. Do not edit by hand.
 

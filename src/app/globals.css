@@ -218,3 +218,28 @@ body {
   background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 10px 30px rgba(14, 26, 38, 0.14);
 }
+
+/* Top navigation bar (NavProgress): grows fast, then slows near the end until the next page arrives. */
+@keyframes nav-progress-grow {
+  0% {
+    transform: scaleX(0);
+  }
+  20% {
+    transform: scaleX(0.45);
+  }
+  60% {
+    transform: scaleX(0.75);
+  }
+  100% {
+    transform: scaleX(0.92);
+  }
+}
+.nav-progress {
+  animation: nav-progress-grow 8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress {
+    animation: none;
+    transform: scaleX(0.6);
+  }
+}

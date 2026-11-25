@@ -13,6 +13,7 @@ import { Menu, MenuContent, MenuItem, MenuLabel, MenuTrigger } from "./Menu";
 import { signOut } from "@/app/actions/auth";
 import { createClient as createBrowserSupabase } from "@/lib/supabase/client";
 import { cn } from "@/lib/cn";
+import { startNavProgress } from "./NavProgress";
 import { useScrolled } from "@/lib/use-scrolled";
 import { iconMotion } from "@/components/ui/motion-presets";
 
@@ -51,6 +52,7 @@ export function GlassNav({ variant = "strip", user }: { variant?: "hero" | "stri
 
   function handleSignOut() {
     if (signingOut) return;
+    startNavProgress();
     startSignOut(async () => {
       try {
         const supabase = createBrowserSupabase();

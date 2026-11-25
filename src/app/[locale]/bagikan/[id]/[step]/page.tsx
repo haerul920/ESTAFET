@@ -199,6 +199,7 @@ export default async function WizardStepPage({ params }: Params) {
     title: project.title,
     summary: project.summary,
     kind: project.kind,
+    kind_other: project.kind_other,
     field: project.field,
     year: project.year,
     status: project.status,

@@ -250,7 +250,8 @@
       "own_role": "Kamu tidak bisa mengubah peranmu sendiri.",
       "same_role": "Akun ini sudah punya peran itu.",
       "role_suspended": "Akun yang ditangguhkan tidak bisa dijadikan admin.",
-      "document_invalid": "Dokumen belum lengkap. Isi semua bagian dalam kedua bahasa."
+      "document_invalid": "Dokumen belum lengkap. Isi semua bagian dalam kedua bahasa.",
+      "needs_file": "Unggah minimal satu berkas dulu. Berkas itulah yang nanti diterima tim penerus."
     },
     "generic": "Terjadi kesalahan. Coba lagi, atau hubungi tim ESTAFET kalau berlanjut.",
     "suspended": "Akunmu ditangguhkan.",
@@ -290,7 +291,9 @@
     "reportDetailsMin": "Ceritakan sedikit lagi (minimal 10 karakter).",
     "reportDetailsMax": "Detail maksimal 1000 karakter.",
     "reportContactMax": "Kontak maksimal 200 karakter.",
-    "domainNotAllowed": "Gunakan email dari salah satu domain ini: {domains}."
+    "domainNotAllowed": "Gunakan email dari salah satu domain ini: {domains}.",
+    "kindOtherMin": "Tulis jenis pekerjaannya, minimal 2 karakter.",
+    "kindOtherMax": "Jenis pekerjaan maksimal 60 karakter."
   },
   "actions": {
     "loginFailed": "Email dan kata sandi tidak cocok. Periksa keduanya lalu coba lagi.",
@@ -469,7 +472,7 @@
   },
   "cta": {
     "ownerTitle": "Ini proyekmu",
-    "ownerText": "Permintaan dan akses baru muncul di dasbormu.",
+    "ownerText": "Kamu pemilik proyek ini, jadi kamu tidak bisa mengajukan untuk melanjutkannya. Permintaan dan akses baru dari tim lain muncul di dasbormu.",
     "openDashboard": "Buka dasbor",
     "holderTitle": "Kamu punya akses",
     "holderText": "Ingat untuk menyebut tim asal dalam apa pun yang dibangun dari proyek ini.",
@@ -980,7 +983,7 @@
     "signupMeta": "Buat akun",
     "signupTitle": "Buat akun",
     "signupDomains": "Gunakan email dari salah satu domain ini: {domains}.",
-    "signupLead": "Pakai email apa saja. Kami mengirim tautan konfirmasi ke alamat itu.",
+    "signupLead": "Pakai email apa saja. Kami mengirim tautan konfirmasi ke alamat itu. Satu akun bisa membagikan proyek sekaligus melanjutkan proyek orang lain, jadi tidak ada peran yang perlu dipilih.",
     "fullName": "Nama lengkap",
     "faculty": "Fakultas",
     "facultyHint": "Opsional. Membantu penerus melihat latar belakangmu.",
@@ -1072,7 +1075,9 @@
     "save": "Simpan dan lanjutkan",
     "saving": "Menyimpan…",
     "searchKind": "Cari jenis pekerjaan…",
-    "noKind": "Jenis tidak ditemukan."
+    "noKind": "Jenis tidak ditemukan.",
+    "kindOther": "Sebutkan jenis pekerjaannya",
+    "kindOtherHint": "Misalnya: tugas akhir, proyek komunitas, atau magang."
   },
   "consentStep": {
     "teamTitle": "Timmu setuju",
@@ -1201,7 +1206,8 @@
     "drafting": "Menyusun draf…",
     "draftingText": "Membaca berkasmu dan memeriksa setiap kutipan terhadap sumbernya. Biasanya butuh beberapa detik.",
     "noticeLine": "Berkasmu tetap pribadi. AI hanya membacanya setelah semua anggota tim setuju.",
-    "noticeLink": "Cara berkasmu dipakai"
+    "noticeLink": "Cara berkasmu dipakai",
+    "uploadFirst": "Unggah minimal satu berkas dulu, baru kamu bisa memilih isi manual atau draf AI."
   },
   "synth": {
     "notFound": "Proyek tidak ditemukan.",
@@ -1272,7 +1278,8 @@
     "cancelTitle": "Batalkan penggunaan AI?",
     "cancelEffect": "Semua buatan AI dihapus permanen: {count, plural, =0 {item drafnya} other {# item draf}}, ringkasan, dan daftar teknologinya. Item yang kamu tulis sendiri tetap ada. Persetujuanmu agar AI membaca berkas dicabut. Teks yang sudah terkirim ke penyedia AI tidak bisa ditarik kembali.",
     "cancelConfirm": "Hapus draf AI",
-    "cancelConfirmManual": "Hapus dan isi manual"
+    "cancelConfirmManual": "Hapus dan isi manual",
+    "manualBelow": "Pilih \"Isi manual\" di bawah, di samping \"Susun draf dengan AI dan lanjut\"."
   },
   "settings": {
     "metaTitle": "Pengaturan proyek",

@@ -29,6 +29,8 @@ paste the whole file, click **Run**, wait for "Success", then do the next one. D
 | 22 | `22_upload_file_kinds.sql` |
 | 23 | `23_upload_limit_50mb.sql` |
 | 24 | `24_project_kinds.sql` |
+| 25 | `25_kind_other.sql` |
+| 26 | `26_manual_needs_file.sql` |
 | optional | `99_OPTIONAL_demo_data.sql` (demo data, skip it for a real site) |
 
 Then make yourself the first admin (replace the email with the one you signed up with):

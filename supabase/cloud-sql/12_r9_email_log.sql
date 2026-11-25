@@ -1,4 +1,4 @@
--- ESTAFET database, step 12 of 24: r9_email_log.
+-- ESTAFET database, step 12 of 26: r9_email_log.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 11 succeeded.
 -- Generated from supabase/migrations/20261126000001_r9_email_log.sql. Do not edit by hand.
 

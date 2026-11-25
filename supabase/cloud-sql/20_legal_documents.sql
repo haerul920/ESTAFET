@@ -1,4 +1,4 @@
--- ESTAFET database, step 20 of 24: legal_documents.
+-- ESTAFET database, step 20 of 26: legal_documents.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 19 succeeded.
 -- Generated from supabase/migrations/20261129000002_legal_documents.sql. Do not edit by hand.
 

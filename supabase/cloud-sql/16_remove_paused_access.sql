@@ -1,4 +1,4 @@
--- ESTAFET database, step 16 of 24: remove_paused_access.
+-- ESTAFET database, step 16 of 26: remove_paused_access.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 15 succeeded.
 -- Generated from supabase/migrations/20261128000002_remove_paused_access.sql. Do not edit by hand.
 

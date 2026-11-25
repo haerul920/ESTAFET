@@ -9,7 +9,9 @@ import { listTeasers } from "@/lib/db/public";
 import { parseAccessFilter, parseFilterYear } from "@/lib/explore";
 import { pageAlternates } from "@/lib/seo";
 import { after } from "next/server";
-import { translationsForList } from "@/lib/translate/server";
+import { projectIdsMatchingTranslation, translationsForList } from "@/lib/translate/server";
+import { getLabels } from "@/lib/get-labels";
+import { FACULTIES } from "@/lib/labels";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -23,8 +25,18 @@ const list = (v: string | string[] | undefined) => (Array.isArray(v) ? v : v ? [
 export default async function ExplorePage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
   const t = await getTranslations("explore");
+  const q = typeof sp.q === "string" ? sp.q.trim() : "";
+  // Search also finds projects through their translation and faculty names in the reader's language (QA note).
+  const L = await getLabels();
+  const qMatches = q
+    ? {
+        projectIds: await projectIdsMatchingTranslation(q),
+        fields: FACULTIES.filter((f) => L.faculty(f).toLowerCase().includes(q.toLowerCase())),
+      }
+    : undefined;
   const found = await listTeasers({
-    q: typeof sp.q === "string" ? sp.q : undefined,
+    q: q || undefined,
+    qMatches,
     faculties: list(sp.faculty),
     year: parseFilterYear(sp.year, new Date().getFullYear()),
     access: parseAccessFilter(sp.access),

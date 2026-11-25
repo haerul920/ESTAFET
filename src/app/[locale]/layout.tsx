@@ -3,7 +3,9 @@ import { DM_Mono, Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Suspense } from "react";
 import { MotionRuntime } from "@/components/ui/MotionRuntime";
+import { NavProgress } from "@/components/ui/NavProgress";
 import { UiProviders } from "@/components/ui/UiProviders";
 import { getSettings } from "@/lib/settings";
 import { isProduction } from "@/lib/admin/env";
@@ -89,6 +91,9 @@ export default async function RootLayout({
       className={`${instrument.variable} ${dmMono.variable} ${jetbrains.variable}`}
     >
       <body>
+        <Suspense fallback={null}>
+          <NavProgress />
+        </Suspense>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-system-banner focus:rounded-full focus:bg-lime focus:px-5 focus:py-3 focus:font-semibold focus:text-black"
