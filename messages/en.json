@@ -250,7 +250,8 @@
       "own_role": "You cannot change your own role.",
       "same_role": "This account already has that role.",
       "role_suspended": "A suspended account cannot become an admin.",
-      "document_invalid": "The document is not complete. Fill in every section in both languages."
+      "document_invalid": "The document is not complete. Fill in every section in both languages.",
+      "needs_file": "Upload at least one file first. The files are what the next team receives."
     },
     "generic": "Something went wrong. Try again, or contact the ESTAFET team if it keeps happening.",
     "suspended": "Your account is suspended.",
@@ -290,7 +291,9 @@
     "reportDetailsMin": "Tell us a little more (at least 10 characters).",
     "reportDetailsMax": "Keep the details under 1000 characters.",
     "reportContactMax": "Keep the contact under 200 characters.",
-    "domainNotAllowed": "Use an email from one of these domains: {domains}."
+    "domainNotAllowed": "Use an email from one of these domains: {domains}.",
+    "kindOtherMin": "Write the kind of work, at least 2 characters.",
+    "kindOtherMax": "The kind of work can be at most 60 characters."
   },
   "actions": {
     "loginFailed": "That email and password do not match. Check both and try again.",
@@ -469,7 +472,7 @@
   },
   "cta": {
     "ownerTitle": "This is your project",
-    "ownerText": "Requests and new access appear on your dashboard.",
+    "ownerText": "You own this project, so you cannot ask to continue it. Requests and new access from other teams appear on your dashboard.",
     "openDashboard": "Open dashboard",
     "holderTitle": "You have access",
     "holderText": "Remember to credit the original team in anything that builds on this project.",
@@ -980,7 +983,7 @@
     "signupMeta": "Create an account",
     "signupTitle": "Create an account",
     "signupDomains": "Use an email from one of these domains: {domains}.",
-    "signupLead": "Use any email address. We send a confirmation link to it.",
+    "signupLead": "Use any email address. We send a confirmation link to it. One account can share projects and continue other people's projects, so there is no role to pick.",
     "fullName": "Full name",
     "faculty": "Faculty",
     "facultyHint": "Optional. Helps people who continue your work see your background.",
@@ -1072,7 +1075,9 @@
     "save": "Save and continue",
     "saving": "Saving…",
     "searchKind": "Search type of work…",
-    "noKind": "No matching type found."
+    "noKind": "No matching type found.",
+    "kindOther": "Name the kind of work",
+    "kindOtherHint": "For example: final thesis, community project, or internship."
   },
   "consentStep": {
     "teamTitle": "Your team agrees",
@@ -1201,7 +1206,8 @@
     "drafting": "Drafting…",
     "draftingText": "Reading your files and checking every quoted line against the source. This usually takes a few seconds.",
     "noticeLine": "Your files stay private. AI reads them only after every team member agrees.",
-    "noticeLink": "How your files are used"
+    "noticeLink": "How your files are used",
+    "uploadFirst": "Upload at least one file first, then you can fill in by hand or draft with AI."
   },
   "synth": {
     "notFound": "Project not found.",
@@ -1272,7 +1278,8 @@
     "cancelTitle": "Cancel AI use?",
     "cancelEffect": "Everything the AI made is deleted for good: {count, plural, =0 {its drafted items} one {# drafted item} other {# drafted items}}, its summary and its list of tools. Items you wrote yourself stay. Your agreement that AI reads the files is withdrawn. Text already sent to the AI provider cannot be recalled.",
     "cancelConfirm": "Delete the AI draft",
-    "cancelConfirmManual": "Delete and fill in by hand"
+    "cancelConfirmManual": "Delete and fill in by hand",
+    "manualBelow": "Choose \"Fill in by hand\" below, next to \"Draft with AI and continue\"."
   },
   "settings": {
     "metaTitle": "Project settings",

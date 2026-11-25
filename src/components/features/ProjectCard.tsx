@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Chip } from "@/components/ui/Badge";
 import { useLabels } from "@/lib/use-labels";
 import type { TeaserProject } from "@/lib/db/types";
+import { kindName } from "@/lib/basics";
 
 export function ProjectCard({ project }: { project: TeaserProject }) {
   const L = useLabels();
@@ -25,7 +26,7 @@ export function ProjectCard({ project }: { project: TeaserProject }) {
           className="lift flex h-full flex-col gap-3 rounded-[28px] border border-surface bg-surface p-6 text-ink no-underline"
         >
           <span className="text-[13px] font-semibold text-text-2">
-            {L.kind[project.kind]} · {project.year}
+            {kindName(project, L.kind)} · {project.year}
           </span>
           <h2 className="m-0 line-clamp-2 text-xl font-medium leading-tight">{project.title}</h2>
           {/* A long description stops after four lines and ends with "…", so a card never grows tall. */}

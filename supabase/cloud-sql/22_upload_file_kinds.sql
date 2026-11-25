@@ -1,4 +1,4 @@
--- ESTAFET database, step 22 of 24: upload_file_kinds.
+-- ESTAFET database, step 22 of 26: upload_file_kinds.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 21 succeeded.
 -- Generated from supabase/migrations/20261130000001_upload_file_kinds.sql. Do not edit by hand.
 

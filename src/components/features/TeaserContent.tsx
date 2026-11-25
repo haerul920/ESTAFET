@@ -6,6 +6,7 @@ import { Reveal, Stagger, StaggerItem } from "@/components/ui/motion";
 import { Lineage, type LineageStep } from "@/components/features/Lineage";
 import { useLabels } from "@/lib/use-labels";
 import type { TeaserItem, TeaserProject } from "@/lib/db/types";
+import { kindName } from "@/lib/basics";
 
 /**
  * The public project teaser body. Used by /projects/[slug] and by the Publish step preview,
@@ -36,7 +37,7 @@ export function TeaserContent({
       <header className="mb-8">
         <h1 className="mb-3 mt-0 text-[44px] font-medium leading-[1.1] max-sm:text-[32px]">{project.title}</h1>
         <p className="m-0 text-text-2">
-          {L.kind[project.kind]} · {project.year} · {L.faculty(project.field)} ·{" "}
+          {kindName(project, L.kind)} · {project.year} · {L.faculty(project.field)} ·{" "}
           {t("byTeam", { count: project.team_size })} · {t("readTime", { minutes })}
         </p>
       </header>

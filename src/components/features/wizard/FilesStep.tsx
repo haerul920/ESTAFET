@@ -73,6 +73,7 @@ export function FilesStep({
   maxMb: number;
 }) {
   const t = useTranslations("files");
+  const tf = useTranslations("fill");
   const L = useLabels();
   const locale = useLocale();
   const router = useRouter();
@@ -83,6 +84,21 @@ export function FilesStep({
   const [error, setError] = useState("");
   const [drafting, setDrafting] = useState(false);
   const [removing, startRemoving] = useTransition();
+  // "Isi manual" sits next to "Susun draf dengan AI" while nothing of the AI exists yet (QA note): both ways forward,
+  // side by side. Once the AI made something, switching goes through the confirmation in the manual card instead.
+  const [goingManual, startGoingManual] = useTransition();
+  const canGoManual = fillMode !== "manual" && fillMode !== "ai" && aiItemCount === 0;
+  function goManual() {
+    startGoingManual(async () => {
+      setError("");
+      const r = await setFillMode(projectId, "manual");
+      if (r.error) {
+        setError(r.error);
+        return;
+      }
+      router.push(`/bagikan/${projectId}/tinjau`);
+    });
+  }
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const upload = useCallback(
@@ -332,20 +348,40 @@ export function FilesStep({
             {t("toVerify")}
           </ButtonLink>
         ) : (
-          <Button
-            size="lg"
-            arrow
-            loading={drafting}
-            disabled={!canSynthesize || readable === 0 || drafting}
-            onClick={draftAndContinue}
-          >
-            {drafting ? t("drafting") : t("draftBtn")}
-          </Button>
+          <>
+            {canGoManual ? (
+              <Button
+                variant="outline"
+                size="lg"
+                loading={goingManual}
+                // The files are what the next team receives: "manual" is not a way to skip the upload (QA note).
+                disabled={files.length === 0 || goingManual || drafting}
+                aria-describedby={files.length === 0 ? "manual-needs-file" : undefined}
+                onClick={goManual}
+              >
+                {tf("manualBtn")}
+              </Button>
+            ) : null}
+            <Button
+              size="lg"
+              arrow
+              loading={drafting}
+              disabled={!canSynthesize || readable === 0 || drafting || goingManual}
+              onClick={draftAndContinue}
+            >
+              {drafting ? t("drafting") : t("draftBtn")}
+            </Button>
+          </>
         )}
       </WizardActions>
       {drafting ? (
         <p role="status" className="m-0 text-sm text-text-2">
           {t("draftingText")}
+        </p>
+      ) : null}
+      {canGoManual && files.length === 0 && itemCount === 0 ? (
+        <p id="manual-needs-file" className="m-0 text-sm text-text-2">
+          {t("uploadFirst")}
         </p>
       ) : null}
     </div>
@@ -375,25 +411,17 @@ function FillChoice({
   const router = useRouter();
   const [pending, start] = useTransition();
 
+  // Which of the two choices is running, so only that button shows the spinner (set outside the transition).
+  const [choice, setChoice] = useState<"ai" | null>(null);
+
   function consent() {
+    setChoice("ai");
     start(async () => {
       onError("");
       const r = await confirmTeamConsent(projectId);
       if (r.error) onError(r.error);
       else await setFillMode(projectId, "ai");
       router.refresh();
-    });
-  }
-
-  function manual() {
-    start(async () => {
-      onError("");
-      const r = await setFillMode(projectId, "manual");
-      if (r.error) {
-        onError(r.error);
-        return;
-      }
-      router.push(`/bagikan/${projectId}/tinjau`);
     });
   }
 
@@ -424,7 +452,7 @@ function FillChoice({
                 variant="outlineBlue"
                 size="md"
                 onClick={consent}
-                loading={pending}
+                loading={pending && choice === "ai"}
                 disabled={pending}
                 // a long label: let it wrap instead of pushing the page sideways on small phones
                 className="h-auto max-w-full whitespace-normal py-2.5 text-center"
@@ -470,9 +498,7 @@ function FillChoice({
               onDone={() => router.push(`/bagikan/${projectId}/tinjau`)}
             />
           ) : (
-            <Button variant="outline" size="md" onClick={manual} loading={pending} disabled={pending}>
-              {t("manualBtn")}
-            </Button>
+            <p className="m-0 text-sm text-text-2">{t("manualBelow")}</p>
           )}
         </div>
       </Card>

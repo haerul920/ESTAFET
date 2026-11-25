@@ -1,6 +1,6 @@
 "use server";
 
-import { PROJECT_KINDS } from "@/lib/db/types";
+import { basicsFields, basicsSchema, settleKind } from "@/lib/basics";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
@@ -37,20 +37,6 @@ export async function setFillMode(projectId: string, mode: "ai" | "manual"): Pro
   return {};
 }
 
-function basicsSchema(v: TFn) {
-  return z.object({
-    title: z.string().trim().min(3, v("titleMin")).max(120, v("titleMax")),
-    kind: z.enum(PROJECT_KINDS, { message: v("kind") }),
-    field: z.string().trim().min(2, v("field")),
-    year: z.coerce
-      .number()
-      .int()
-      .min(2015, v("yearMin"))
-      .max(new Date().getFullYear() + 1, v("yearMax")),
-    stopped_note: z.string().trim().max(400, v("stoppedNoteMax")).optional(),
-  });
-}
-
 /**
  * Autosave for the Info step. It only writes when every field is valid, so a half-typed form never overwrites a good
  * draft. A project that does not exist yet is created by the normal "Save and continue" (saveBasics).
@@ -64,10 +50,7 @@ export async function autosaveBasics(
   const parsed = basicsSchema(t.v).safeParse(values);
   if (!parsed.success) return { saved: false, fieldErrors: fieldErrorsFrom(parsed.error) };
   const supabase = await createClient();
-  const input = {
-    ...parsed.data,
-    stopped_note: parsed.data.stopped_note ?? "",
-  };
+  const input = parsed.data;
   const { data, error } = await supabase.from("projects").update(input).eq("id", projectId).select("id");
   if (error || !data || data.length === 0) return { saved: false };
   return { saved: true };
@@ -159,14 +142,15 @@ export async function saveDraftAndExit(
 ): Promise<{ error?: string; id: string | null; skipped: string[] }> {
   const t = await tr();
   const user = await requireUser(projectId ? `/bagikan/${projectId}/info` : "/bagikan");
-  const shape = basicsSchema(t.v).shape;
-  const patch: Record<string, string | number> = {};
+  const shape = basicsFields(t.v);
+  const patch: Record<string, string | number | null> = {};
   const skipped: string[] = [];
   for (const key of Object.keys(shape) as (keyof typeof shape)[]) {
     const result = shape[key].safeParse(values[key]);
     if (!result.success) skipped.push(key);
     else if (result.data !== undefined) patch[key] = result.data;
   }
+  settleKind(patch, skipped);
   const supabase = await createClient();
 
   if (projectId) {

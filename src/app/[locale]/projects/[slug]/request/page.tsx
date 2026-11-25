@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getLabels } from "@/lib/get-labels";
 import { translationFor } from "@/lib/translate/server";
 import { withTranslation } from "@/lib/translate/core";
+import { kindName } from "@/lib/basics";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -69,7 +70,7 @@ export default async function RequestPage({ params }: { params: Promise<{ slug: 
           <Card>
             <h2 className="mb-2 mt-0 text-lg">{project.title}</h2>
             <p className="mb-3 mt-0 text-sm text-text-2">
-              {L.kind[project.kind]} · {project.year} · {L.faculty(project.field)}
+              {kindName(project, L.kind)} · {project.year} · {L.faculty(project.field)}
             </p>
             <div className="flex flex-wrap gap-2"></div>
           </Card>

@@ -1,4 +1,4 @@
--- ESTAFET database, step 14 of 24: suggestions_not_binding.
+-- ESTAFET database, step 14 of 26: suggestions_not_binding.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 13 succeeded.
 -- Generated from supabase/migrations/20261127000001_suggestions_not_binding.sql. Do not edit by hand.
 

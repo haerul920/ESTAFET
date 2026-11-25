@@ -1,4 +1,4 @@
--- ESTAFET database, step 02 of 24: admin.
+-- ESTAFET database, step 02 of 26: admin.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 01 succeeded.
 -- Generated from supabase/migrations/20261120000001_admin.sql. Do not edit by hand.
 

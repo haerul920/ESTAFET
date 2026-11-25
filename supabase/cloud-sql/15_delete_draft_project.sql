@@ -1,4 +1,4 @@
--- ESTAFET database, step 15 of 24: delete_draft_project.
+-- ESTAFET database, step 15 of 26: delete_draft_project.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 14 succeeded.
 -- Generated from supabase/migrations/20261128000001_delete_draft_project.sql. Do not edit by hand.
 

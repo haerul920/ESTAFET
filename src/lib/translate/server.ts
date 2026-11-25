@@ -143,3 +143,29 @@ export async function translationsForList(
   if (rest.length) later(() => Promise.all(rest.map((m) => create(m.id, m.source, lang))));
   return new Map(out);
 }
+
+/**
+ * Projects whose cached translation contains the search words (title or summary), so a reader can search in their
+ * own language when the owner wrote in the other one (QA note). Only ids come back; the caller still lists them
+ * through the public teaser view, so nothing unpublished is ever shown. Empty on any error.
+ */
+export async function projectIdsMatchingTranslation(q: string): Promise<string[]> {
+  // Characters with a meaning in a PostgREST filter are turned into spaces.
+  const words = q
+    .trim()
+    .replace(/[%,()"*\\]/g, " ")
+    .trim();
+  if (words.length < 2) return [];
+  try {
+    const { data, error } = await createAdminClient()
+      .from("project_translations")
+      .select("project_id")
+      .eq("same_language", false)
+      .or(`content->>title.ilike.%${words}%,content->>summary.ilike.%${words}%`)
+      .limit(200);
+    if (error || !data) return [];
+    return [...new Set(data.map((r) => r.project_id as string))];
+  } catch {
+    return [];
+  }
+}

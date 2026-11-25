@@ -593,7 +593,7 @@ The public page has no "Built with" (tools) section. The locked files card says 
 - It is labelled as an AI translation, with the original one click away. The publish step and the privacy text say so.
 - Translations are cached in `project_translations` (migration `20261129000003_project_translations.sql`), keyed by a fingerprint of the source text, and made once per version: in the background, the first time someone reads it in the other language. Limits: 4 tries per project and language per hour, and `TRANSLATION_DAILY_CAP` per day.
 - No translation is invented: in mock mode, on a failed or implausible answer, or past a limit, readers see the original. Names and acronyms are kept.
-- Explore search still matches the original text only.
+- Explore search matches the original text, and (revised 2026-11-26, QA notes) also a cached translation of the title or summary, and faculty names in the reader's language. A project is found in the other language only after its translation was made once (the first time someone read it in that language).
 
 ### 15.40 Upload formats. Decided 2026-11-25
 - Accepted: PDF, Markdown, JPG, PNG, Word (.docx), Excel (.xlsx) and PowerPoint (.pptx), up to 50 MB per file. ZIP uploads are no longer accepted, and the old .doc, .xls and .ppt formats are refused with advice to save them in the new format. This replaces the ZIP and 25 MB rules in sections 1, 3, 7 and 8. Older projects keep their code folder files.
@@ -603,11 +603,20 @@ The public page has no "Built with" (tools) section. The locked files card says 
 
 ### 15.41 Types of work. Decided 2026-11-25
 - The share wizard offers: student creativity program, hackathon, research ("Penelitian"), community service ("Pengabdian") and other ("Lainnya"), in this order. This replaces the three values of `kind` in section 6.
-- "Research project" is now called "Research" (same stored value). "Other" has no free-text field. Explore still has no filter by type (15.5).
+- "Research project" is now called "Research" (same stored value). Explore still has no filter by type (15.5).
 - Migration `20261130000003_project_kinds.sql`.
+- Revised 2026-11-26: "Other" ("Lainnya") now has a free-text field, "Sebutkan jenis pekerjaannya", 2 to 60 characters, required when "Other" is chosen. It is stored in `projects.kind_other` (null for every other kind, enforced by a check constraint) and shown instead of the word "Other" on cards, the teaser, the request page and the admin project page. Existing "Other" projects got "Lainnya" as their name. Migration `20261130000004_kind_other.sql`.
 
 ### 15.42 PDF preview on the Files step, and plain AI error messages. Decided 2026-11-26
 - Every uploaded PDF on the Files step has a "Preview" ("Pratinjau") button. It opens the browser's own PDF viewer in a window, with "Open in a new tab". A browser without a viewer shows that link only. Other file types have no preview.
 - The browser asks `download?preview=1`, which makes the same access check as a download and returns an address that lasts 5 minutes. The file comes straight from storage, and the CSP allows frames from the storage address. This is the one exception to "downloads are served as attachments" in 14.10: PDF only, from the storage origin, with the type the server set after checking the content. Downloads are still attachments.
 - When the AI draft fails, the person reads a plain message in their language that says what to do (`synth.error.*`). The provider's technical reason is kept in `synthesis_runs.error`. Retrying and the run limits are unchanged.
+
+### 15.43 QA round fixes. Decided 2026-11-26
+- Home "How it works": the step label and text sit right under the number, so labels in one row line up.
+- Info step: the start year can be at most the current year (it was next year).
+- Files step: while the AI has made nothing yet, "Fill in by hand" sits in the bottom button row next to "Draft with AI". Once the AI made something, switching to manual still goes through the confirmation in the manual card.
+- An owner looking at their own project is told plainly that they cannot ask to continue it. Sign-up says one account can both share and continue projects (no role to pick, as in 14.3).
+- Files step: "Fill in by hand" needs at least one uploaded file, like the AI draft needs a readable one. The files are what the next team receives, so manual is not a way to skip the upload. Enforced in `set_fill_mode` (hint `needs_file`, migration `20261130000005_manual_needs_file.sql`) and shown in the UI.
+- Explore search: see 15.39. "Other" kind with its own name: see 15.41.
 

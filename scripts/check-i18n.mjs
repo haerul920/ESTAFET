@@ -57,6 +57,7 @@ const files = walk(join(ROOT, "src"));
 
 // Translators that are passed in as parameters rather than created in the file.
 const FILE_NS = {
+  "src/lib/basics.ts": { v: "validation" },
   "src/lib/db/dashboard.ts": { t: "dashboard" },
   "src/lib/lineage.ts": { t: "lineage" },
   "src/lib/agreement/terms.ts": { t: "agreement" },

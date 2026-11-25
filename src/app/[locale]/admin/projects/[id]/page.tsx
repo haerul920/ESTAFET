@@ -24,6 +24,7 @@ interface Detail {
     title: string;
     summary: string;
     kind: string;
+    kind_other?: string | null;
     field: string;
     year: number;
     status: string;
@@ -78,7 +79,7 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
     <>
       <PageHeader
         title={p.title}
-        intro={`${kindName(p.kind)} · ${p.year} · ${p.field}`}
+        intro={`${p.kind === "other" && p.kind_other ? p.kind_other : kindName(p.kind)} · ${p.year} · ${p.field}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {p.is_demo ? <DemoBadge /> : null}

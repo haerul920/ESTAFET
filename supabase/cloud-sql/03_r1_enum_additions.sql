@@ -1,4 +1,4 @@
--- ESTAFET database, step 03 of 24: r1_enum_additions.
+-- ESTAFET database, step 03 of 26: r1_enum_additions.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 02 succeeded.
 -- Generated from supabase/migrations/20261121000001_r1_enum_additions.sql. Do not edit by hand.
 

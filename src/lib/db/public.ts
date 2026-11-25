@@ -5,6 +5,11 @@ import type { TeaserItem, TeaserLineageEvent, TeaserProject } from "./types";
 
 export interface ExploreFilters {
   q?: string;
+  /**
+   * Extra search matches for `q` that the view cannot see itself: projects whose cached translation matches (the
+   * reader may search in the other language), and stored faculty names whose translated label matches ("Teknik").
+   */
+  qMatches?: { projectIds?: string[]; fields?: string[] };
   faculties?: string[];
   year?: number;
   access?: AccessFilter;
@@ -16,7 +21,13 @@ export async function listTeasers(filters: ExploreFilters = {}): Promise<TeaserP
   let query = supabase.from("public_project_teaser").select("*");
 
   const q = filters.q?.trim().replace(/[%,()]/g, " ");
-  if (q) query = query.or(`title.ilike.%${q}%,summary.ilike.%${q}%,field.ilike.%${q}%`);
+  if (q) {
+    const ors = [`title.ilike.%${q}%`, `summary.ilike.%${q}%`, `field.ilike.%${q}%`];
+    const ids = (filters.qMatches?.projectIds ?? []).filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+    if (ids.length) ors.push(`id.in.(${ids.join(",")})`);
+    for (const field of filters.qMatches?.fields ?? []) ors.push(`field.eq."${field.replace(/"/g, "")}"`);
+    query = query.or(ors.join(","));
+  }
   if (filters.faculties?.length) query = query.in("field", filters.faculties);
   if (filters.year) query = query.eq("year", filters.year);
   if (filters.access) query = query.eq("access_mode", filters.access);

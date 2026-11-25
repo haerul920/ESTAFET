@@ -1,4 +1,4 @@
--- ESTAFET database, step 19 of 24: admin_decides_and_roles.
+-- ESTAFET database, step 19 of 26: admin_decides_and_roles.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 18 succeeded.
 -- Generated from supabase/migrations/20261129000001_admin_decides_and_roles.sql. Do not edit by hand.
 

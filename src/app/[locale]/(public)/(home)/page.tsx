@@ -78,11 +78,14 @@ export default function HomePage() {
               {t("how.title")}
             </h2>
           </Reveal>
-          <Stagger gap={0.1} className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-4">
+          {/* 1, 2 or 4 columns, never 3 + 1: a lone last card made the row look uneven (QA note). */}
+          <Stagger gap={0.1} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((s) => (
               <StaggerItem
                 key={s.n}
-                className="flex min-h-[230px] flex-col justify-between rounded-[28px] bg-surface-soft p-6 max-sm:min-h-[190px] max-sm:rounded-[24px] max-sm:p-5"
+                // The label and text sit right under the number, so every card in a row starts its label at the same height
+                // (QA note: with justify-between, a longer text pushed its label up and the row looked uneven).
+                className="flex min-h-[230px] flex-col gap-8 rounded-[28px] bg-surface-soft p-6 max-sm:min-h-[190px] max-sm:gap-6 max-sm:rounded-[24px] max-sm:p-5"
               >
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-full font-semibold ${s.lime ? "bg-lime text-black" : "bg-black text-white"}`}

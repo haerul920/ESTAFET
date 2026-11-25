@@ -1,4 +1,4 @@
--- ESTAFET database, step 24 of 24: project_kinds.
+-- ESTAFET database, step 24 of 26: project_kinds.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 23 succeeded.
 -- Generated from supabase/migrations/20261130000003_project_kinds.sql. Do not edit by hand.
 

@@ -1,4 +1,4 @@
--- ESTAFET database, step 17 of 24: avatars_bucket.
+-- ESTAFET database, step 17 of 26: avatars_bucket.
 -- Paste this whole file into the Supabase SQL Editor and click Run. Run it ALONE, after step 16 succeeded.
 -- Generated from supabase/migrations/20261128000003_avatars_bucket.sql. Do not edit by hand.
 
