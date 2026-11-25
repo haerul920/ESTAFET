@@ -22,14 +22,20 @@ export function EmailPreferences({ enabled, locale }: { enabled: boolean; locale
   return (
     <form action={action} className="flex flex-col gap-3">
       <CheckboxField label={t("toggle")} name="enabled" defaultChecked={enabled} />
-      <SelectField label={t("language")} name="locale" defaultValue={locale} className="max-w-[260px]">
-        <option value="id">{t("langId")}</option>
-        <option value="en">{t("langEn")}</option>
-      </SelectField>
+      <SelectField
+        label={t("language")}
+        name="locale"
+        defaultValue={locale}
+        className="max-w-[260px]"
+        options={[
+          { value: "id", label: t("langId") },
+          { value: "en", label: t("langEn") },
+        ]}
+      />
       {state.error ? <FormMessage tone="error">{state.error}</FormMessage> : null}
       {state.ok ? <FormMessage tone="success">{t("saved")}</FormMessage> : null}
       <div>
-        <Button type="submit" variant="outlineBlue" pending={pending}>
+        <Button type="submit" variant="outlineBlue" disabled={pending}>
           {t("save")}
         </Button>
       </div>

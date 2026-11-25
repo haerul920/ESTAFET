@@ -7,7 +7,7 @@ ESTAFET stores **everything** in Supabase. Nothing is kept in files on the serve
 | Accounts and sign-in | Auth (`auth.users`) plus `public.profiles` (created by a trigger on sign-up) |
 | Projects, members, access, requests, drafted items, consents, reports, settings, audit log, trials, notifications | Postgres tables in schema `public` (see `docs/database-setup.md`) |
 | Rate limits (reports, consent links, synthesis) | Table `public.rate_limit_hits`, checked by `public.check_rate_limit()` |
-| Uploaded files (PDF, Markdown, ZIP code tree) | Storage bucket `project-files` (private) |
+| Uploaded files (PDF, Markdown, pictures, Word, Excel, PowerPoint) | Storage bucket `project-files` (private) |
 | Extracted text (per page) | Storage bucket `extracted-text` (private) |
 | Business rules (publish, take access, decide request, revoke, moderation) | SQL functions, enforced again by Row Level Security |
 

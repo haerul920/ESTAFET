@@ -274,7 +274,7 @@ export function renderEmail(
   const base = ctx.appUrl.replace(/\/+$/, "");
   const prefix = locale === "en" ? "/en" : "";
   const link = `${base}${prefix}${content.path}`;
-  const prefsLink = `${base}${prefix}/akun/privasi`;
+  const prefsLink = `${base}${prefix}/akun/setelan`;
   const name = str(ctx.name, 80);
   const greeting = name ? t("common.greeting", { name }) : t("common.greetingNoName");
   const cta = t(`cta.${content.ctaKey}`);

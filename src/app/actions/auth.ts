@@ -1,19 +1,18 @@
 "use server";
 
-import { after } from "next/server";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import { createClient as createPlainClient } from "@supabase/supabase-js";
 import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { sessionCookieOptions } from "@/lib/supabase/keys";
 import { emailSchema, fieldErrorsFrom, formValues, safeNext, type FormState } from "@/lib/validation";
 import { getSettings, isEmailAllowedBy } from "@/lib/settings";
 import { isSuspendedProfile } from "@/lib/auth";
 import { botSignalsFrom, verifyBot } from "@/lib/botcheck";
 import { allow, clientIp } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { SUPABASE_PUBLIC_KEY, SUPABASE_URL } from "@/lib/supabase/keys";
 import type { TFn } from "@/lib/labels";
 
 async function tr() {
@@ -56,20 +55,8 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
     await supabase.auth.signOut();
     return { error: suspendedMessage, values };
   }
-  // Admins work in /admin (user pages send them there anyway); everyone else lands on the dashboard by default.
-  const next = safeNext(values.next);
-  const { data: admin } = await supabase.rpc("is_admin");
-  const target = admin === true && next === "/dasbor" ? "/admin" : next;
-  // A newer Terms or Privacy Policy: go straight to the re-acceptance screen. Redirecting to `next` and letting that
-  // page redirect again happens inside this action's response, so the address bar keeps the old URL, and the form
-  // on the re-acceptance screen then posts to the wrong route ("Server Action not found").
-  if (!target.startsWith("/admin")) {
-    const { data: accepted, error: policyError } = await supabase.rpc("i_accepted_current_policies");
-    if (!policyError && accepted === false) {
-      redirect({ href: `/kebijakan/setujui?next=${encodeURIComponent(target)}`, locale });
-    }
-  }
-  redirect({ href: target, locale });
+  revalidatePath("/", "layout");
+  redirect({ href: safeNext(values.next), locale });
 }
 
 export async function signup(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -82,7 +69,12 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
       email: emailSchema(t.v),
       faculty: z.string().trim().optional(),
       password: z.string().min(8, t.v("passwordMin")),
+      confirm_password: z.string().min(1, t.v("passwordConfirmRequired")),
       accept_policies: z.literal("on", { message: t.v("acceptPolicies") }),
+    })
+    .refine((d) => d.password === d.confirm_password, {
+      path: ["confirm_password"],
+      message: t.v("passwordMismatch"),
     })
     .safeParse(values);
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error), values };
@@ -130,6 +122,7 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
         .upsert(rows, { onConflict: "profile_id,kind,version", ignoreDuplicates: true });
   }
   if (!data.session) return { ok: true, message: t.a("signupDone") };
+  revalidatePath("/", "layout");
   redirect({ href: safeNext(values.next), locale });
 }
 
@@ -149,30 +142,26 @@ export async function resendVerification(): Promise<{ error?: string }> {
   return {};
 }
 
-/** Supabase session cookies, also when split into chunks (`.0`, `.1`, ...). */
-const SESSION_COOKIE = /^sb-.+-auth-token(?:-code-verifier)?(?:.d+)?$/;
-
-/**
- * Signs out without making the person wait for Supabase: the session cookies are removed at once and the redirect
- * leaves immediately. Revoking the session at Supabase (one network round trip) runs after the response is sent.
- */
 export async function signOut() {
   const locale = await getLocale();
-  const supabase = await createClient();
-  // Read from the cookie only (no network call), before the cookie goes.
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const token = session?.access_token;
-  const store = await cookies();
-  for (const c of store.getAll()) {
-    if (SESSION_COOKIE.test(c.name)) store.set(c.name, "", { path: "/", maxAge: 0 });
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch {
+    /* ignore remote sign-out errors so local session cookies are still wiped */
   }
-  if (token) {
-    after(async () => {
-      const plain = createPlainClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, { auth: { persistSession: false } });
-      await plain.auth.admin.signOut(token, "local").catch(() => undefined);
-    });
+  const cookieStore = await cookies();
+  const opts = sessionCookieOptions();
+  for (const c of cookieStore.getAll()) {
+    if (c.name.startsWith("sb-")) {
+      try {
+        cookieStore.set(c.name, "", { ...opts, maxAge: 0, expires: new Date(0) });
+        cookieStore.delete(c.name);
+      } catch {
+        /* ignore cookie deletion errors */
+      }
+    }
   }
+  revalidatePath("/", "layout");
   redirect({ href: "/", locale });
 }

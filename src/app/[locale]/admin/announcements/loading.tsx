@@ -1,5 +1,5 @@
 import { AdminSkeleton } from "@/components/admin/AdminSkeleton";
 
 export default function Loading() {
-  return <AdminSkeleton variant="panels" />;
+  return <AdminSkeleton variant="announcements" />;
 }

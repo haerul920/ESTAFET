@@ -82,9 +82,9 @@ describe("behaviour", () => {
   it("essential mail says why it was sent and has no unsubscribe link; others link to the settings", () => {
     const essential = renderEmail("moderation", "en", SAMPLES.moderation, { ...ctx, essential: true })!;
     expect(essential.text).toContain("is sent even if you turned notification emails off");
-    expect(essential.text).not.toContain("/akun/privasi");
+    expect(essential.text).not.toContain("/akun/setelan");
     const normal = renderEmail("new_request", "en", SAMPLES.new_request, ctx)!;
-    expect(normal.text).toContain("https://estafet.example/en/akun/privasi");
+    expect(normal.text).toContain("https://estafet.example/en/akun/setelan");
   });
 
   it("works without a name", () => {

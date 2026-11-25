@@ -44,6 +44,7 @@ export default async function AdminAppealsPage({ searchParams }: { searchParams:
     getTranslations("admin.actionsName"),
   ]);
   const status = (k: string) => statusText(ts as unknown as StatusTranslator, k);
+  const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
   const action = (k: string) => ((ta as unknown as StatusTranslator).has(k) ? ta(k as never) : k);
 
   const { rows, total, params } = await queryView<Row>("admin_appeals_v", sp, {
@@ -143,12 +144,15 @@ export default async function AdminAppealsPage({ searchParams }: { searchParams:
         </aside>
       ) : null}
       <FilterBar
+        dropdowns
         searchLabel={t("search")}
         filters={[
           {
             key: "status",
             label: t("filterStatus"),
-            options: ["open", "accepted", "rejected"].map((v) => ({ value: v, label: status(v) })),
+            allLabel: t("allStatuses"),
+            options: ["accepted", "rejected"].map((v) => ({ value: v, label: capital(status(v)) })),
+            linkOnly: [{ value: "open", label: capital(status("open")) }],
           },
         ]}
       />

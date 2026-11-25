@@ -69,6 +69,43 @@ export async function dispatchEmails(limit = 25): Promise<DispatchResult> {
   return result;
 }
 
+/**
+ * Immediately delivers a team invitation email (and flushes any queued outbox rows).
+ * Works both for registered ESTAFET accounts and for addresses that have not signed up yet.
+ */
+export async function sendTeamInviteEmail(opts: {
+  projectId: string;
+  email: string;
+  locale: string;
+  registered: boolean;
+}): Promise<void> {
+  try {
+    if (opts.registered) {
+      await dispatchEmails(10);
+      return;
+    }
+    if (providerName() === "none") return;
+    const db = createAdminClient();
+    const { data: project } = await db.from("projects").select("title").eq("id", opts.projectId).maybeSingle();
+    const appUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+    const locale: EmailLocale = opts.locale === "en" ? "en" : "id";
+    const mail = renderEmail(
+      "team_invite",
+      locale,
+      { title: project?.title ?? "", project_id: opts.projectId },
+      { appUrl, name: null, essential: false },
+    );
+    if (!mail) return;
+    await sendEmail({
+      to: opts.email,
+      ...mail,
+      unsubscribeUrl: `${appUrl}${locale === "en" ? "/en" : ""}/akun/setelan`,
+    });
+  } catch (e) {
+    log.warn("email.team_invite_direct_failed", { code: e instanceof EmailError ? e.code : "error" });
+  }
+}
+
 async function deliver(
   db: ReturnType<typeof createAdminClient>,
   row: OutboxRow,
@@ -92,7 +129,7 @@ async function deliver(
     await sendEmail({
       to,
       ...mail,
-      unsubscribeUrl: row.essential ? undefined : `${appUrl}${locale === "en" ? "/en" : ""}/akun/privasi`,
+      unsubscribeUrl: row.essential ? undefined : `${appUrl}${locale === "en" ? "/en" : ""}/akun/setelan`,
     });
     return { ok: true };
   } catch (e) {

@@ -31,8 +31,7 @@ test("moderation: report, hide, disappears, creators notified, restore, audited"
   // 1. A visitor reports a published demo project (no account).
   const visitor = await fresh(browser);
   await visitor.page.goto("/en/projects/fish-freshness-indicator");
-  await visitor.page.getByRole("button", { name: "Project menu" }).click();
-  await visitor.page.getByRole("menuitem", { name: /Report/ }).click();
+  await visitor.page.getByRole("button", { name: "Report project" }).click();
   const reportDialog = visitor.page.getByRole("dialog");
   await reportDialog.getByRole("radio", { name: /False or misleading/ }).check();
   await reportDialog.getByLabel("What is wrong?").fill("E2E: the summary says more than the files support.");
@@ -223,12 +222,12 @@ test("smoke: every page, a setting, a trial, break glass and suspension, all aud
   const blocked = await fresh(browser);
   await blocked.page.goto("/en/login");
   await blocked.page.getByLabel("Email", { exact: true }).fill("adopter@estafet.demo");
-  await blocked.page.getByLabel("Password").fill(PASSWORD);
+  await blocked.page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await blocked.page.getByRole("button", { name: "Sign in" }).click();
   await expect(blocked.page.getByText(/Your account is suspended/)).toBeVisible();
   await a.getByRole("button", { name: "Restore access" }).click();
   await confirmDialog(a, "Restore access");
-  await blocked.page.getByLabel("Password").fill(PASSWORD); // the form clears the password after a failed attempt
+  await blocked.page.getByLabel("Password", { exact: true }).fill(PASSWORD); // the form clears the password after a failed attempt
   await blocked.page.getByRole("button", { name: "Sign in" }).click();
   await blocked.page.waitForURL("**/dasbor");
   await blocked.context.close();

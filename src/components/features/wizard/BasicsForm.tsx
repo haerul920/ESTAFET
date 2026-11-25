@@ -1,19 +1,25 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
-import { FormMessage, SelectField, TextArea, TextField } from "@/components/ui/Field";
+import { FormMessage, SearchableSelect, TextArea, TextField } from "@/components/ui/Field";
 import { FACULTIES } from "@/lib/labels";
 import { useLabels } from "@/lib/use-labels";
 import { saveBasics } from "@/app/actions/projects";
-import { autosaveBasics } from "@/app/actions/owner";
+import { autosaveBasics, saveDraftAndExit } from "@/app/actions/owner";
+import { useRouter } from "@/i18n/navigation";
+import { LeaveDialog } from "./SaveExit";
 import type { FormState } from "@/lib/validation";
 import type { Project } from "@/lib/db/types";
+import { WizardActions } from "./WizardActions";
 
 export function BasicsForm({ project }: { project: Project | null }) {
   const t = useTranslations("basics");
   const tw = useTranslations("wizard");
+  const ta = useTranslations("auth");
+  const tx = useTranslations("saveExit");
+  const router = useRouter();
   const L = useLabels();
   const formRef = useRef<HTMLFormElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -53,18 +59,53 @@ export function BasicsForm({ project }: { project: Project | null }) {
     }, 1200);
   }
 
+  // Any edit: the form's own change events, and the pickers, which report their choices themselves.
+  function edited() {
+    setDirty(true);
+    scheduleAutosave();
+  }
+
+  // "Save and exit": a new draft created here is remembered, so saving again updates it instead of making another.
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [leaving, startLeaving] = useTransition();
+  const [exitQuestion, setExitQuestion] = useState<{ title: string; text: string } | null>(null);
+  const FIELD_LABELS: Record<string, string> = {
+    title: t("title"),
+    kind: t("kind"),
+    field: t("field"),
+    year: t("year"),
+    stopped_note: t("stoppedNote"),
+  };
+
+  function saveAndExit() {
+    const form = formRef.current;
+    if (!form) return;
+    clearTimeout(timer.current);
+    const values = Object.fromEntries(
+      [...new FormData(form).entries()].filter(([, val]) => typeof val === "string"),
+    ) as Record<string, string>;
+    startLeaving(async () => {
+      const result = await saveDraftAndExit(project?.id ?? createdId, values);
+      if (result.id && !project) setCreatedId(result.id);
+      if (result.error) {
+        setExitQuestion({ title: tx("failedTitle"), text: result.error });
+        return;
+      }
+      const fields = result.skipped.map((key) => FIELD_LABELS[key] ?? key).join(", ");
+      if (!result.id) setExitQuestion({ title: tx("noDraftTitle"), text: tx("noDraftText") });
+      else if (result.skipped.length > 0) {
+        setDirty(false);
+        setExitQuestion({ title: tx("skippedTitle"), text: tx("skippedText", { fields }) });
+      } else {
+        setDirty(false);
+        router.push("/dasbor");
+      }
+    });
+  }
+
   return (
-    <form
-      ref={formRef}
-      action={action}
-      noValidate
-      onChange={() => {
-        setDirty(true);
-        scheduleAutosave();
-      }}
-      className="flex max-w-[760px] flex-col gap-5"
-    >
-      {project ? <input type="hidden" name="id" value={project.id} /> : null}
+    <form ref={formRef} action={action} noValidate onChange={edited} className="flex flex-col gap-5">
+      {project || createdId ? <input type="hidden" name="id" value={project?.id ?? createdId ?? ""} /> : null}
       {state.error ? <FormMessage tone="error">{state.error}</FormMessage> : null}
 
       <TextField
@@ -75,48 +116,31 @@ export function BasicsForm({ project }: { project: Project | null }) {
         required
         maxLength={120}
       />
-      <TextArea
-        label={t("summary")}
-        name="summary"
-        rows={4}
-        defaultValue={v("summary", project?.summary)}
-        error={fe.summary}
-        hint={t("summaryHint")}
-        required
-      />
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-4">
-        <SelectField
+      <div className="flex flex-col gap-5">
+        <SearchableSelect
           label={t("kind")}
           name="kind"
           defaultValue={v("kind", project?.kind ?? "")}
           error={fe.kind}
-          required
-        >
-          <option value="" disabled>
-            {t("choose")}
-          </option>
-          {Object.entries(L.kind).map(([k, l]) => (
-            <option key={k} value={k}>
-              {l}
-            </option>
-          ))}
-        </SelectField>
-        <SelectField
+          placeholder={t("choose")}
+          options={Object.entries(L.kind).map(([value, label]) => ({ value, label }))}
+          searchPlaceholder={t("searchKind")}
+          clearLabel={ta("facultySearchClear")}
+          emptyText={t("noKind")}
+          onValueChange={edited}
+        />
+        <SearchableSelect
           label={t("field")}
           name="field"
           defaultValue={v("field", project?.field ?? "")}
           error={fe.field}
-          required
-        >
-          <option value="" disabled>
-            {t("choose")}
-          </option>
-          {FACULTIES.map((f) => (
-            <option key={f} value={f}>
-              {L.faculty(f)}
-            </option>
-          ))}
-        </SelectField>
+          placeholder={t("choose")}
+          options={FACULTIES.map((f) => ({ value: f, label: L.faculty(f) }))}
+          searchPlaceholder={ta("facultySearchPlaceholder")}
+          clearLabel={ta("facultySearchClear")}
+          emptyText={ta("facultyEmpty")}
+          onValueChange={edited}
+        />
         <TextField
           label={t("year")}
           name="year"
@@ -127,22 +151,6 @@ export function BasicsForm({ project }: { project: Project | null }) {
           required
         />
       </div>
-      <SelectField
-        label={t("stop")}
-        name="stop_reason"
-        defaultValue={v("stop_reason", project?.stop_reason ?? "")}
-        error={fe.stop_reason}
-        required
-      >
-        <option value="" disabled>
-          {t("choose")}
-        </option>
-        {Object.entries(L.stopReason).map(([k, l]) => (
-          <option key={k} value={k}>
-            {l}
-          </option>
-        ))}
-      </SelectField>
       <TextArea
         label={t("stoppedNote")}
         name="stopped_note"
@@ -151,26 +159,36 @@ export function BasicsForm({ project }: { project: Project | null }) {
         error={fe.stopped_note}
         hint={t("stoppedHint")}
       />
-      <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" arrow size="lg" pending={pending}>
+      <WizardActions
+        left={
+          // Autosave works quietly. It speaks up only when it could not save, so nobody thinks their edit is kept.
+          project ? (
+            <span role="status" aria-live="polite" className="text-sm font-semibold text-warn">
+              {auto === "invalid" ? tw("autoFailed") : ""}
+            </span>
+          ) : null
+        }
+      >
+        <Button variant="outline" size="lg" loading={leaving} disabled={leaving || pending} onClick={saveAndExit}>
+          {tx("button")}
+        </Button>
+        <Button type="submit" arrow size="lg" disabled={pending}>
           {pending ? t("saving") : t("save")}
         </Button>
-        {project ? (
-          <span
-            role="status"
-            aria-live="polite"
-            className={auto === "invalid" ? "text-sm font-semibold text-warn" : "text-sm text-text-2"}
-          >
-            {auto === "saving"
-              ? tw("savingAuto")
-              : auto === "saved"
-                ? tw("savedAuto")
-                : auto === "invalid"
-                  ? tw("autoFailed")
-                  : ""}
-          </span>
-        ) : null}
-      </div>
+      </WizardActions>
+      <LeaveDialog
+        open={exitQuestion !== null}
+        onOpenChange={(open) => {
+          if (!open) setExitQuestion(null);
+        }}
+        title={exitQuestion?.title ?? ""}
+        text={exitQuestion?.text ?? ""}
+        onLeave={() => {
+          setDirty(false);
+          setExitQuestion(null);
+          router.push("/dasbor");
+        }}
+      />
     </form>
   );
 }

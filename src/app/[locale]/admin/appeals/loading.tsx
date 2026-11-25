@@ -1,5 +1,5 @@
 import { AdminSkeleton } from "@/components/admin/AdminSkeleton";
 
 export default function Loading() {
-  return <AdminSkeleton variant="table" />;
+  return <AdminSkeleton variant="appeals" />;
 }

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { ReasonAction } from "@/components/admin/ReasonDialog";
 import { saveAnnouncement, type AnnouncementInput } from "@/app/[locale]/admin/actions";
 import { fromWitaInput } from "@/lib/admin/time";
+import { SelectField } from "@/components/ui/Field";
 
 export interface AnnouncementDraft {
   id: string | null;
@@ -67,20 +68,17 @@ export function AnnouncementEditor({ initial, onDone }: { initial?: Announcement
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="ann-sev" className="text-sm font-semibold">
-            {t("severity")}
-          </label>
-          <select
-            id="ann-sev"
+        <div>
+          <SelectField
+            label={t("severity")}
             value={d.severity}
-            onChange={(e) => set("severity", e.target.value as AnnouncementDraft["severity"])}
-            className={FIELD}
-          >
-            <option value="info">{t("info")}</option>
-            <option value="warning">{t("warning")}</option>
-            <option value="critical">{t("critical")}</option>
-          </select>
+            onValueChange={(next) => set("severity", next as AnnouncementDraft["severity"])}
+            options={[
+              { value: "info", label: t("info") },
+              { value: "warning", label: t("warning") },
+              { value: "critical", label: t("critical") },
+            ]}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="ann-start" className="text-sm font-semibold">

@@ -12,10 +12,14 @@ import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { buildPublicLineage } from "@/lib/lineage";
 import { ReportDialog } from "@/components/features/ReportDialog";
-import { ProjectMenu } from "@/components/features/ProjectMenu";
 import type { TFn } from "@/lib/labels";
 import type { TeaserProject } from "@/lib/db/types";
 import { jsonLd, pageAlternates, projectJsonLd } from "@/lib/seo";
+import { getLabels } from "@/lib/get-labels";
+import { ArrowLeft } from "lucide-react";
+import { translationFor } from "@/lib/translate/server";
+import { withTranslation } from "@/lib/translate/core";
+import { TranslationNote } from "@/components/features/TranslationNote";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -62,18 +66,16 @@ async function ctaStateFor(project: TeaserProject, asVisitor: boolean): Promise<
     .maybeSingle();
   if (open) return { kind: "request", requestId: open.id as string, status: open.status as "pending" | "approved" };
 
-  const watching =
-    project.access_mode === "paused" || full
-      ? !!(
-          await supabase
-            .from("project_watchers")
-            .select("project_id")
-            .eq("project_id", project.id)
-            .eq("profile_id", user.id)
-            .maybeSingle()
-        ).data
-      : false;
-  if (project.access_mode === "paused") return { kind: "paused", watching };
+  const watching = full
+    ? !!(
+        await supabase
+          .from("project_watchers")
+          .select("project_id")
+          .eq("project_id", project.id)
+          .eq("profile_id", user.id)
+          .maybeSingle()
+      ).data
+    : false;
   if (full) return { kind: "quota_full", watching };
   return project.access_mode === "open"
     ? { kind: "open", verified: user.verified, email: user.email }
@@ -83,9 +85,9 @@ async function ctaStateFor(project: TeaserProject, asVisitor: boolean): Promise<
 export default async function ProjectTeaserPage({
   params,
   searchParams,
-}: Params & { searchParams: Promise<{ as?: string }> }) {
+}: Params & { searchParams: Promise<{ as?: string; original?: string }> }) {
   const { slug } = await params;
-  const { as } = await searchParams;
+  const { as, original } = await searchParams;
   const project = await getTeaserBySlug(slug);
   if (!project) {
     // A project that is being held (after reports or by an admin) is not shown, but visitors get a neutral notice
@@ -105,18 +107,18 @@ export default async function ProjectTeaserPage({
     ctaStateFor(project, asVisitor),
   ]);
   const signedIn = (await getCurrentUser()) !== null;
+  const labels = await getLabels();
+  // The owners wrote in their own language. A reader of the other one gets a labelled machine translation.
+  const translation = await translationFor(project, items, locale === "en" ? "en" : "id");
+  const shown =
+    translation && original !== "1" ? withTranslation(project, items, translation) : { project, items: items };
   const unlocked = state.kind === "owner" || state.kind === "holder";
   const workspace = `/projects/${project.slug}/workspace`;
 
-  const cta = (
-    <div className="flex flex-col gap-4">
-      <ProjectCta state={state} projectId={project.id} slug={project.slug} />
-      <ReportDialog projectId={project.id} signedIn={signedIn} />
-    </div>
-  );
+  const cta = <ProjectCta state={state} projectId={project.id} slug={project.slug} />;
 
   return (
-    <PageShell footerNote={project.is_demo ? t("demoFooter") : undefined}>
+    <PageShell width={920}>
       {/* Structured data for search engines. A data block is not executed, so the script policy does not apply to it. */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(projectJsonLd(project, locale)) }} />
       {asVisitor ? (
@@ -132,12 +134,23 @@ export default async function ProjectTeaserPage({
       ) : null}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Breadcrumb items={[{ label: t("explore"), href: "/explore" }, { label: project.title }]} />
-        <ProjectMenu projectId={project.id} signedIn={signedIn} />
+        <div className="flex flex-wrap items-center gap-2">
+          <ButtonLink href="/explore" variant="outline" className="h-11 px-4 py-0 text-sm">
+            <ArrowLeft size={16} aria-hidden="true" /> {t("back")}
+          </ButtonLink>
+          <ReportDialog projectId={project.id} signedIn={signedIn} />
+        </div>
       </div>
+      {translation ? <TranslationNote slug={slug} original={original === "1"} /> : null}
       <TeaserContent
-        project={project}
-        items={items}
-        lineageSteps={buildPublicLineage(project, lineageEvents, tl as unknown as TFn, locale)}
+        project={shown.project}
+        items={shown.items}
+        lineageSteps={buildPublicLineage(
+          { year: project.year, faculty: labels.faculty(project.field) },
+          lineageEvents,
+          tl as unknown as TFn,
+          locale,
+        )}
         cta={cta}
         unlockedHref={unlocked ? workspace : undefined}
       />

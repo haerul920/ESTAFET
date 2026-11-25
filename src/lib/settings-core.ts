@@ -2,6 +2,9 @@ import { z } from "zod";
 
 /** Pure settings logic (no server imports) so it can be unit tested. Env vars are defaults, settings override them. */
 
+/** The official address of ESTAFET (owner decision, CLAUDE.md 15.10). */
+export const OFFICIAL_CONTACT_EMAIL = "estafet.info@gmail.com";
+
 export const SETTING_KEYS = [
   "allowed_email_domains",
   "max_upload_mb",
@@ -26,7 +29,8 @@ export const SETTING_SCHEMAS = {
         .regex(/^[a-z0-9.-]+\.[a-z]{2,}$/, "domains"),
     )
     .max(20),
-  max_upload_mb: z.number().int("whole").min(1, "mb_min").max(200, "mb_max"),
+  // The private storage bucket takes at most 50 MB, so a larger setting could not be honoured.
+  max_upload_mb: z.number().int("whole").min(1, "mb_min").max(50, "mb_max"),
   synthesis_daily_cap: z.number().int("whole").min(1, "runs_min").max(1000, "runs_max"),
   show_demo_banner: z.boolean(),
   registrations_open: z.boolean(),
@@ -73,11 +77,11 @@ function envDefaults(env: Record<string, string | undefined>): {
     .filter(Boolean);
   return {
     allowed_email_domains: { value: domains, fromEnv: domains.length > 0 },
-    max_upload_mb: { value: num(env.MAX_UPLOAD_MB, 25), fromEnv: Boolean(env.MAX_UPLOAD_MB) },
+    max_upload_mb: { value: num(env.MAX_UPLOAD_MB, 50), fromEnv: Boolean(env.MAX_UPLOAD_MB) },
     synthesis_daily_cap: { value: num(env.SYNTHESIS_DAILY_CAP, 20), fromEnv: Boolean(env.SYNTHESIS_DAILY_CAP) },
     show_demo_banner: { value: true, fromEnv: false },
     registrations_open: { value: true, fromEnv: false },
-    contact_email: { value: env.CONTACT_EMAIL ?? "", fromEnv: Boolean(env.CONTACT_EMAIL) },
+    contact_email: { value: env.CONTACT_EMAIL || OFFICIAL_CONTACT_EMAIL, fromEnv: Boolean(env.CONTACT_EMAIL) },
     request_expiry_days: { value: num(env.REQUEST_EXPIRY_DAYS, 30), fromEnv: Boolean(env.REQUEST_EXPIRY_DAYS) },
     reapply_cooldown_days: {
       value:

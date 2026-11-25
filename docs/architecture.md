@@ -60,7 +60,7 @@ RLS is enabled on every table. Column privileges close gaps RLS cannot express.
 ## Security notes
 
 - There is no advisor role (R5). The old advisor tokens, functions and page were removed; old columns are deprecated.
-- Uploads: allowed types by **content**, size limit (`MAX_UPLOAD_MB`), ZIP entry and size limits, traversal rejected, nothing executed.
-- ZIPs are never stored: a sanitized tree JSON (tree, README, manifests) is stored instead. `.env`, keys and credentials are skipped and reported.
+- Uploads (PDF, Markdown, JPG, PNG, .docx, .xlsx, .pptx; 50 MB): the browser sends each file straight to private storage through a single-use address, then the server reads it back, checks it by **content**, and keeps or deletes it. Office files: entry and unpacked size limits, unsafe paths and macros rejected, nothing executed. Pictures are decoded and written again, which removes camera data.
+- ZIP uploads are no longer accepted. Older projects keep their stored code folder trees. A file whose text contains a key or token is not stored, and the owner is told. A picture cannot be scanned before the AI provider reads it; what is read is scanned before it is kept.
 - File text is passed to the model as data inside `<document>` tags, tags inside the text are neutralized, and the system prompt tells the model to ignore embedded instructions.
 - File contents and tokens are never logged.

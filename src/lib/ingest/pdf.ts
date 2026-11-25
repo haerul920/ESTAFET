@@ -16,11 +16,11 @@ export async function extractPdfPages(data: Uint8Array): Promise<ExtractedPage[]
   try {
     doc = await task.promise;
   } catch {
-    throw new UploadRejected("This PDF could not be read. It may be damaged or password protected.");
+    throw new UploadRejected("pdf_broken");
   }
   if (doc.numPages > LIMITS.pdfMaxPages) {
     await task.destroy();
-    throw new UploadRejected(`This PDF has ${doc.numPages} pages. The limit is ${LIMITS.pdfMaxPages}.`);
+    throw new UploadRejected("pdf_pages", { pages: doc.numPages, max: LIMITS.pdfMaxPages });
   }
   const pages: ExtractedPage[] = [];
   for (let n = 1; n <= doc.numPages; n++) {

@@ -1,5 +1,5 @@
-import { WizardStepSkeleton } from "@/components/features/wizard/WizardSkeleton";
+import { PageSkeleton } from "@/components/ui/PageSkeleton";
 
 export default function Loading() {
-  return <WizardStepSkeleton />;
+  return <PageSkeleton variant="wizardStep" />;
 }

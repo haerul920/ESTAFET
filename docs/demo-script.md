@@ -9,7 +9,7 @@ Say out loud: sample projects are simulated demo data, and the AI output is simu
 4. **Share, as a new creator**: sign up, then `/share`.
    - Basics: fill and save.
    - Consent: click "I confirm", then "Create consent link". Open the link in a private window and click "Approve publishing" (the advisor needs no account).
-   - Files: drop a PDF, a Markdown file and a ZIP that contains a `.env`. Point out "Check: sensitive file skipped and not stored".
+   - Files: drop a PDF, a Markdown file and a Word file. Then drop a ZIP and point out that it is refused. In mock mode pictures are stored but not read.
    - Click "Draft with AI and continue". The mock banner appears. One item says "Evidence not found": select it to see the source viewer.
    - Keep, edit and remove items. "Continue to publish" stays disabled until all are reviewed.
    - Preview, tick the box, "Publish teaser". It appears on Explore.

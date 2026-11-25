@@ -1,13 +1,13 @@
 import "server-only";
+import type { AccessFilter } from "@/lib/explore";
 import { createClient } from "@/lib/supabase/server";
-import type { ProjectKind, StopReason, TeaserItem, TeaserLineageEvent, TeaserProject } from "./types";
+import type { TeaserItem, TeaserLineageEvent, TeaserProject } from "./types";
 
 export interface ExploreFilters {
   q?: string;
-  kinds?: ProjectKind[];
-  reasons?: StopReason[];
   faculties?: string[];
-  sort?: "recent" | "tasks" | "progress";
+  year?: number;
+  access?: AccessFilter;
 }
 
 /** Published teasers only, via the public_project_teaser view. */
@@ -17,20 +17,14 @@ export async function listTeasers(filters: ExploreFilters = {}): Promise<TeaserP
 
   const q = filters.q?.trim().replace(/[%,()]/g, " ");
   if (q) query = query.or(`title.ilike.%${q}%,summary.ilike.%${q}%,field.ilike.%${q}%`);
-  if (filters.kinds?.length) query = query.in("kind", filters.kinds);
-  if (filters.reasons?.length) query = query.in("stop_reason", filters.reasons);
   if (filters.faculties?.length) query = query.in("field", filters.faculties);
+  if (filters.year) query = query.eq("year", filters.year);
+  if (filters.access) query = query.eq("access_mode", filters.access);
 
-  const { data, error } = await query.order("published_at", { ascending: false });
+  // Always newest first. Without nullsFirst: false, rows with no date would come out on top.
+  const { data, error } = await query.order("published_at", { ascending: false, nullsFirst: false });
   if (error) throw new Error(`Could not load projects: ${error.message}`);
-  let rows = (data ?? []) as TeaserProject[];
-
-  if (filters.sort === "tasks") rows = [...rows].sort((a, b) => b.tasks_count - a.tasks_count);
-  if (filters.sort === "progress") {
-    const pct = (p: TeaserProject) => (p.objectives_total ? p.objectives_done / p.objectives_total : 0);
-    rows = [...rows].sort((a, b) => pct(b) - pct(a));
-  }
-  return rows;
+  return (data ?? []) as TeaserProject[];
 }
 
 export async function getTeaserBySlug(slug: string): Promise<TeaserProject | null> {
@@ -49,6 +43,33 @@ export async function getTeaserItems(projectId: string): Promise<TeaserItem[]> {
     .order("position", { ascending: true });
   if (error) throw new Error(`Could not load project items: ${error.message}`);
   return (data ?? []) as TeaserItem[];
+}
+
+/** How many project ids go into one request. A longer list makes an address too long to send. */
+export const ID_BATCH = 40;
+
+export function inBatches<T>(list: T[], size = ID_BATCH): T[][] {
+  return Array.from({ length: Math.ceil(list.length / size) }, (_, i) => list.slice(i * size, (i + 1) * size));
+}
+
+/** The public items of many projects, grouped by project. A few requests however long the list is. */
+export async function getTeaserItemsFor(projectIds: string[]): Promise<Map<string, TeaserItem[]>> {
+  const supabase = await createClient();
+  const answers = await Promise.all(
+    inBatches(projectIds).map((ids) =>
+      supabase.from("public_teaser_items").select("*").in("project_id", ids).order("position", { ascending: true }),
+    ),
+  );
+  const grouped = new Map<string, TeaserItem[]>();
+  for (const { data, error } of answers) {
+    if (error) throw new Error(`Could not load project items: ${error.message}`);
+    for (const item of (data ?? []) as TeaserItem[]) {
+      const list = grouped.get(item.project_id);
+      if (list) list.push(item);
+      else grouped.set(item.project_id, [item]);
+    }
+  }
+  return grouped;
 }
 
 export async function getTeaserLineage(projectId: string): Promise<TeaserLineageEvent[]> {

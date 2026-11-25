@@ -4,14 +4,16 @@ import { useState, useTransition } from "react";
 import { Link } from "@/i18n/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { Bell, FolderPlus, Inbox, KeyRound, Send, UserPlus } from "lucide-react";
+import { FolderPlus, Inbox, KeyRound, Send, UserPlus } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Badge, DemoBadge } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/Badge";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/Field";
-import { CountUp, Stagger, StaggerItem } from "@/components/ui/motion";
-import { markNotificationsRead } from "@/app/actions/requests";
+import { CountUp, Stagger, HoverLift, StaggerItem } from "@/components/ui/motion";
 import { respondToInvite } from "@/app/actions/projects";
+import { deleteDraftProject } from "@/app/actions/owner";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/Toast";
 import { useLabels } from "@/lib/use-labels";
 import { cn } from "@/lib/cn";
 import type {
@@ -22,11 +24,32 @@ import type {
   DashboardRequest,
 } from "@/lib/db/dashboard";
 
+function DeleteDraft({ p }: { p: DashboardProject }) {
+  const t = useTranslations("dashboard");
+  const router = useRouter();
+  const toast = useToast();
+  return (
+    <ConfirmDialog
+      trigger={t("delete.trigger")}
+      title={t("delete.title", { title: p.title })}
+      effect={t("delete.effect")}
+      confirmLabel={t("delete.confirm")}
+      tone="danger"
+      triggerVariant="danger"
+      onConfirm={() => deleteDraftProject(p.id)}
+      onDone={() => {
+        toast.push({ message: t("delete.done", { title: p.title }) });
+        router.refresh();
+      }}
+    />
+  );
+}
+
 function ProjectRow({ p }: { p: DashboardProject }) {
   const t = useTranslations("dashboard");
   return (
     <StaggerItem>
-      <div>
+      <HoverLift>
         <Card className="lift flex flex-col gap-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -40,17 +63,19 @@ function ProjectRow({ p }: { p: DashboardProject }) {
                   {p.statusLabel}
                 </Badge>
                 {p.meta}
-                {p.isDemo ? <DemoBadge /> : null}
               </span>
             </div>
-            <ButtonLink
-              href={p.href}
-              variant={p.ctaTone === "lime" ? "primary" : p.ctaTone === "blue" ? "darkSolid" : "outline"}
-              size="md"
-              className={p.ctaTone === "blue" ? "!bg-blue" : ""}
-            >
-              {p.cta}
-            </ButtonLink>
+            <div className="flex flex-wrap items-center gap-2">
+              {p.canDelete ? <DeleteDraft p={p} /> : null}
+              <ButtonLink
+                href={p.href}
+                variant={p.ctaTone === "lime" ? "primary" : p.ctaTone === "blue" ? "darkSolid" : "outline"}
+                size="md"
+                className={p.ctaTone === "blue" ? "!bg-blue" : ""}
+              >
+                {p.cta}
+              </ButtonLink>
+            </div>
           </div>
           {p.status !== "draft" ? (
             <Link
@@ -69,7 +94,7 @@ function ProjectRow({ p }: { p: DashboardProject }) {
             {p.note}
           </div>
         </Card>
-      </div>
+      </HoverLift>
     </StaggerItem>
   );
 }
@@ -140,16 +165,13 @@ function InvitationRow({ i }: { i: DashboardInvitation }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
-  const [choice, setChoice] = useState<boolean | null>(null);
-  const answer = (accept: boolean) => {
-    setChoice(accept);
+  const answer = (accept: boolean) =>
     start(async () => {
       setError("");
       const r = await respondToInvite(i.projectId, accept);
       if (r.error) setError(r.error);
       else router.refresh();
     });
-  };
   return (
     <StaggerItem>
       <Card className="flex flex-col gap-3">
@@ -160,16 +182,10 @@ function InvitationRow({ i }: { i: DashboardInvitation }) {
             <span className="text-sm text-text-2">{t("inviteText")}</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="md" disabled={pending} pending={pending && choice === true} onClick={() => answer(true)}>
+            <Button size="md" loading={pending} disabled={pending} onClick={() => answer(true)}>
               {t("accept")}
             </Button>
-            <Button
-              variant="outline"
-              size="md"
-              disabled={pending}
-              pending={pending && choice === false}
-              onClick={() => answer(false)}
-            >
+            <Button variant="outline" size="md" loading={pending} disabled={pending} onClick={() => answer(false)}>
               {t("decline")}
             </Button>
           </div>
@@ -204,9 +220,6 @@ function Empty({
 /** One view, two sections. Nothing here depends on an account type: the same person can share and continue. */
 export function Dashboard({ data }: { data: DashboardData }) {
   const t = useTranslations("dashboard");
-  const router = useRouter();
-  const [, start] = useTransition();
-  const unread = data.notifications.filter((n) => n.unread).length;
 
   const tiles = [
     {
@@ -336,67 +349,6 @@ export function Dashboard({ data }: { data: DashboardData }) {
               </div>
             ) : null}
           </>
-        )}
-      </section>
-
-      <section id="notifikasi" className="flex scroll-mt-6 flex-col gap-3" aria-labelledby="notif-h">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="notif-h" className="m-0 flex items-center gap-2 text-[26px]">
-            <Bell size={22} aria-hidden="true" /> {t("notifications")}
-            {unread > 0 ? <Badge tone="lime">{t("unreadCount", { count: unread })}</Badge> : null}
-          </h2>
-          {unread > 0 ? (
-            <Button
-              variant="outline"
-              size="md"
-              onClick={() =>
-                start(async () => {
-                  await markNotificationsRead([]);
-                  router.refresh();
-                })
-              }
-            >
-              {t("markAll")}
-            </Button>
-          ) : null}
-        </div>
-        {data.notifications.length === 0 ? (
-          <Empty
-            icon={<Bell size={32} className="text-text-2" aria-hidden="true" />}
-            title={t("caughtUpTitle")}
-            text={t("caughtUpText")}
-          />
-        ) : (
-          <Stagger as="ul" className="m-0 flex list-none flex-col gap-3 p-0">
-            {data.notifications.slice(0, 20).map((n) => (
-              <StaggerItem key={n.id} as="li">
-                <Link
-                  href={n.href}
-                  onClick={() =>
-                    n.unread &&
-                    start(async () => {
-                      await markNotificationsRead([n.id]);
-                    })
-                  }
-                  className={cn(
-                    "flex flex-col gap-1 rounded-3xl border p-4 text-ink no-underline transition-colors hover:bg-surface",
-                    n.unread ? "border-lime bg-white" : "border-line-soft bg-white",
-                  )}
-                >
-                  <span className="flex items-start justify-between gap-3">
-                    <strong>{n.text}</strong>
-                    <span className="whitespace-nowrap text-[13px] text-text-2">{n.when}</span>
-                  </span>
-                  {n.detail ? <span className="text-sm text-text-2">{n.detail}</span> : null}
-                  {n.unread ? (
-                    <Badge tone="lime" className="mt-1 self-start">
-                      {t("new")}
-                    </Badge>
-                  ) : null}
-                </Link>
-              </StaggerItem>
-            ))}
-          </Stagger>
         )}
       </section>
     </div>

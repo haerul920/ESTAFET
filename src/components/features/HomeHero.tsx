@@ -1,30 +1,17 @@
-import { Plus } from "lucide-react";
+"use client";
+
 import { useTranslations } from "next-intl";
 import { ButtonLink } from "@/components/ui/Button";
-import { Cloud, Floating, ParallaxLayer, WordReveal } from "@/components/ui/motion";
+import { SurveyDots } from "@/components/features/SurveyDots";
+import { Cloud, CountUp, ParallaxLayer, Stagger, StaggerItem, WordReveal } from "@/components/ui/motion";
 
-const cardShadow = "shadow-[0_20px_40px_rgba(10,60,150,0.25)]";
-
-function Tilt({ deg, children, className }: { deg: number; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={className} style={{ transform: `perspective(900px) rotateY(${deg}deg)` }}>
-      {children}
-    </div>
-  );
-}
-
-/*
- * Layout contract (CLAUDE.md 14.9): the hero is a vertical stack of three rows: the navigation, the copy
- * (headline, lead, calls to action) and the card stage. The floating cards live only in the stage row, which
- * has its own padding for the float amplitude (max 16 px) and rotation, so a card can never touch the headline,
- * the lead or a button at any width. Clouds and cards are aria-hidden, pointer-events none and sit below content.
- */
-export function HomeHero({ nav }: { nav: React.ReactNode }) {
+export function HomeHero() {
   const t = useTranslations("home.hero");
+  const ts = useTranslations("home.stats");
   return (
     <section className="p-3">
       <div
-        className="relative isolate overflow-hidden rounded-[36px] px-6 pt-5"
+        className="relative isolate overflow-hidden rounded-[36px] px-6 pt-5 max-sm:px-4"
         style={{ background: "var(--sky-gradient)" }}
       >
         <ParallaxLayer>
@@ -64,143 +51,86 @@ export function HomeHero({ nav }: { nav: React.ReactNode }) {
           />
         </ParallaxLayer>
 
-        <div className="relative z-raised">{nav}</div>
+        {/* Room for the navigation, which the page lays over this spot so that <main> starts after it. */}
+        <div aria-hidden="true" className="h-[66px]" />
 
-        <div className="relative z-raised mx-auto mt-[88px] max-w-[860px] text-center max-sm:mt-14">
-          <h1 className="mb-6 text-[72px] font-medium leading-[1.02] tracking-[-0.045em] text-white max-md:text-[48px] max-sm:text-[40px]">
+        <div className="relative z-raised mx-auto mt-[84px] max-w-[860px] text-center max-md:mt-16 max-sm:mt-10">
+          <h1 className="mb-6 text-[72px] font-medium leading-[1.02] tracking-[-0.045em] text-white max-lg:text-[56px] max-md:text-[44px] max-sm:text-[34px]">
             <WordReveal text={t("line1")} className="block" baseDelay={100} />
             <WordReveal text={t("line2")} className="block text-[#EAF4FF]" baseDelay={420} />
           </h1>
           <p
-            className="fade-up mx-auto mb-9 max-w-[560px] text-lg text-white/95"
+            className="fade-up mx-auto mb-9 max-w-[560px] text-lg text-white/95 max-sm:mb-7 max-sm:text-base"
             style={{ "--delay": "500ms" } as React.CSSProperties}
           >
             {t("lead")}
           </p>
           <div
-            className="fade-up flex flex-wrap justify-center gap-3"
+            className="fade-up flex flex-wrap justify-center gap-3 max-sm:flex-col max-sm:items-stretch"
             style={{ "--delay": "650ms" } as React.CSSProperties}
           >
-            <ButtonLink href="/explore" variant="dark" size="lg" glow>
+            <ButtonLink href="/explore" variant="dark" size="lg" glow className="max-sm:w-full">
               {t("explore")}
             </ButtonLink>
-            <ButtonLink href="/bagikan" size="lg" arrow glow>
+            <ButtonLink href="/bagikan" size="lg" arrow glow className="max-sm:w-full">
               {t("share")}
             </ButtonLink>
           </div>
         </div>
 
-        {/* Card stage: its own row, with room for the float amplitude and rotation. */}
-        <div
-          aria-hidden="true"
-          className="fade-up pointer-events-none relative z-base -mx-10 mt-14 flex items-center justify-center gap-4 overflow-x-clip px-10 py-10 max-md:justify-start max-sm:mx-0 max-sm:mt-10 max-sm:flex-wrap max-sm:justify-center max-sm:px-0"
-          style={{ "--delay": "800ms" } as React.CSSProperties}
-        >
-          <Floating duration={7.2} amplitude={12} rotate={1.2} delay={0.2} className="flex-none max-sm:hidden">
-            <Tilt deg={55} className={`h-[170px] w-[120px] rounded-[20px] bg-white p-3.5 ${cardShadow}`}>
-              <div className="mb-2.5 text-xs font-semibold">{t("cardObjectives")}</div>
-              <div className="mb-2 h-2 w-4/5 rounded-full bg-blue" />
-              <div className="mb-2 h-2 w-3/5 rounded-full bg-blue" />
-              <div className="h-2 w-2/5 rounded-full bg-[#E1E5E9]" />
-            </Tilt>
-          </Floating>
-          <Floating duration={8.4} amplitude={14} rotate={1.8} delay={0.9} className="flex-none">
-            <Tilt deg={38} className={`h-[190px] w-[140px] rounded-[20px] bg-white p-3.5 ${cardShadow}`}>
-              <div className="mb-2.5 text-xs font-semibold">{t("cardTasks")}</div>
-              <div className="mb-2 text-xs">{t("task1")}</div>
-              <div className="mb-2 text-xs">{t("task2")}</div>
-              <div className="mb-2 text-xs">{t("task3")}</div>
-            </Tilt>
-          </Floating>
-          <Floating duration={6.4} amplitude={10} rotate={2.2} delay={0.5} className="flex-none">
-            <Tilt
-              deg={18}
-              className={`flex h-[190px] w-[150px] flex-col justify-between rounded-[20px] bg-lime p-4 ${cardShadow}`}
-            >
-              <div className="text-xs font-semibold">{t("cardNext")}</div>
-              <div>
-                <div className="text-[52px] font-medium leading-none tracking-[-0.04em]">4</div>
-                <div className="text-xs">{t("cardNextCount")}</div>
+        <div className="relative z-raised mx-auto mt-14 max-w-[1060px] pb-8 max-sm:mt-9">
+          <Stagger gap={0.12} className="grid grid-cols-[repeat(auto-fit,minmax(min(280px,100%),1fr))] gap-4">
+            <StaggerItem>
+              <div
+                className="relative flex h-full min-h-[360px] flex-col justify-between overflow-hidden rounded-[32px] border border-white/40 p-5 shadow-[0_18px_40px_rgba(10,55,135,0.16)] max-sm:min-h-[260px] max-sm:rounded-[26px]"
+                style={{ background: "linear-gradient(180deg,#2C86EE 0%,#7BBAF7 70%,#CDE4FB 100%)" }}
+              >
+                <Cloud className="-right-[60px] bottom-[100px] h-20 w-[260px] opacity-60 blur-[22px]" />
+                <span className="mono-label relative text-xs text-white">{ts("surveyLabel")}</span>
+                <div className="relative rounded-3xl bg-white p-5 max-sm:p-4">
+                  <div className="text-[60px] font-medium leading-none tracking-[-0.05em] text-ink max-sm:text-[46px]">
+                    <CountUp to={100} suffix="%" />
+                  </div>
+                  <p className="mt-2 text-[15px] text-text-2">{ts("surveyText")}</p>
+                </div>
               </div>
-            </Tilt>
-          </Floating>
-          <Floating duration={8.8} amplitude={8} rotate={0.8} delay={1.3} className="flex-none max-sm:hidden">
-            <div className="h-[220px] w-[210px] rounded-[22px] bg-white p-4 shadow-[0_24px_50px_rgba(10,60,150,0.3)]">
-              <div className="mb-1 text-[13px] font-semibold">{t("cardStands")}</div>
-              <div className="mb-2.5 text-xs text-text-2">{t("cardStandsSub")}</div>
-              <svg viewBox="0 0 180 90" width="100%" height="90" role="presentation">
-                <path
-                  d="M0 80 L30 70 L60 62 L90 50 L120 34 L150 22 L180 10"
-                  pathLength="1"
-                  className="draw-path"
-                  fill="none"
-                  stroke="#1760D6"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M0 80 L30 70 L60 62 L90 50 L120 34 L150 22 L180 10 L180 90 L0 90 Z"
-                  fill="#1760D6"
-                  opacity="0.12"
-                />
-              </svg>
-            </div>
-          </Floating>
-          <Floating duration={7.6} amplitude={9} rotate={1.4} delay={0.1} className="flex-none max-sm:hidden">
-            <div className="flex h-[220px] w-[200px] flex-col justify-between rounded-[22px] bg-black p-[18px] text-white shadow-[0_24px_50px_rgba(10,60,150,0.3)]">
-              <div className="text-[13px]">
-                <span className="mr-2 inline-block h-2 w-2 rounded-full bg-lime" />
-                {t("evidence")}
+            </StaggerItem>
+            <StaggerItem>
+              <div className="flex h-full min-h-[360px] flex-col justify-between rounded-[32px] border border-white/70 bg-white/95 p-6 shadow-[0_18px_40px_rgba(10,55,135,0.16)] backdrop-blur-md max-sm:min-h-[260px] max-sm:rounded-[26px] max-sm:p-5">
+                <span className="mono-label text-xs text-text-2">{ts("filesLabel")}</span>
+                <div>
+                  <div className="mb-4 text-[60px] font-medium leading-none tracking-[-0.05em] text-ink max-sm:mb-3 max-sm:text-[46px]">
+                    <CountUp to={5} />
+                  </div>
+                  <SurveyDots filled={5} total={5} />
+                  <p className="mt-3 text-[15px] text-text-2">{ts("filesText")}</p>
+                </div>
               </div>
-              <div className="text-[20px] font-medium leading-[1.2] tracking-[-0.02em]">
-                {t("aiDrafts")}
-                <br />
-                {t("peopleDecide")}
+            </StaggerItem>
+            <StaggerItem className="flex flex-col gap-4">
+              <div className="flex min-h-[170px] flex-1 flex-col justify-between rounded-[32px] bg-lime p-6 text-ink shadow-[0_18px_40px_rgba(10,55,135,0.16)] max-sm:rounded-[26px] max-sm:p-5">
+                <span className="mono-label text-xs">{ts("docsLabel")}</span>
+                <div>
+                  <div className="text-[52px] font-medium leading-none tracking-[-0.05em] max-sm:text-[42px]">
+                    <CountUp to={3} />
+                  </div>
+                  <p className="mt-1.5 text-[15px]">{ts("docsText")}</p>
+                </div>
               </div>
-            </div>
-          </Floating>
-          <Floating duration={6.8} amplitude={16} rotate={2} delay={0.7} className="flex-none">
-            <Tilt
-              deg={-18}
-              className="glass flex h-[190px] w-[170px] flex-col justify-between rounded-[22px] p-4 text-white shadow-[0_20px_40px_rgba(10,60,150,0.25)]"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-blue">
-                <Plus size={20} />
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[32px] bg-black p-6 text-white shadow-[0_18px_40px_rgba(10,55,135,0.16)] max-sm:rounded-[26px] max-sm:p-5">
+                <div>
+                  <span className="mono-label text-xs text-[#B8C0C8]">{ts("targetLabel")}</span>
+                  <div className="mt-1 text-[15px] text-[#DDE2E6]">{ts("targetText")}</div>
+                </div>
+                <div className="whitespace-nowrap text-[40px] font-medium tracking-[-0.04em] max-sm:text-[32px]">
+                  {ts("targetValue")}
+                </div>
               </div>
-              <div className="text-base font-medium">
-                {t("requestA")}
-                <br />
-                {t("requestB")}
-              </div>
-            </Tilt>
-          </Floating>
-          <Floating duration={9} amplitude={11} rotate={1} delay={1.1} className="flex-none max-sm:hidden">
-            <Tilt deg={-38} className={`h-[190px] w-[140px] rounded-[20px] bg-white p-3.5 ${cardShadow}`}>
-              <div className="mb-3 text-xs font-semibold">{t("cardLineage")}</div>
-              <div className="mb-2.5 flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-blue" />
-                <span className="text-xs">{t("lineageOrigin")}</span>
-              </div>
-              <div className="mb-2.5 flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-blue" />
-                <span className="text-xs">{t("lineagePublished")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full border border-black bg-lime" />
-                <span className="text-xs">{t("lineageNext")}</span>
-              </div>
-            </Tilt>
-          </Floating>
-          <Floating duration={7} amplitude={13} rotate={1.6} delay={0.4} className="flex-none max-sm:hidden">
-            <Tilt deg={-55} className={`h-[170px] w-[120px] rounded-[20px] bg-white p-3.5 ${cardShadow}`}>
-              <div className="mb-2 text-xs font-semibold">{t("cardProgress")}</div>
-              <div className="text-[34px] font-medium tracking-[-0.04em]">60%</div>
-            </Tilt>
-          </Floating>
+            </StaggerItem>
+          </Stagger>
         </div>
 
-        <p className="mono-label relative z-raised mt-2 pb-[110px] text-center text-xs text-[#0E3A7A]">{t("stack")}</p>
+        <p className="mono-label relative z-raised mt-2 pb-10 text-center text-xs text-[#0E3A7A]">{t("stack")}</p>
       </div>
     </section>
   );

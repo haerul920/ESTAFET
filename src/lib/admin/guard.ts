@@ -1,8 +1,17 @@
 import "server-only";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { getCurrentUser, isAdmin as isAdminUser, type CurrentUser } from "@/lib/auth";
+import { getCurrentUser, type CurrentUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { REAUTH_COOKIE, REAUTH_MINUTES, verifyReauth } from "./reauth";
+
+/** Asks the database (is_admin()), never a client flag. */
+const isAdminUser = cache(async (): Promise<boolean> => {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("is_admin");
+  return data === true;
+});
 
 /** Non-admins and guests get 404, not 403, so the area is not advertised. */
 export async function requireAdmin(): Promise<CurrentUser> {

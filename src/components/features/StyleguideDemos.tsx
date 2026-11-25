@@ -9,6 +9,8 @@ import { Menu, MenuContent, MenuItem, MenuLabel, MenuTrigger } from "@/component
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import { useToast } from "@/components/ui/Toast";
 import { Tip } from "@/components/ui/Tooltip";
+import { motion } from "framer-motion";
+import { iconMotion } from "@/components/ui/motion-presets";
 
 /** The interactive part of `/styleguide`: tabs, dialog, drawer, menu, tooltip and toasts, all on the shared UI kit. */
 export function StyleguideDemos() {
@@ -79,13 +81,14 @@ export function StyleguideDemos() {
         </Menu>
 
         <Tip label={t("tooltipText")}>
-          <button
+          <motion.button
+            {...iconMotion}
             type="button"
             aria-label={t("tooltipTrigger")}
-            className="icon-btn flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-ink hover:bg-surface"
+            className="icon-press flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-ink hover:bg-surface"
           >
             <Info size={20} aria-hidden="true" />
-          </button>
+          </motion.button>
         </Tip>
 
         <Button variant="outlineBlue" onClick={() => toast.push({ message: t("toastSaved"), undo: async () => ({}) })}>

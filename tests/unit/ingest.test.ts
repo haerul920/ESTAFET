@@ -1,81 +1,179 @@
 import JSZip from "jszip";
+import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 import { makePdf } from "@/lib/demo/make-pdf";
+import { ACCEPT_ATTRIBUTE, checkName } from "@/lib/ingest/accept";
 import { detectUploadKind, UploadRejected } from "@/lib/ingest/magic";
 import { parseMarkdownSections } from "@/lib/ingest/markdown";
+import { assertSafeEntryPath, decodeXml } from "@/lib/ingest/office";
+import { imageForAi } from "@/lib/ingest/image";
 import { extractPdfPages } from "@/lib/ingest/pdf";
 import { findSecretPatterns, sensitiveNameReason } from "@/lib/ingest/secrets-scan";
-import { assertSafeEntryPath, readZipTree } from "@/lib/ingest/zip-tree";
 import { ingestUpload } from "@/lib/ingest";
+import { officeFile } from "../office-fixtures";
 
 const enc = (s: string) => new TextEncoder().encode(s);
+const plainZip = () => new JSZip().file("a.txt", "x").generateAsync({ type: "uint8array" });
+const refusal = async (name: string, bytes: Uint8Array) => {
+  const error = await ingestUpload(name, bytes).then(
+    () => null,
+    (e: unknown) => e,
+  );
+  expect(error).toBeInstanceOf(UploadRejected);
+  return (error as UploadRejected).code;
+};
+const picture = async (format: "jpeg" | "png", width = 40, height = 30) => {
+  const base = sharp({ create: { width, height, channels: 3, background: "#2266aa" } });
+  const withLocation = base.withExif({ IFD0: { Artist: "Someone" }, IFD3: { GPSLatitudeRef: "S" } });
+  return new Uint8Array(await (format === "jpeg" ? withLocation.jpeg() : withLocation.png()).toBuffer());
+};
 
-describe("magic bytes", () => {
-  it("accepts a real PDF, ZIP and Markdown", async () => {
+describe("which files are accepted", () => {
+  it("accepts PDF, Markdown, pictures and the new Office formats", () => {
+    const names = ["a.pdf", "a.md", "a.markdown", "a.JPG", "a.jpeg", "a.png", "a.docx", "a.xlsx", "a.pptx"];
+    expect(names.map((n) => checkName(n).ok)).toEqual(names.map(() => true));
+    expect(ACCEPT_ATTRIBUTE).toContain(".pdf");
+    expect(ACCEPT_ATTRIBUTE).not.toContain(".zip");
+  });
+
+  it("refuses ZIP, the old Office formats and everything else, each with its own reason", () => {
+    expect(checkName("code.zip")).toEqual({ ok: false, code: "zip" });
+    for (const name of ["a.doc", "a.xls", "a.ppt"]) expect(checkName(name)).toEqual({ ok: false, code: "old_office" });
+    for (const name of ["run.exe", "a.docm", "a.svg", "a.gif", "noextension"])
+      expect(checkName(name)).toEqual({ ok: false, code: "type" });
+  });
+
+  it("checks the first bytes, not only the name", async () => {
     expect(detectUploadKind("a.pdf", makePdf(["hello"]))).toBe("pdf");
-    const zip = await new JSZip().file("a.txt", "x").generateAsync({ type: "uint8array" });
-    expect(detectUploadKind("code.zip", zip)).toBe("zip");
     expect(detectUploadKind("notes.md", enc("# Title\n\ntext"))).toBe("markdown");
-  });
-
-  it("rejects a file whose extension lies about its content", async () => {
-    expect(() => detectUploadKind("report.pdf", enc("just text"))).toThrow(UploadRejected);
-    expect(() => detectUploadKind("code.zip", enc("not a zip"))).toThrow(UploadRejected);
-    const zip = await new JSZip().file("a.txt", "x").generateAsync({ type: "uint8array" });
-    expect(() => detectUploadKind("notes.md", zip)).toThrow(UploadRejected);
-    expect(() => detectUploadKind("notes.md", new Uint8Array([0x41, 0x00, 0x42]))).toThrow(UploadRejected);
-  });
-
-  it("rejects other types and empty files", () => {
-    expect(() => detectUploadKind("run.exe", enc("MZ"))).toThrow(UploadRejected);
-    expect(() => detectUploadKind("a.pdf", new Uint8Array())).toThrow(UploadRejected);
+    expect(detectUploadKind("a.png", await picture("png"))).toBe("image");
+    expect(detectUploadKind("a.jpg", await picture("jpeg"))).toBe("image");
+    const lies: [string, Uint8Array][] = [
+      ["report.pdf", enc("just text")],
+      ["photo.png", await picture("jpeg")],
+      ["photo.jpg", enc("not a picture")],
+      ["report.docx", enc("not a container")],
+      ["notes.md", await plainZip()],
+      ["notes.md", new Uint8Array([0x41, 0x00, 0x42])],
+      ["a.pdf", new Uint8Array()],
+    ];
+    for (const [name, bytes] of lies) expect(() => detectUploadKind(name, bytes), name).toThrow(UploadRejected);
   });
 });
 
-describe("ZIP safety", () => {
-  it("rejects path traversal and absolute paths", () => {
-    expect(() => assertSafeEntryPath("../evil.sh")).toThrow(UploadRejected);
-    expect(() => assertSafeEntryPath("a/../../evil")).toThrow(UploadRejected);
-    expect(() => assertSafeEntryPath("/etc/passwd")).toThrow(UploadRejected);
-    expect(() => assertSafeEntryPath("C:\\Windows\\x")).toThrow(UploadRejected);
-    expect(() => assertSafeEntryPath("src/app/main.ts")).not.toThrow();
+describe("Word, Excel and PowerPoint", () => {
+  it("reads a Word file in sections, with entities and headings", async () => {
+    const bytes = await officeFile.word([
+      { text: "Ringkasan proyek", heading: true },
+      { text: "Data diambil dari dua lokasi & diberi label." },
+      { text: "Langkah lanjutan", heading: true },
+      { text: "TODO: tambah label untuk <tepi> mangrove." },
+    ]);
+    const result = await ingestUpload("laporan.docx", bytes);
+    expect(result.kind).toBe("word");
+    expect(result.status).toBe("ready");
+    expect(result.doc!.pages.map((p) => p.text)).toEqual([
+      "Ringkasan proyek\nData diambil dari dua lokasi & diberi label.",
+      "Langkah lanjutan\nTODO: tambah label untuk <tepi> mangrove.",
+    ]);
+    expect(result.contentType).toContain("wordprocessingml");
   });
 
-  it("rejects a whole archive that contains a traversal entry", async () => {
-    const zip = new JSZip();
-    zip.file("README.md", "ok");
-    zip.file("../../evil.txt", "bad");
-    const bytes = await zip.generateAsync({ type: "uint8array" });
-    await expect(readZipTree(bytes)).rejects.toBeInstanceOf(UploadRejected);
+  it("reads each sheet of a spreadsheet as rows", async () => {
+    const bytes = await officeFile.spreadsheet([
+      {
+        name: "Anggaran",
+        rows: [
+          ["Barang", "Harga"],
+          ["Drone", 1500],
+        ],
+      },
+      { name: "Catatan", rows: [["Belum diuji di lapangan"]] },
+    ]);
+    const result = await ingestUpload("data.xlsx", bytes);
+    expect(result.doc!.pages).toEqual([
+      { page: 1, label: "Sheet Anggaran", text: "Barang | Harga\nDrone | 1500" },
+      { page: 2, label: "Sheet Catatan", text: "Belum diuji di lapangan" },
+    ]);
   });
 
-  it("lists the tree, reads README and manifests only, and skips sensitive files", async () => {
-    const zip = new JSZip();
-    zip.file("README.md", "# Demo\nA tiny project.");
-    zip.file("package.json", '{"name":"demo","dependencies":{"react":"19"}}');
-    zip.file("src/index.ts", "SECRET_SOURCE_CODE_MUST_NOT_BE_READ");
-    zip.file(".env", "API_KEY=abcdefghijklmnop12345");
-    zip.file("config/keys.json", "{}");
-    zip.file("node_modules/x/index.js", "noise");
-    const tree = await readZipTree(await zip.generateAsync({ type: "uint8array" }));
-    expect(tree.skipped.map((s) => s.name).sort()).toEqual([".env", "config/keys.json"]);
-    expect(tree.readme?.text).toContain("tiny project");
-    expect(tree.manifests.map((m) => m.path)).toEqual(["package.json"]);
-    expect(tree.tree).toContain("src/index.ts");
-    expect(tree.tree.some((p) => p.includes("node_modules"))).toBe(false);
-    expect(JSON.stringify(tree)).not.toContain("SECRET_SOURCE_CODE_MUST_NOT_BE_READ");
-    expect(JSON.stringify(tree)).not.toContain("abcdefghijklmnop12345");
+  it("reads slides in presentation order and keeps their numbers", async () => {
+    const bytes = await officeFile.slides([["Tujuan", "Memantau mangrove"], [], ["Rencana: uji lapangan"]]);
+    const result = await ingestUpload("deck.pptx", bytes);
+    expect(result.doc!.pages).toEqual([
+      { page: 1, label: "Slide 1", text: "Tujuan\nMemantau mangrove" },
+      { page: 3, label: "Slide 3", text: "Rencana: uji lapangan" },
+    ]);
   });
 
-  it("stores a sanitized tree, never the original archive, and reports the skipped files", async () => {
-    const zip = new JSZip();
-    zip.file("README.md", "# Demo");
-    zip.file(".env", "TOKEN=1234567890abcdefghij");
-    const result = await ingestUpload("code.zip", await zip.generateAsync({ type: "uint8array" }));
+  it("refuses a renamed ZIP archive, a wrong kind of document and macros", async () => {
+    expect(await refusal("renamed.docx", await plainZip())).toBe("office_broken");
+    expect(await refusal("sheet.docx", await officeFile.spreadsheet([{ name: "a", rows: [["b"]] }]))).toBe(
+      "office_broken",
+    );
+    const macro = await officeFile.word([{ text: "x" }], { "word/vbaProject.bin": "binary" });
+    expect(await refusal("macro.docx", macro)).toBe("office_macros");
+  });
+
+  it("refuses unsafe paths inside a document", async () => {
+    for (const path of ["../evil.sh", "a/../../evil", "/etc/passwd", "C:\\Windows\\x"])
+      expect(() => assertSafeEntryPath(path)).toThrow(UploadRejected);
+    expect(() => assertSafeEntryPath("word/media/image1.png")).not.toThrow();
+    const bytes = await officeFile.word([{ text: "x" }], { "../../evil.txt": "bad" });
+    expect(await refusal("evil.docx", bytes)).toBe("office_unsafe");
+  });
+
+  it("does not keep a document that contains a secret", async () => {
+    const result = await ingestUpload("kunci.docx", await officeFile.word([{ text: "Key AKIAABCDEFGHIJKLMNOP" }]));
+    expect(result.storeBytes).toBeNull();
+    expect(result.doc).toBeNull();
     expect(result.status).toBe("check");
-    expect(result.note).toContain("skipped and not stored");
-    expect(new TextDecoder().decode(result.storeBytes!)).not.toContain("1234567890abcdefghij");
-    expect(result.storeName.endsWith(".tree.json")).toBe(true);
+    expect(result.note.code).toBe("secret");
+    expect(result.skipped).toHaveLength(1);
+  });
+
+  it("decodes XML entities once", () => {
+    expect(decodeXml("a &amp;lt; b &#233; &#x41; &bogus;")).toBe("a &lt; b é A &bogus;");
+  });
+});
+
+describe("pictures", () => {
+  it("stores the picture again without camera data, and sends nothing to an AI", async () => {
+    const original = await picture("jpeg");
+    expect((await sharp(original).metadata()).exif).toBeDefined();
+    const result = await ingestUpload("foto.jpg", original);
+    expect(result.kind).toBe("image");
+    expect(result.contentType).toBe("image/jpeg");
+    expect((await sharp(result.storeBytes!).metadata()).exif).toBeUndefined();
+    expect(result.doc!.pages).toEqual([{ page: 1, label: "Image", text: "" }]);
+    expect(result.note).toEqual({ code: "image", values: { width: 40, height: 30 } });
+  });
+
+  it("refuses a damaged picture", async () => {
+    const broken = (await picture("png")).slice(0, 40);
+    expect(await refusal("rusak.png", broken)).toBe("image_broken");
+  });
+
+  it("gives the AI a smaller JPEG, whatever the size of the original", async () => {
+    const big = await picture("png", 4000, 1000);
+    const sent = Buffer.from(await imageForAi(big), "base64");
+    const meta = await sharp(sent).metadata();
+    expect(meta.format).toBe("jpeg");
+    expect([meta.width, meta.height]).toEqual([2048, 512]);
+  });
+});
+
+describe("size limit", () => {
+  it("is 50 MB unless set otherwise", async () => {
+    const saved = process.env.MAX_UPLOAD_MB;
+    delete process.env.MAX_UPLOAD_MB;
+    try {
+      const justOver = new Uint8Array(50 * 1024 * 1024 + 1);
+      justOver.set(enc("%PDF-"));
+      expect(await refusal("besar.pdf", justOver)).toBe("too_big");
+    } finally {
+      if (saved !== undefined) process.env.MAX_UPLOAD_MB = saved;
+    }
   });
 });
 
@@ -132,7 +230,7 @@ describe("parsers", () => {
     expect(pages[1].text).toContain("monitoring guide");
   });
 
-  it("rejects a corrupt PDF with a readable message", async () => {
+  it("rejects a corrupt PDF", async () => {
     await expect(extractPdfPages(enc("%PDF-1.4 garbage"))).rejects.toBeInstanceOf(UploadRejected);
   });
 });

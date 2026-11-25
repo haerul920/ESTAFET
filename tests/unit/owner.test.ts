@@ -11,7 +11,6 @@ const item = (review_status: DraftItem["review_status"]): DraftItem => ({
   kind: "next_task",
   title: "t",
   description: "",
-  effort: null,
   lesson_type: null,
   objective_status: null,
   evidence: [],
@@ -31,6 +30,17 @@ describe("buildChecklist", () => {
     expect(buildChecklist([member(true)], [item("kept")], { policiesAccepted: false }).canPublish).toBe(false);
     expect(buildChecklist([member(true)], [item("pending")]).canPublish).toBe(false);
     expect(buildChecklist([member(false)], [item("kept")]).canPublish).toBe(false);
+  });
+
+  it("does not count removed items", () => {
+    const checklist = buildChecklist([member(true)], [item("kept"), item("kept"), item("removed"), item("removed")]);
+    expect(checklist.review).toEqual({ reviewed: 2, total: 2, kept: 2, done: true });
+    expect(buildChecklist([member(true)], [item("removed")]).review).toEqual({
+      reviewed: 0,
+      total: 0,
+      kept: 0,
+      done: false,
+    });
   });
 
   it("has no advisor entry at all", () => {
@@ -55,9 +65,9 @@ describe("buildChecklist", () => {
 });
 
 describe("resumeStep", () => {
-  const draft = { status: "draft" as const, title: "T", summary: "S" };
+  const draft = { status: "draft" as const, title: "T", field: "Engineering" };
   it("resumes from what is done, not from a stored status", () => {
-    expect(resumeStep({ ...draft, summary: "" }, false, false)).toBe("info");
+    expect(resumeStep({ ...draft, field: "" }, false, false)).toBe("info");
     expect(resumeStep(draft, false, false)).toBe("berkas");
     expect(resumeStep(draft, true, false)).toBe("berkas");
     expect(resumeStep(draft, true, true)).toBe("tinjau");

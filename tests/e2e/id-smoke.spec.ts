@@ -1,6 +1,6 @@
 import "../../scripts/lib/env";
 import { expect, test } from "@playwright/test";
-import { adminDb, DEMO_PASSWORD, newUserPage, signIn, signUp } from "./helpers";
+import { pickOption, adminDb, DEMO_PASSWORD, newUserPage, signIn, signUp } from "./helpers";
 
 const stamp = Date.now();
 const REASON_ID = "Ditinjau oleh pengujian e2e berbahasa Indonesia dengan alasan yang jelas.";
@@ -30,9 +30,9 @@ test("key public and legal pages are fully Indonesian, with draft notices and In
 
   await page.goto("/projects/mangrove-cover-classifier");
   await expect(page.getByRole("heading", { level: 1, name: "Mangrove Cover Classifier" })).toBeVisible();
-  await expect(page.getByText("Proyek riset")).toBeVisible();
-  await expect(page.getByText("Posisi saat ini")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Menu proyek" })).toBeVisible();
+  await expect(page.getByText("Penelitian")).toBeVisible();
+  await expect(page.getByText("Saran langkah lanjutan dari tim asal")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Laporkan proyek" })).toBeVisible();
 
   for (const [path, heading, hasDraftBanner] of [
     ["/terms", "Syarat dan Ketentuan", true],
@@ -44,7 +44,7 @@ test("key public and legal pages are fully Indonesian, with draft notices and In
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
     if (hasDraftBanner) {
-      await expect(page.getByText("Draf, belum ditinjau pihak berwenang")).toBeVisible();
+      await expect(page.getByText("Draf, belum ditinjau pihak berwenang")).toHaveCount(0);
     }
   }
 
@@ -77,12 +77,8 @@ test("R4 Indonesian flow: manual wizard, open access, publish, unpublish and rep
   // Step 1: Info dasar
   await page.goto("/bagikan");
   await page.getByLabel("Judul proyek").fill(title);
-  await page
-    .getByLabel("Ringkasan singkat")
-    .fill("Proyek sintetis berbahasa Indonesia yang seluruh catatannya diisi manual tanpa penyedia AI.");
-  await page.getByLabel("Jenis pekerjaan").selectOption("hackathon");
-  await page.getByLabel("Fakultas atau bidang").selectOption("Engineering");
-  await page.getByLabel("Mengapa berhenti?").selectOption("team_graduated");
+  await pickOption(page, "Jenis pekerjaan", "Hackathon");
+  await pickOption(page, "Fakultas atau bidang", "Fakultas Teknik (FT)");
   await page.getByRole("button", { name: "Simpan dan lanjutkan" }).click();
   await page.waitForURL("**/berkas");
 
@@ -101,7 +97,7 @@ test("R4 Indonesian flow: manual wizard, open access, publish, unpublish and rep
   // Step 4: Konfirmasi tim & buka akses dengan perjanjian
   await page.getByRole("button", { name: "Saya konfirmasi" }).click();
   await page.getByRole("radio", { name: /^Terbuka dengan perjanjian/ }).check();
-  await page.getByLabel("Berapa tim penerus sekaligus").selectOption("1");
+  await pickOption(page, "Berapa tim penerus sekaligus", /^1 /);
   await page.getByRole("button", { name: "Simpan aturan akses" }).click();
   await expect(page.getByText("Aturan akses disimpan.")).toBeVisible();
   await page.getByRole("link", { name: "Lanjut ke pratinjau" }).click();
@@ -130,13 +126,12 @@ test("R4 Indonesian flow: manual wizard, open access, publish, unpublish and rep
   await visitor.context.close();
 });
 
-test("R5 Indonesian flow: report project, view /laporan-saya, and manage /akun/privasi", async ({ page }) => {
+test("R5 Indonesian flow: report project, view /laporan-saya, and manage /akun/setelan", async ({ page }) => {
   await signIn(page, "adopter@estafet.demo", { locale: "id" });
 
   // Laporkan proyek dalam bahasa Indonesia
   await page.goto("/projects/mangrove-cover-classifier");
-  await page.getByRole("button", { name: "Menu proyek" }).click();
-  await page.getByRole("menuitem", { name: /Laporkan/ }).click();
+  await page.getByRole("button", { name: "Laporkan proyek" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("radio", { name: /Informasi palsu atau menyesatkan/ }).check();
   await dialog.getByLabel("Apa yang salah?").fill("Uji E2E ID: klaim akurasi perlu dicek terhadap berkas laporan.");
@@ -149,8 +144,8 @@ test("R5 Indonesian flow: report project, view /laporan-saya, and manage /akun/p
   await expect(page.getByRole("heading", { level: 1, name: "Laporan saya" })).toBeVisible();
   await expect(page.getByText("Mangrove Cover Classifier").first()).toBeVisible();
 
-  // Privasi akun (/akun/privasi): ekspor JSON, preferensi email, jadwalkan & batalkan penghapusan akun
-  await page.goto("/akun/privasi");
+  // Setelan (/akun/setelan): ekspor JSON, preferensi email, jadwalkan & batalkan penghapusan akun
+  await page.goto("/akun/setelan");
   await expect(page.getByRole("heading", { level: 1, name: "Privasi akun" })).toBeVisible();
   const exp = await page.request.get("/api/account/export");
   expect(exp.status()).toBe(200);
@@ -167,7 +162,7 @@ test("R5 Indonesian flow: report project, view /laporan-saya, and manage /akun/p
   await page.goto("/dasbor");
   await expect(page.getByText(/Akunmu dijadwalkan dihapus pada/)).toBeVisible();
 
-  await page.goto("/akun/privasi");
+  await page.goto("/akun/setelan");
   await page.getByRole("button", { name: "Batalkan penghapusan" }).click();
   await expect(page.getByRole("button", { name: "Jadwalkan penghapusan akun" })).toBeVisible();
 });

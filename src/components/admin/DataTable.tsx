@@ -68,7 +68,7 @@ export function DataTable<Row extends { id: string }>({
                     key={c.key}
                     scope="col"
                     aria-sort={active ? (params.dir === "asc" ? "ascending" : "descending") : undefined}
-                    className="sticky top-0 border-b border-line bg-surface px-4 py-3 font-semibold first:rounded-tl-3xl last:rounded-tr-3xl in-data-[density=compact]:py-2"
+                    className="sticky top-0 border-b border-line bg-surface px-4 py-3 font-semibold first:rounded-tl-3xl last:rounded-tr-3xl"
                   >
                     {c.sortable ? (
                       <Link
@@ -102,7 +102,7 @@ export function DataTable<Row extends { id: string }>({
                 )}
               >
                 {columns.map((c, i) => (
-                  <td key={c.key} className={cn("px-4 py-3 align-top in-data-[density=compact]:py-1.5", c.className)}>
+                  <td key={c.key} className={cn("px-4 py-3 align-top", c.className)}>
                     {i === 0 && rowHref ? (
                       <Link
                         href={rowHref(r)}

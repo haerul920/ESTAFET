@@ -6,5 +6,5 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 export default function TermsPage() {
-  return <LegalDocument doc="terms" sections={8} />;
+  return <LegalDocument doc="terms" />;
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import { PROJECT_KINDS } from "@/lib/db/types";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
@@ -8,6 +9,11 @@ import { requireUser } from "@/lib/auth";
 import { dbErrorMessage } from "@/lib/errors";
 import { fieldErrorsFrom } from "@/lib/validation";
 import type { TFn } from "@/lib/labels";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { aiRemovalPatch } from "@/lib/db/ai-draft";
+import { getOwnedProject } from "@/lib/db/owner";
+import { log } from "@/lib/log";
+import { forgetImageReadings } from "@/lib/ingest/image-readings";
 
 async function tr() {
   const [v, a, e] = await Promise.all([
@@ -34,17 +40,13 @@ export async function setFillMode(projectId: string, mode: "ai" | "manual"): Pro
 function basicsSchema(v: TFn) {
   return z.object({
     title: z.string().trim().min(3, v("titleMin")).max(120, v("titleMax")),
-    summary: z.string().trim().min(30, v("summaryMin")).max(700, v("summaryMax")),
-    kind: z.enum(["student_program", "hackathon", "research"], { message: v("kind") }),
+    kind: z.enum(PROJECT_KINDS, { message: v("kind") }),
     field: z.string().trim().min(2, v("field")),
     year: z.coerce
       .number()
       .int()
       .min(2015, v("yearMin"))
       .max(new Date().getFullYear() + 1, v("yearMax")),
-    stop_reason: z.enum(["funding_not_granted", "team_graduated", "time_or_people", "other"], {
-      message: v("stopReason"),
-    }),
     stopped_note: z.string().trim().max(400, v("stoppedNoteMax")).optional(),
   });
 }
@@ -74,7 +76,7 @@ export async function autosaveBasics(
 /** Access mode and team limit (Team and access step, and the project settings). The database logs it in the lineage. */
 export async function saveAccessSettings(
   projectId: string,
-  mode: "open" | "by_request" | "paused",
+  mode: "open" | "by_request",
   max: number | null,
 ): Promise<Result> {
   const t = await tr();
@@ -143,5 +145,123 @@ export async function cancelOwnership(projectId: string): Promise<Result> {
   const { error } = await supabase.rpc("cancel_ownership_transfer", { p_project_id: projectId });
   if (error) return { error: dbErrorMessage(t.e, error) };
   revalidatePath("/proyek", "layout");
+  return {};
+}
+
+/**
+ * "Save and exit" on the Info step. Every field that is valid is saved, so a half-filled draft is not lost. Fields
+ * that are not valid yet are reported back and left as they were. Publishing stays blocked until the basics are in.
+ * A new project needs at least a title.
+ */
+export async function saveDraftAndExit(
+  projectId: string | null,
+  values: Record<string, string>,
+): Promise<{ error?: string; id: string | null; skipped: string[] }> {
+  const t = await tr();
+  const user = await requireUser(projectId ? `/bagikan/${projectId}/info` : "/bagikan");
+  const shape = basicsSchema(t.v).shape;
+  const patch: Record<string, string | number> = {};
+  const skipped: string[] = [];
+  for (const key of Object.keys(shape) as (keyof typeof shape)[]) {
+    const result = shape[key].safeParse(values[key]);
+    if (!result.success) skipped.push(key);
+    else if (result.data !== undefined) patch[key] = result.data;
+  }
+  const supabase = await createClient();
+
+  if (projectId) {
+    if (Object.keys(patch).length > 0) {
+      const { data, error } = await supabase.from("projects").update(patch).eq("id", projectId).select("id");
+      if (error || !data || data.length === 0) return { error: t.a("draftFailed"), id: projectId, skipped };
+      revalidatePath(`/bagikan/${projectId}`, "layout");
+      revalidatePath("/dasbor");
+    }
+    return { id: projectId, skipped };
+  }
+
+  if (skipped.includes("title")) return { id: null, skipped };
+  const { data, error } = await supabase
+    .from("projects")
+    .insert({ ...patch, created_by: user.id })
+    .select("id")
+    .single();
+  if (error || !data) {
+    return { error: t.a(user.verified ? "draftFailed" : "verifyFirst"), id: null, skipped };
+  }
+  revalidatePath("/dasbor");
+  return { id: data.id as string, skipped };
+}
+
+/**
+ * Takes the AI back: everything the draft produced is deleted (items, its summary, its list of tools), the choice
+ * between AI and manual is open again, and this owner's agreement that AI reads the files is withdrawn.
+ * Items the owners wrote stay. Text already sent to the AI provider cannot be recalled.
+ */
+export async function cancelAiDraft(projectId: string): Promise<Result> {
+  const t = await tr();
+  const user = await requireUser(`/bagikan/${projectId}/berkas`);
+  const project = await getOwnedProject(projectId);
+  if (!project) return { error: t.a("notOwnerEdit") };
+  // A public teaser is made of these items, so it has to be taken down first.
+  if (project.status === "published" || project.status === "archived") return { error: t.a("cancelAiPublished") };
+
+  const admin = createAdminClient();
+  const failed = { error: t.a("cancelAiFailed") };
+  // The agreement goes first, so that no new AI run can start while the rest is being removed.
+  const consent = await admin
+    .from("project_members")
+    .update({ consented_at: null })
+    .eq("project_id", projectId)
+    .eq("profile_id", user.id);
+  if (consent.error) return failed;
+  const upload = await getTranslations("upload");
+  if (!(await forgetImageReadings(projectId, upload("note.image_forgotten")))) return failed;
+  const runs = await admin
+    .from("synthesis_runs")
+    .select("summary_draft")
+    .eq("project_id", projectId)
+    .eq("status", "done");
+  if (runs.error) return failed;
+  const items = await admin.from("draft_items").delete().eq("project_id", projectId).eq("origin", "ai");
+  if (items.error) return failed;
+  const patch = aiRemovalPatch(
+    project.summary,
+    (runs.data ?? []).map((r) => r.summary_draft as string | null),
+  );
+  const updated = await admin.from("projects").update(patch).eq("id", projectId);
+  if (updated.error) return failed;
+  const cleared = await admin.from("synthesis_runs").update({ summary_draft: null }).eq("project_id", projectId);
+  if (cleared.error) return failed;
+
+  revalidatePath(`/bagikan/${projectId}`, "layout");
+  revalidatePath("/dasbor");
+  return {};
+}
+
+/**
+ * Deletes a draft for good. The database function checks who may do it and what may be deleted: only the main owner,
+ * only a draft that was never published and that has no request, access or report. Stored files are removed after
+ * the database step, so a refusal never costs a file.
+ */
+export async function deleteDraftProject(projectId: string): Promise<Result> {
+  const t = await tr();
+  await requireUser("/dasbor");
+  if (!z.string().uuid().safeParse(projectId).success) return { error: t.e("generic") };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("delete_draft_project", { p_project: projectId });
+  if (error) return { error: dbErrorMessage(t.e, error) };
+
+  const paths = data as { originals: string[]; texts: string[] };
+  const admin = createAdminClient();
+  for (const [bucket, list] of [
+    ["project-files", paths.originals],
+    ["extracted-text", paths.texts],
+  ] as const) {
+    if (list.length === 0) continue;
+    const removed = await admin.storage.from(bucket).remove(list);
+    // The project is already gone. Leftover objects are private and are only counted here, never named.
+    if (removed.error) log.error("draft_delete_storage_failed", { projectId, bucket, count: list.length });
+  }
+  revalidatePath("/dasbor");
   return {};
 }

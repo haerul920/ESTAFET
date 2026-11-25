@@ -52,7 +52,7 @@ Sebelum melakukan penggabungan (`merge`) atau perubahan cabang rilis:
 - [ ] `GET /api/dev/email-preview` berfungsi di `STAGING` (dan mengembalikan `404` saat diuji dengan `APP_ENV=PRODUCTION`)
 - [ ] Satu alur penuh bahasa Indonesia berhasil dijalankan di staging:
   - Daftar akun baru -> terima email konfirmasi nyata -> masuk -> `/mulai`
-  - Bagikan proyek (`/bagikan`) -> unggah PDF/Markdown/ZIP -> jalankan sintesis AI nyata (bukan mode tiruan) -> tinjau semua butir -> konfirmasi tim -> terbitkan
+  - Bagikan proyek (`/bagikan`) -> unggah PDF/Markdown/Word/Excel/PowerPoint/JPG/PNG (coba juga berkas mendekati 50 MB) -> jalankan sintesis AI nyata (bukan mode tiruan) -> tinjau semua butir -> konfirmasi tim -> terbitkan
   - Akun kedua mengajukan permintaan melanjutkan (atau mengambil akses langsung pada mode terbuka) -> pemilik menyetujui -> penerus menyetujui perjanjian atribusi -> unduh berkas pribadi & PDF perjanjian atribusi
   - Kirim laporan dari halaman proyek -> proses dari `/admin/reports` -> verifikasi email notifikasi keluar dari `email_outbox` dan terkirim lewat Resend
 - [ ] Pemilik proyek menandatangani persetujuan lanjut ke Tahap B.

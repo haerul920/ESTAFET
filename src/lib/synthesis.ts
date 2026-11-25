@@ -3,8 +3,9 @@ import { createHash } from "node:crypto";
 import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getConfig, synthesize, SynthesisError, type SynthesisErrorCode, type SynthesisOutput } from "@/lib/llm";
-import { checkItemEvidence } from "@/lib/evidence/match";
+import { getConfig, synthesize, SynthesisError, type SynthesisOutput } from "@/lib/llm";
+import { checkItemEvidence, type EvidenceStatus } from "@/lib/evidence/match";
+import { readPendingImages } from "@/lib/ingest/image-readings";
 import { normalize } from "@/lib/evidence/normalize";
 import { getSettings } from "@/lib/settings";
 import { globalSynthesisCap } from "@/lib/settings-core";
@@ -22,37 +23,32 @@ type NewItem = {
   kind: "objective" | "completed" | "next_task" | "lesson";
   title: string;
   description: string;
-  effort: "small" | "medium" | "large" | null;
   lesson_type: "methodology" | "evaluation_feedback" | "funding_feedback" | "blocker" | null;
   objective_status: "done" | "in_progress" | "not_started" | null;
   evidence: { file: string; page: number; quote: string }[];
 };
 
 function flatten(out: SynthesisOutput): NewItem[] {
-  const base = { description: "", effort: null, lesson_type: null, objective_status: null } as const;
-  return [
-    ...out.objectives.map((o): NewItem => ({
-      ...base,
-      kind: "objective",
-      title: o.title,
-      objective_status: o.status,
-      evidence: o.evidence,
-    })),
-    ...out.completed.map((c): NewItem => ({
-      ...base,
-      kind: "completed",
-      title: c.title,
-      description: c.description,
-      evidence: c.evidence,
-    })),
+  const base = { description: "", lesson_type: null, objective_status: null } as const;
+  const nextTasks: NewItem[] = [
     ...out.next_tasks.map((t): NewItem => ({
       ...base,
       kind: "next_task",
       title: t.title,
       description: t.description,
-      effort: t.effort,
       evidence: t.evidence,
     })),
+    ...out.objectives
+      .filter((o) => o.status !== "done")
+      .map((o): NewItem => ({
+        ...base,
+        kind: "next_task",
+        title: o.title,
+        description: "",
+        evidence: o.evidence,
+      })),
+  ];
+  const materials: NewItem[] = [
     ...out.lessons.map((l): NewItem => ({
       ...base,
       kind: "lesson",
@@ -60,7 +56,23 @@ function flatten(out: SynthesisOutput): NewItem[] {
       lesson_type: l.type,
       evidence: l.evidence,
     })),
+    ...out.completed.map((c): NewItem => ({
+      ...base,
+      kind: "lesson",
+      title: c.description ? `${c.title} — ${c.description}` : c.title,
+      lesson_type: "methodology",
+      evidence: c.evidence,
+    })),
   ];
+  return [...nextTasks, ...materials];
+}
+
+function downgradeForImages(
+  status: EvidenceStatus,
+  evidence: { file_id: string }[],
+  images: Set<string>,
+): EvidenceStatus {
+  return status === "matched" && evidence.some((e) => images.has(e.file_id)) ? "partial" : status;
 }
 
 /**
@@ -184,9 +196,15 @@ export async function runSynthesis(
     .single();
   if (runError || !run) return { ok: false, status: 500, error: t("startFailed") };
 
-  const meta: { model?: string } = {};
   try {
-    const output = await synthesize(docs, config, undefined, locale, meta);
+    // Pictures have no text until the AI reads them. This is after the consent and rate limit checks above.
+    const upload = await getTranslations({ locale, namespace: "upload" });
+    await readPendingImages(files, docsById, config, (code) => upload(`note.${code}`));
+    const images = new Set(files.filter((f) => f.kind === "image").map((f) => f.id));
+    if (images.size > 0 && docs.every((d) => d.pages.every((p) => p.text.trim() === ""))) {
+      throw new SynthesisError(config.mode === "mock" ? t("imagesNeedLiveAi") : t("imagesUnread"));
+    }
+    const output = await synthesize(docs, config, undefined, locale);
     const idByName = new Map(files.map((f) => [f.original_name, f.id]));
     const pagesByFile = new Map<string, Map<number, string>>();
     for (const f of files) {
@@ -194,13 +212,8 @@ export async function runSynthesis(
       if (d) pagesByFile.set(f.id, new Map(d.pages.map((p) => [p.page, p.text])));
     }
 
-    // Replace earlier pending AI items. Reviewed items stay, and duplicates of them are skipped.
-    await admin
-      .from("draft_items")
-      .delete()
-      .eq("project_id", projectId)
-      .eq("origin", "ai")
-      .eq("review_status", "pending");
+    // Replace earlier AI items so a fresh Gemini run cleanly replaces previous drafts.
+    await admin.from("draft_items").delete().eq("project_id", projectId).eq("origin", "ai");
     const { data: existing } = await admin.from("draft_items").select("title, position").eq("project_id", projectId);
     const known = new Set((existing ?? []).map((e) => normalize(e.title)));
     let position = Math.max(0, ...(existing ?? []).map((e) => e.position)) + 1;
@@ -218,55 +231,44 @@ export async function runSynthesis(
         kind: item.kind,
         title: item.title.slice(0, 300),
         description: item.description.slice(0, 600),
-        effort: item.effort,
         lesson_type: item.lesson_type,
         objective_status: item.objective_status,
         evidence,
-        evidence_status: checkItemEvidence(evidence, pagesByFile),
+        // A quote from a picture is only checked against the AI's own reading of it, so it is never "matched".
+        evidence_status: downgradeForImages(checkItemEvidence(evidence, pagesByFile), evidence, images),
         origin: "ai",
-        review_status: "pending",
+        review_status: "kept",
         position: position++,
       });
     }
     if (rows.length > 0) {
       const { error } = await admin.from("draft_items").insert(rows);
-      if (error) throw new SynthesisError("The draft could not be saved.");
+      if (error) throw new SynthesisError("The draft could not be saved.", "saveFailed");
     }
-    if ((project.tech as string[]).length === 0 && output.tech.length > 0) {
-      await admin.from("projects").update({ tech: output.tech }).eq("id", projectId);
+    const projectPatch: { summary?: string; tech?: string[] } = {};
+    if (output.summary.trim().length >= 20) {
+      projectPatch.summary = output.summary.trim();
+    }
+    if (output.tech.length > 0) {
+      const mergedTech = [...new Set([...((project.tech as string[]) ?? []), ...output.tech])].slice(0, 15);
+      projectPatch.tech = mergedTech;
+    }
+    if (Object.keys(projectPatch).length > 0) {
+      await admin.from("projects").update(projectPatch).eq("id", projectId);
     }
     await admin
       .from("synthesis_runs")
-      .update({
-        status: "done",
-        finished_at: new Date().toISOString(),
-        summary_draft: output.summary,
-        // The fallback model when the first one was busy, so the pipeline and cost numbers stay honest.
-        model: meta.model ?? config.model,
-      })
+      .update({ status: "done", finished_at: new Date().toISOString(), summary_draft: output.summary })
       .eq("id", run.id);
     return { ok: true, runId: run.id, mode: config.mode, items: rows.length };
   } catch (e) {
-    // The run keeps the technical reason (English, no file contents) for the admin pipeline; people get a short,
-    // translated explanation with what to do next.
-    const code: SynthesisErrorCode = e instanceof SynthesisError ? e.code : "failed";
-    const technical = e instanceof Error ? e.message : String(e);
+    // The run keeps the technical reason. The person sees plain words in their own language.
+    const known = e instanceof SynthesisError ? e : null;
     await admin
       .from("synthesis_runs")
-      .update({ status: "failed", finished_at: new Date().toISOString(), error: `${code}: ${technical}`.slice(0, 500) })
+      .update({ status: "failed", finished_at: new Date().toISOString(), error: known?.message ?? "Unexpected error." })
       .eq("id", run.id);
-    // A wrong key, a retired model or a used-up quota needs a person. Tell the team once a day, not on every run.
-    if (
-      (code === "quota" || code === "config") &&
-      (await allow({
-        scope: "alert-ai-provider",
-        identity: new Date().toISOString().slice(0, 10),
-        max: 1,
-        windowSeconds: 86_400,
-      }))
-    ) {
-      await alert("synthesis_provider", "Live AI runs fail because of the provider key, model or quota.", { code });
-    }
-    return { ok: false, status: code === "busy" || code === "quota" ? 503 : 502, error: t(`error.${code}`) };
+    const code = known ? known.code : "failed";
+    return { ok: false, status: 502, error: code ? t(`error.${code}`) : known!.message };
   }
 }

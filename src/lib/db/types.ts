@@ -1,16 +1,16 @@
 // Row shapes returned by Supabase queries. Kept in sync with supabase/migrations by hand.
 
-export type ProjectKind = "student_program" | "hackathon" | "research";
-export type StopReason = "funding_not_granted" | "team_graduated" | "time_or_people" | "other";
+/** The types of work, in the order the pickers list them. "other" stays last. */
+export const PROJECT_KINDS = ["student_program", "hackathon", "research", "community_service", "other"] as const;
+export type ProjectKind = (typeof PROJECT_KINDS)[number];
 export type ProjectStatus = "draft" | "published" | "unpublished" | "archived";
 export type ModerationStatus = "ok" | "held" | "hidden" | "removed";
-export type AccessMode = "open" | "by_request" | "paused";
+export type AccessMode = "open" | "by_request";
 export type MemberRole = "owner" | "co_owner";
 export type MemberStatus = "invited" | "active" | "left";
 export type AccessSource = "open" | "approved_request";
 export type AccessStatus = "active" | "revoked";
 export type ItemKind = "objective" | "completed" | "next_task" | "lesson";
-export type Effort = "small" | "medium" | "large";
 export type LessonType = "methodology" | "evaluation_feedback" | "funding_feedback" | "blocker";
 export type EvidenceStatus = "matched" | "not_found" | "partial";
 export type ReviewStatus = "pending" | "kept" | "removed";
@@ -60,7 +60,6 @@ export interface TeaserProject {
   kind: ProjectKind;
   field: string;
   year: number;
-  stop_reason: StopReason;
   status: ProjectStatus;
   is_demo: boolean;
   published_at: string | null;
@@ -82,7 +81,6 @@ export interface TeaserItem {
   kind: ItemKind;
   title: string;
   description: string;
-  effort: Effort | null;
   lesson_type: LessonType | null;
   objective_status: ObjectiveStatus | null;
   position: number;
@@ -105,7 +103,6 @@ export interface Project {
   kind: ProjectKind;
   field: string;
   year: number;
-  stop_reason: StopReason;
   status: ProjectStatus;
   created_by: string;
   is_demo: boolean;
@@ -145,7 +142,6 @@ export interface DraftItem {
   kind: ItemKind;
   title: string;
   description: string;
-  effort: Effort | null;
   lesson_type: LessonType | null;
   objective_status: ObjectiveStatus | null;
   evidence: EvidenceRef[];
@@ -158,7 +154,7 @@ export interface DraftItem {
 export interface ProjectFile {
   id: string;
   project_id: string;
-  kind: "pdf" | "markdown" | "code_tree";
+  kind: "pdf" | "markdown" | "image" | "word" | "spreadsheet" | "slides" | "code_tree";
   storage_path: string;
   original_name: string;
   size_bytes: number;

@@ -44,7 +44,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         owners: d.ownerNames,
         adopterTeam: d.request.adopter_team_name,
         adopters,
-        tasks: d.tasks.map((t) => t.title),
+        tasks: d.tasks.length > 0 ? d.tasks.map((t) => t.title) : [pdf("noTasks")],
         accepted: d.holders.map((h) => ({ name: h.name, at: formatDate(h.acceptedAt, locale) })),
         lineageId,
         creditLine: creditLine({ title: d.project.title, creators: d.ownerNames, lineageId }, ag),

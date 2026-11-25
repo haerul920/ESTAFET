@@ -30,7 +30,6 @@ const VALID = {
     {
       title: "More labels",
       description: "",
-      effort: "small",
       evidence: [{ file: "notes.md", page: 2, quote: "TODO: edge class needs far more labeled images" }],
     },
   ],

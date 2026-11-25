@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { cleanup, makeUser, publishedProject, svc, type TestUser } from "./helpers";
 
@@ -152,110 +153,63 @@ describe("reports", () => {
   });
 });
 
-describe("automatic hold", () => {
-  it("holds a project once enough DISTINCT reporters report a serious reason, and tells the owners and the admins neutrally", async () => {
+describe("a report never changes a project by itself", () => {
+  it("stays public however many different people report a serious reason, until an admin decides", async () => {
     const f = await publishedProject(owner);
-    expect((await report(f.projectId, "copyright", alice)).data.held).toBe(false);
-    expect((await report(f.projectId, "copyright", bob)).data.held).toBe(false);
-    expect(await status(f.projectId)).toBe("ok");
-    const third = await report(f.projectId, "copyright", carol);
-    expect(third.data.held).toBe(true);
-    expect(await status(f.projectId)).toBe("held");
-
-    // hidden from public lists, with a neutral public check
-    expect((await svc.from("public_project_teaser").select("id").eq("id", f.projectId)).data).toHaveLength(0);
-    const slug = (await svc.from("projects").select("slug").eq("id", f.projectId).single()).data!.slug;
-    expect((await svc.rpc("is_project_held", { p_slug: slug })).data).toBe(true);
-
-    // the decision is recorded as automatic, with a neutral reason that carries no count and no reporter
-    const dec =
-      (
-        await owner.client
-          .from("moderation_decisions")
-          .select("action, automatic, reason")
-          .eq("project_id", f.projectId)
-      ).data ?? [];
-    expect(dec).toHaveLength(1);
-    expect(dec[0]).toMatchObject({ action: "hold", automatic: true });
-    expect(dec[0].reason).not.toMatch(/\d|alice|bob|carol|reporter/i);
-
-    // owner notification: reason and decision link, no reporter information
-    const n = (await notes(owner.id, "moderation")).filter(
-      (x) => (x.payload as { project_id: string }).project_id === f.projectId,
-    );
-    expect(n).toHaveLength(1);
-    expect(Object.keys(n[0].payload as object).sort()).toEqual([
-      "action",
-      "automatic",
-      "decision_id",
-      "project_id",
-      "reason",
-      "slug",
-      "title",
-    ]);
-    expect((n[0].payload as { action: string }).action).toBe("held");
-
-    // admins are alerted
-    const alert = (await notes(admin.id, "admin_hold")).filter(
-      (x) => (x.payload as { project_id: string }).project_id === f.projectId,
-    );
-    expect(alert).toHaveLength(1);
-  });
-
-  it("one person reporting many times, or many guests behind one address, never reach the threshold", async () => {
-    const f = await publishedProject(owner);
-    for (let i = 0; i < 6; i++) await report(f.projectId, "copyright", alice); // same account
-    for (let i = 0; i < 6; i++) await report(f.projectId, "copyright", null, "shared-office-ip"); // guests behind one address
-    // signed-in but unverified accounts count by address, not as separate people
-    const ghost1 = await mk("r5ghost1", { verified: false, policies: false });
-    const ghost2 = await mk("r5ghost2", { verified: false, policies: false });
-    await report(f.projectId, "copyright", ghost1, "shared-office-ip");
-    await report(f.projectId, "copyright", ghost2, "shared-office-ip");
-    expect(await status(f.projectId)).toBe("ok");
-    // distinct people: alice (verified) + the shared address (one) + a second address = 3 -> hold
-    expect((await report(f.projectId, "copyright", null, ip())).data.held).toBe(true);
-    expect(await status(f.projectId)).toBe("held");
-  });
-
-  it("reasons that are not on the serious list never hold a project by count", async () => {
-    const f = await publishedProject(owner);
-    for (let i = 0; i < 6; i++) await report(f.projectId, "spam", null, ip());
-    expect(await status(f.projectId)).toBe("ok");
-  });
-
-  it("the threshold is a setting", async () => {
-    await svc.from("app_settings").upsert({ key: "report_hold_threshold", value: 2 });
-    try {
-      const f = await publishedProject(owner);
-      await report(f.projectId, "harmful_file", alice);
-      expect((await report(f.projectId, "harmful_file", bob)).data.held).toBe(true);
-    } finally {
-      await svc.from("app_settings").delete().eq("key", "report_hold_threshold");
+    for (const reason of ["copyright", "personal_data", "harmful_file"] as const) {
+      for (const person of [alice, bob, carol])
+        expect((await report(f.projectId, reason, person)).data.held).toBe(false);
     }
+    for (let i = 0; i < 4; i++) await report(f.projectId, "copyright", null, ip());
+    expect(await status(f.projectId)).toBe("ok");
+    expect((await svc.from("public_project_teaser").select("id").eq("id", f.projectId)).data).toHaveLength(1);
+    expect((await owner.client.from("moderation_decisions").select("id").eq("project_id", f.projectId)).data).toEqual(
+      [],
+    );
   });
 
-  it("a hold that nobody reviewed in time alerts the admins once", async () => {
+  it("an admin can remove it, the owner appeals, and the admin decides the appeal", async () => {
     const f = await publishedProject(owner);
-    await report(f.projectId, "personal_data", alice);
-    await report(f.projectId, "personal_data", bob);
-    await report(f.projectId, "personal_data", carol);
-    expect(await status(f.projectId)).toBe("held");
-    expect((await svc.rpc("escalate_overdue_holds")).data).toBeGreaterThanOrEqual(0);
-    const before = (await notes(admin.id, "admin_hold_overdue")).filter(
-      (x) => (x.payload as { project_id: string }).project_id === f.projectId,
-    );
-    expect(before).toHaveLength(0); // fresh hold: not overdue yet
-    await svc
-      .from("projects")
-      .update({ moderated_at: new Date(Date.now() - 4 * 864e5).toISOString() })
-      .eq("id", f.projectId);
-    await svc.rpc("escalate_overdue_holds");
-    await svc.rpc("escalate_overdue_holds");
-    const after = (await notes(admin.id, "admin_hold_overdue")).filter(
-      (x) => (x.payload as { project_id: string }).project_id === f.projectId,
-    );
-    expect(after).toHaveLength(1);
-    expect((await owner.client.rpc("escalate_overdue_holds")).error).not.toBeNull();
+    const filed = await report(f.projectId, "copyright", alice);
+    expect(filed.error).toBeNull();
+    const rid = (await svc.from("reports").select("id").eq("reference", filed.data.reference).single()).data!.id;
+    expect(
+      (
+        await admin.client.rpc("admin_handle_report", {
+          p_report: rid,
+          p_action: "remove",
+          p_note: "Checked: the report is correct.",
+        })
+      ).error,
+    ).toBeNull();
+    expect(await status(f.projectId)).toBe("removed");
+    expect((await svc.from("public_project_teaser").select("id").eq("id", f.projectId)).data).toHaveLength(0);
+
+    const decision = (
+      await owner.client
+        .from("moderation_decisions")
+        .select("id")
+        .eq("project_id", f.projectId)
+        .eq("action", "remove")
+        .single()
+    ).data!.id;
+    const appeal = await owner.client.rpc("appeal_decision", {
+      p_decision: decision,
+      p_body: "The work is our own and we can show the drafts.",
+    });
+    expect(appeal.error).toBeNull();
+    // still removed: only the admin's answer changes that
+    expect(await status(f.projectId)).toBe("removed");
+    expect(
+      (
+        await admin.client.rpc("admin_resolve_appeal", {
+          p_appeal: appeal.data as string,
+          p_outcome: "accepted",
+          p_note: "The drafts show it is their work.",
+        })
+      ).error,
+    ).toBeNull();
+    expect(await status(f.projectId)).toBe("ok");
   });
 });
 
@@ -445,12 +399,18 @@ describe("decisions, appeals and restore", () => {
     expect((await svc.from("reports").select("status").eq("id", rid).single()).data!.status).toBe("dismissed");
   });
 
-  it("an admin can restore a held project, and a restore with no reason is refused", async () => {
+  it("an admin can restore a removed project, and a restore with no reason is refused", async () => {
     const f = await publishedProject(owner);
-    await report(f.projectId, "copyright", alice);
-    await report(f.projectId, "copyright", bob);
-    await report(f.projectId, "copyright", carol);
-    expect(await status(f.projectId)).toBe("held");
+    expect(
+      (
+        await admin.client.rpc("admin_set_project_moderation", {
+          p_project: f.projectId,
+          p_status: "removed",
+          p_reason: "Checked: it breaks the guidelines.",
+        })
+      ).error,
+    ).toBeNull();
+    expect(await status(f.projectId)).toBe("removed");
     expect(
       hint(
         (
@@ -475,7 +435,7 @@ describe("decisions, appeals and restore", () => {
     const n = (await notes(owner.id, "moderation")).filter(
       (x) => (x.payload as { project_id: string; action: string }).project_id === f.projectId,
     );
-    expect(n.map((x) => (x.payload as { action: string }).action).sort()).toEqual(["held", "restored"]);
+    expect(n.map((x) => (x.payload as { action: string }).action).sort()).toEqual(["removed", "restored"]);
   });
 });
 
@@ -643,5 +603,94 @@ describe("policy versions", () => {
       await svc.from("policy_acceptances").delete().eq("kind", "terms").eq("version", 2);
       await svc.from("policies").delete().eq("kind", "terms").eq("version", 2);
     }
+  });
+});
+
+describe("changing roles from the Users page", () => {
+  const setRole = (
+    client: TestUser["client"],
+    user: string,
+    makeAdmin: boolean,
+    reason = "Joins the moderation team.",
+  ) => client.rpc("admin_set_role", { p_user: user, p_admin: makeAdmin, p_reason: reason });
+  const isAdmin = async (id: string) =>
+    (await svc.from("profiles").select("is_admin").eq("id", id).single()).data!.is_admin;
+
+  it("an admin promotes and demotes someone else, with a reason, and both are audited", async () => {
+    const person = await mk("r5role");
+    expect((await setRole(admin.client, person.id, true)).error).toBeNull();
+    expect(await isAdmin(person.id)).toBe(true);
+    expect((await setRole(admin.client, person.id, false, "Leaves the moderation team.")).error).toBeNull();
+    expect(await isAdmin(person.id)).toBe(false);
+    const audit = (await svc.from("audit_log").select("action").eq("target_id", person.id)).data ?? [];
+    expect(audit.map((a) => a.action).sort()).toEqual(["user.demote", "user.promote"]);
+  });
+
+  it("refuses members, short reasons, your own role and a role they already have", async () => {
+    const person = await mk("r5role2");
+    expect((await setRole(person.client, person.id, true)).error).not.toBeNull();
+    expect((await setRole(owner.client, person.id, true)).error).not.toBeNull();
+    const signedOut = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      auth: { persistSession: false },
+    });
+    expect((await setRole(signedOut, person.id, true)).error).not.toBeNull();
+    expect(hint((await setRole(admin.client, person.id, true, "too short")).error)).toBe("reason_short");
+    expect(hint((await setRole(admin.client, admin.id, false)).error)).toBe("own_role");
+    expect(hint((await setRole(admin.client, person.id, false)).error)).toBe("same_role");
+    expect(await isAdmin(person.id)).toBe(false);
+    expect(await isAdmin(admin.id)).toBe(true);
+  });
+});
+
+describe("legal documents written in the app", () => {
+  const text = (title: string) => ({ title, lead: "Intro.", sections: [{ id: "s1", h: "Heading", body: "Text." }] });
+  const content = (title: string) => ({ id: text(title), en: text(title) });
+  const publish = (client: TestUser["client"], doc: string, value: unknown, reason = "Clearer wording for readers.") =>
+    client.rpc("admin_publish_document", { p_doc: doc, p_content: value, p_reason: reason });
+  const signedOut = () =>
+    createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      auth: { persistSession: false },
+    });
+  // The guidelines are used because publishing them asks nobody to accept anything again.
+  it("only an admin publishes, each publication is a new revision, readers see it, and it is audited", async () => {
+    expect((await publish(owner.client, "guidelines", content("Not allowed"))).error).not.toBeNull();
+    expect((await publish(signedOut(), "guidelines", content("Not allowed"))).error).not.toBeNull();
+    const first = await publish(admin.client, "guidelines", content("Revision one"));
+    expect(first.error).toBeNull();
+    const second = await publish(admin.client, "guidelines", content("Revision two"));
+    expect(second.data).toBe((first.data as number) + 1);
+    const seen = await signedOut()
+      .from("legal_documents")
+      .select("content, revision")
+      .eq("doc", "guidelines")
+      .order("revision", { ascending: false })
+      .limit(1)
+      .single();
+    expect((seen.data!.content as { id: { title: string } }).id.title).toBe("Revision two");
+    const audit = await svc.from("audit_log").select("id").eq("action", "document.publish").eq("actor_id", admin.id);
+    expect((audit.data ?? []).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("refuses short reasons, unknown documents and half-empty documents", async () => {
+    expect(hint((await publish(admin.client, "guidelines", content("x".repeat(10)), "short")).error)).toBe(
+      "reason_short",
+    );
+    expect(hint((await publish(admin.client, "contact", content("Contact page"))).error)).toBe("document_invalid");
+    expect(hint((await publish(admin.client, "guidelines", { id: text("Only one language") })).error)).toBe(
+      "document_invalid",
+    );
+    expect(
+      hint((await publish(admin.client, "guidelines", { id: { title: "T", sections: [] }, en: text("E") })).error),
+    ).toBe("document_invalid");
+  });
+
+  it("published text cannot be changed or deleted, not even directly", async () => {
+    for (const client of [admin.client, owner.client, signedOut()]) {
+      expect(
+        (await client.from("legal_documents").insert({ doc: "guidelines", revision: 999, content: {} })).error,
+      ).not.toBeNull();
+    }
+    expect((await svc.from("legal_documents").update({ revision: 998 }).eq("doc", "guidelines")).error).not.toBeNull();
+    expect((await svc.from("legal_documents").delete().eq("doc", "guidelines")).error).not.toBeNull();
   });
 });

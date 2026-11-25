@@ -139,32 +139,34 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
           />
           <h3 className="mb-2 mt-4 text-sm">{t("beforeAfter")}</h3>
           {open.before || open.after ? (
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="text-text-2">
-                  <th className="py-1 font-semibold">{t("field")}</th>
-                  <th className="font-semibold">{t("before")}</th>
-                  <th className="font-semibold">{t("after")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {diffObjects(open.before, open.after).map((d) => (
-                  <tr
-                    key={d.key}
-                    className={cn(
-                      "border-t border-line",
-                      d.kind === "changed" && "bg-warn-bg/60",
-                      d.kind === "added" && "bg-ok-bg/60",
-                      d.kind === "removed" && "bg-[#fdecea]/70",
-                    )}
-                  >
-                    <td className="py-1.5 pr-3 font-code text-[13px]">{d.key}</td>
-                    <td className="pr-3">{d.before || "—"}</td>
-                    <td>{d.after || "—"}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="text-text-2">
+                    <th className="py-1 pr-3 font-semibold">{t("field")}</th>
+                    <th className="pr-3 font-semibold">{t("before")}</th>
+                    <th className="font-semibold">{t("after")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {diffObjects(open.before, open.after).map((d) => (
+                    <tr
+                      key={d.key}
+                      className={cn(
+                        "border-t border-line",
+                        d.kind === "changed" && "bg-warn-bg/60",
+                        d.kind === "added" && "bg-ok-bg/60",
+                        d.kind === "removed" && "bg-[#fdecea]/70",
+                      )}
+                    >
+                      <td className="py-1.5 pr-3 font-code text-[13px]">{d.key}</td>
+                      <td className="pr-3">{d.before || "—"}</td>
+                      <td>{d.after || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <p className="m-0 text-sm text-text-2">{t("noDiff")}</p>
           )}

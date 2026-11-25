@@ -228,11 +228,15 @@ export default async function StyleguidePage() {
               error={t("fields.emailError")}
               autoComplete="off"
             />
-            <SelectField label={t("fields.kind")} defaultValue="hackathon">
-              <option value="student_program">{t("fields.kindA")}</option>
-              <option value="hackathon">{t("fields.kindB")}</option>
-              <option value="research">{t("fields.kindC")}</option>
-            </SelectField>
+            <SelectField
+              label={t("fields.kind")}
+              defaultValue="hackathon"
+              options={[
+                { value: "student_program", label: t("fields.kindA") },
+                { value: "hackathon", label: t("fields.kindB") },
+                { value: "research", label: t("fields.kindC") },
+              ]}
+            />
             <TextField label={t("fields.disabled")} disabled defaultValue={t("fields.disabledValue")} />
             <TextArea label={t("fields.notes")} hint={t("fields.notesHint")} className="col-span-full" />
             <CheckboxField label={t("fields.check")} className="col-span-full" />

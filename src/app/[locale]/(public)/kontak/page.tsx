@@ -13,7 +13,7 @@ export default async function ContactPage() {
   const [t, settings] = await Promise.all([getTranslations("legal.contact"), getSettings()]);
   const email = settings.contact_email.value;
   return (
-    <LegalDocument doc="contact" sections={0}>
+    <LegalDocument doc="contact">
       <Card className="flex flex-col gap-2">
         {email ? (
           <p className="m-0">

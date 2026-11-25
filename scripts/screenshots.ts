@@ -9,7 +9,7 @@ const base = process.env.E2E_BASE_URL ?? "http://localhost:3100";
 async function login(page: import("@playwright/test").Page, email: string) {
   await page.goto(`${base}/login`);
   await page.getByLabel("Email", { exact: true }).fill(email);
-  await page.getByLabel("Password").fill("Demo-Pass-2026!");
+  await page.getByLabel("Password", { exact: true }).fill("Demo-Pass-2026!");
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForURL("**/dasbor");
 }

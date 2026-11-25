@@ -1,10 +1,16 @@
-import { Link } from "@/i18n/navigation";
-import { Children } from "react";
+"use client";
+
+import { useFormStatus } from "react-dom";
+import { motion } from "framer-motion";
 import { ArrowUpRight, Loader2 } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/cn";
+import { usePrefersReducedMotion } from "@/lib/use-reduced-motion";
 
 export type ButtonVariant = "primary" | "dark" | "darkSolid" | "outline" | "outlineBlue" | "danger" | "ghost" | "white";
 export type ButtonSize = "sm" | "md" | "lg";
+
+const MotionLink = motion.create(Link);
 
 interface Shared {
   variant?: ButtonVariant;
@@ -20,9 +26,9 @@ interface Shared {
 function styles(variant: ButtonVariant, size: ButtonSize, arrow: boolean, glow = false) {
   const mono = size !== "md";
   const base = cn(
-    "btn relative inline-flex select-none items-center justify-center gap-3 whitespace-nowrap rounded-full font-semibold no-underline",
+    "btn relative inline-flex select-none items-center justify-center gap-2.5 whitespace-nowrap rounded-full font-semibold no-underline",
     glow && "btn-glow",
-    "disabled:cursor-not-allowed disabled:opacity-100",
+    "disabled:cursor-not-allowed disabled:opacity-70",
     mono ? "mono-label" : "text-[15px]",
     size === "sm" && "min-h-[44px] text-[12.5px]",
     size === "lg" && "min-h-[52px] text-[13px]",
@@ -34,7 +40,7 @@ function styles(variant: ButtonVariant, size: ButtonSize, arrow: boolean, glow =
         ? "py-[6px] pl-[18px] pr-[6px]"
         : "py-2 pl-6 pr-2"
       : size === "lg"
-        ? "px-7 py-[18px]"
+        ? "px-7 py-3.5"
         : size === "sm"
           ? "px-5 py-2.5"
           : "px-6 py-3";
@@ -67,64 +73,51 @@ function ArrowCircle({ variant, size }: { variant: ButtonVariant; size: ButtonSi
   );
 }
 
-type ButtonProps = Shared &
-  Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children" | "className"> & {
-    /**
-     * The action this button started is running: shows a spinner in place of the label (same size, so nothing moves),
-     * disables the button and sets `aria-busy`. The label stays in the accessibility tree.
-     */
-    pending?: boolean;
-  };
+type ButtonProps = Shared & {
+  /** Shows an inline loading spinner and disables the button while an action is running. */
+  loading?: boolean;
+} & Omit<
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
+    "children" | "className" | "onAnimationStart" | "onDrag" | "onDragEnd" | "onDragStart"
+  >;
 
 export function Button({
   variant = "primary",
   size = "md",
   arrow,
   glow,
+  loading,
   className,
   children,
   type = "button",
-  pending = false,
   disabled,
   ...rest
 }: ButtonProps) {
-  const showArrow = arrow ?? false;
+  const { pending: formPending } = useFormStatus();
+  const isLoading = Boolean(loading || (type === "submit" && formPending));
+  const isDisabled = Boolean(disabled) || isLoading;
+  const showArrow = (arrow ?? false) && !isLoading;
+  const reduce = usePrefersReducedMotion();
+  const inactive = reduce || isDisabled;
+  // A menu trigger gets no Motion press: on Enter, Motion fires a synthetic pointerdown that would close
+  // the menu again as soon as it opens.
+  const opensMenu = rest["aria-haspopup"] === "menu";
   return (
-    <button
+    <motion.button
       type={type}
-      className={cn(styles(variant, size, showArrow, glow), pending && "cursor-progress", className)}
-      disabled={disabled || pending}
-      aria-busy={pending || undefined}
+      disabled={isDisabled}
+      aria-busy={isLoading || undefined}
+      className={cn(styles(variant, size, showArrow, glow), className)}
+      whileHover={inactive ? undefined : { y: -2, scale: 1.015 }}
+      whileTap={inactive || opensMenu ? undefined : { y: 0, scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 460, damping: 26, mass: 0.6 }}
       {...rest}
     >
-      <ButtonContent pending={pending}>
-        {children}
-        {showArrow ? <ArrowCircle variant={variant} size={size} /> : null}
-      </ButtonContent>
-    </button>
+      {isLoading ? <Loader2 size={size === "sm" ? 15 : 17} className="animate-spin" aria-hidden="true" /> : null}
+      {children}
+      {showArrow ? <ArrowCircle variant={variant} size={size} /> : null}
+    </motion.button>
   );
-}
-
-/** Label plus an overlaid spinner while pending. The label only fades, so the button keeps its width. */
-function ButtonContent({ pending, children }: { pending: boolean; children: React.ReactNode }) {
-  if (!pending) return <>{children}</>;
-  return (
-    <>
-      <span className="contents [&>*]:opacity-0">{wrapText(children)}</span>
-      <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
-        <Loader2
-          size={18}
-          strokeWidth={2.5}
-          className="animate-spin motion-reduce:animate-[spin_1.5s_linear_infinite]"
-        />
-      </span>
-    </>
-  );
-}
-
-/** Text children become a span so the `opacity-0` rule above reaches them. */
-function wrapText(children: React.ReactNode): React.ReactNode {
-  return Children.map(children, (c) => (typeof c === "string" || typeof c === "number" ? <span>{c}</span> : c));
 }
 
 type ButtonLinkProps = Shared & {
@@ -148,21 +141,38 @@ export function ButtonLink({
   ...rest
 }: ButtonLinkProps) {
   const showArrow = arrow ?? false;
+  const reduce = usePrefersReducedMotion();
   const cls = cn(styles(variant, size, showArrow, glow), className);
+  const hoverProps = reduce
+    ? {}
+    : {
+        whileHover: { y: -2, scale: 1.015 },
+        whileTap: { y: 0, scale: 0.98 },
+        transition: { type: "spring" as const, stiffness: 460, damping: 26, mass: 0.6 },
+      };
+
   // API routes (downloads, PDFs) are not pages: they must not get a language prefix, so they use a plain anchor.
   if (rest.href.startsWith("/api/")) {
     const { href, download, target, rel, "aria-label": ariaLabel } = rest;
     return (
-      <a className={cls} href={href} download={download} target={target} rel={rel} aria-label={ariaLabel}>
+      <motion.a
+        className={cls}
+        href={href}
+        download={download}
+        target={target}
+        rel={rel}
+        aria-label={ariaLabel}
+        {...hoverProps}
+      >
         {children}
         {showArrow ? <ArrowCircle variant={variant} size={size} /> : null}
-      </a>
+      </motion.a>
     );
   }
   return (
-    <Link className={cls} {...rest}>
+    <MotionLink className={cls} {...hoverProps} {...rest}>
       {children}
       {showArrow ? <ArrowCircle variant={variant} size={size} /> : null}
-    </Link>
+    </MotionLink>
   );
 }

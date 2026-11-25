@@ -6,6 +6,7 @@ import { TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { ReasonAction } from "./ReasonDialog";
 import { openBreakGlass } from "@/app/[locale]/admin/actions";
+import { SelectField } from "@/components/ui/Field";
 
 interface FileMeta {
   id: string;
@@ -32,21 +33,16 @@ export function BreakGlassPanel({ projectId, files }: { projectId: string; files
         <p className="m-0 text-sm text-text-2">{t("noFiles")}</p>
       ) : (
         <>
-          <label htmlFor="bg-file" className="mb-1 block text-sm font-semibold">
-            {t("fileLabel")}
-          </label>
-          <select
-            id="bg-file"
+          <SelectField
+            label={t("fileLabel")}
             value={fileId}
-            onChange={(e) => setFileId(e.target.value)}
-            className="mb-3 min-h-[44px] w-full rounded-[14px] border border-line-strong bg-white px-3.5"
-          >
-            {stored.map((f) => (
-              <option key={f.id} value={f.id}>
-                {t("fileOption", { name: f.name, kind: f.kind, kb: Math.max(1, Math.round(f.size_bytes / 1024)) })}
-              </option>
-            ))}
-          </select>
+            onValueChange={setFileId}
+            className="mb-3"
+            options={stored.map((f) => ({
+              value: f.id,
+              label: t("fileOption", { name: f.name, kind: f.kind, kb: Math.max(1, Math.round(f.size_bytes / 1024)) }),
+            }))}
+          />
           <ReasonAction
             label={t("open")}
             tone="danger"

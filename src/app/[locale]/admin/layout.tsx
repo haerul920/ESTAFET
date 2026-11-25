@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { requireAdmin } from "@/lib/admin/guard";
-import { environmentName } from "@/lib/admin/env";
 
 export const metadata: Metadata = {
   title: { default: "Admin", template: "%s · Admin · ESTAFET" },
@@ -10,9 +9,5 @@ export const metadata: Metadata = {
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAdmin();
-  return (
-    <AdminShell adminName={user.profile?.full_name || user.email} env={environmentName()}>
-      {children}
-    </AdminShell>
-  );
+  return <AdminShell adminName={user.profile?.full_name || user.email}>{children}</AdminShell>;
 }

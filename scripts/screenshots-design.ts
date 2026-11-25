@@ -46,7 +46,7 @@ async function login(browser: Browser, role: Exclude<Role, "guest">, width: numb
   const page = await ctx.newPage();
   await page.goto(`${base}/login`);
   await page.getByLabel("Email", { exact: true }).fill(EMAIL[role]);
-  await page.getByLabel("Kata sandi").fill(PASSWORD);
+  await page.getByLabel("Kata sandi", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Masuk" }).last().click();
   await page.waitForURL(/\/(dasbor|admin|mulai)/);
   return { ctx, state: await ctx.storageState() };

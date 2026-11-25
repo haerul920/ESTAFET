@@ -13,6 +13,9 @@ const LABEL_KEY = {
   terbit: "stepPublish",
 } as const;
 
+/** Every wizard step has the same width and one column. It matches the width of the header. */
+export const WIZARD_WIDTH = 1040;
+
 export function WizardFrame({
   projectId,
   current,
@@ -25,7 +28,7 @@ export function WizardFrame({
   const t = useTranslations("wizard");
   const index = WIZARD_STEPS.indexOf(current);
   return (
-    <PageShell>
+    <PageShell width={WIZARD_WIDTH}>
       <Breadcrumb items={[{ label: t("breadcrumbDashboard"), href: "/dasbor" }, { label: t("shareMeta") }]} />
       <Stepper
         label={t("frameLabel")}

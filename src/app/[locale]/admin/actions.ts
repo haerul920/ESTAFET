@@ -8,15 +8,12 @@ import { createClient as createPlainClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { ReauthRequired, requireAdmin, requireRecentAuth } from "@/lib/admin/guard";
 import { REAUTH_COOKIE, REAUTH_MINUTES, signReauth } from "@/lib/admin/reauth";
-import { isProduction } from "@/lib/admin/env";
 import { setAuthBan } from "@/lib/admin/ban";
 import { sendConfirmationAgain } from "@/lib/admin/auth-users";
-import { removeDemoObjects } from "@/lib/admin/purge";
 import { SUPABASE_PUBLIC_KEY, SUPABASE_URL } from "@/lib/supabase/keys";
-import { runSynthesis } from "@/lib/synthesis";
-import { trialSchema } from "@/lib/admin/trial-schema";
 import { SETTING_KEYS, SETTING_SCHEMAS, type SettingKey } from "@/lib/settings";
 import { KNOWN_HINTS } from "@/lib/errors";
+import { hasFixedAnchors, LEGAL_DOCS, legalContentSchema } from "@/lib/legal/content";
 
 /**
  * Every admin mutation goes through an `admin_*` SQL function that writes the change and the audit row
@@ -186,10 +183,16 @@ export async function endAnnouncement(id: string, reason: string): Promise<Actio
 }
 
 /** A new policy version makes everyone accept it again. It is a platform-wide change, so it needs a recent password check. */
-export async function publishPolicy(kind: "terms" | "privacy", version: number, reason: string): Promise<ActionResult> {
-  if (!Number.isInteger(version) || version < 1) return { error: await msg("wholeVersion") };
+/** Publishes a document written in the editor. For the Terms and the Privacy Policy this is also a new version. */
+export async function publishLegalDocument(doc: string, content: unknown, reason: string): Promise<ActionResult> {
+  const name = z.enum(LEGAL_DOCS).safeParse(doc);
+  const parsed = legalContentSchema.safeParse(content);
+  if (!name.success || !parsed.success || !hasFixedAnchors(name.data, parsed.data))
+    return { error: await msg("documentInvalid") };
   return run(true, async (db) =>
-    fail((await db.rpc("admin_publish_policy", { p_kind: kind, p_version: version, p_reason: reason })).error),
+    fail(
+      (await db.rpc("admin_publish_document", { p_doc: name.data, p_content: parsed.data, p_reason: reason })).error,
+    ),
   );
 }
 
@@ -247,6 +250,14 @@ export async function restoreUser(userId: string, reason: string): Promise<Actio
   });
 }
 
+/** Gives or takes the admin role. Needs a recent password check; the SQL function writes the audit row. */
+export async function setUserRole(userId: string, makeAdmin: boolean, reason: string): Promise<ActionResult> {
+  return run(true, async (db) => {
+    const { error } = await db.rpc("admin_set_role", { p_user: userId, p_admin: makeAdmin, p_reason: reason });
+    if (error) return { error: await dbMsg(error) };
+  });
+}
+
 export async function openBreakGlass(projectId: string, fileId: string, reason: string): Promise<ActionResult> {
   return run(true, async (db) => {
     const { data, error } = await db.rpc("admin_break_glass", {
@@ -270,45 +281,6 @@ export async function addNote(
 }
 
 // ---- Operations -------------------------------------------------------------------------------
-
-export async function cancelRun(runId: string, reason: string): Promise<ActionResult> {
-  return run(false, async (db) => fail((await db.rpc("admin_cancel_run", { p_run: runId, p_reason: reason })).error));
-}
-
-/**
- * Puts a failed ESSENTIAL email back in the queue with a fresh set of attempts. `admin_resend_email` checks the
- * state and writes the audit row in the same transaction; the next run of the email job sends it.
- */
-export async function resendEmail(emailId: string, reason: string): Promise<ActionResult> {
-  return run(false, async (db) =>
-    fail((await db.rpc("admin_resend_email", { p_id: emailId, p_reason: reason })).error),
-  );
-}
-
-/** Writes the audit row first, then re-runs the synthesis. The run counts toward the original user's daily cap. */
-export async function retryRun(runId: string, reason: string): Promise<ActionResult> {
-  return run(false, async (db) => {
-    const { data: row } = await db
-      .from("admin_runs_v")
-      .select("id, project_id, status, requested_by")
-      .eq("id", runId)
-      .maybeSingle();
-    if (!row) return { error: await msg("runNotFound") };
-    if (row.status !== "failed") return { error: await msg("onlyFailed") };
-    const logged = await db.rpc("admin_log_action", {
-      p_action: "run.retry",
-      p_target_type: "synthesis_run",
-      p_target_id: runId,
-      p_reason: reason,
-      p_before: { status: "failed" },
-      p_after: { project_id: row.project_id },
-    });
-    if (logged.error) return { error: await dbMsg(logged.error) };
-    const result = await runSynthesis(row.project_id, row.requested_by);
-    if (!result.ok) return { error: await msg("retryFailed", { detail: result.error }) };
-    return { data: { items: result.items } };
-  });
-}
 
 const SETTING_INPUT: Record<SettingKey, (raw: string | boolean) => unknown> = {
   allowed_email_domains: (r) =>
@@ -338,35 +310,4 @@ export async function updateSetting(key: string, raw: string | boolean, reason: 
   return run(true, async (db) =>
     fail((await db.rpc("admin_update_setting", { p_key: k, p_value: parsed.data, p_reason: reason })).error),
   );
-}
-
-export async function purgeDemoData(reason: string): Promise<ActionResult> {
-  if (isProduction()) return { error: await msg("purgeBlocked") };
-  return run(true, async (db) => {
-    const { data: paths, error: pathError } = await db.rpc("admin_demo_storage_paths");
-    if (pathError) return { error: await dbMsg(pathError) };
-    await removeDemoObjects((paths as string[] | null) ?? []);
-    const { data, error } = await db.rpc("admin_purge_demo", { p_reason: reason, p_allow: !isProduction() });
-    if (error) return { error: await dbMsg(error) };
-    return { data: data as Record<string, unknown> };
-  });
-}
-
-// ---- Trials -----------------------------------------------------------------------------------
-
-export async function saveTrial(
-  input: Record<string, unknown>,
-): Promise<ActionResult & { fieldErrors?: Record<string, string> }> {
-  await requireAdmin();
-  const parsed = trialSchema.safeParse(input);
-  if (!parsed.success) {
-    const fieldErrors: Record<string, string> = {};
-    for (const i of parsed.error.issues) fieldErrors[String(i.path[0] ?? "_")] ??= await msg(`trial_${i.message}`);
-    return { error: await msg("fixFields"), fieldErrors };
-  }
-  const { id, ...rest } = parsed.data;
-  const res = await run(false, async (db) =>
-    fail((await db.rpc("admin_trial_save", { p_id: id || null, p_data: rest })).error),
-  );
-  return res;
 }

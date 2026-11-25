@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ShieldAlert } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/ui/PageShell";
-import { SubmitButton } from "@/components/ui/SubmitButton";
+import { Button } from "@/components/ui/Button";
 import { signOut } from "@/app/actions/auth";
 import { getCurrentUser } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
@@ -46,7 +46,9 @@ export default async function SuspendedPage() {
           )}
         </p>
         <form action={signOut}>
-          <SubmitButton variant="outline">{t("signOut")}</SubmitButton>
+          <Button type="submit" variant="outline">
+            {t("signOut")}
+          </Button>
         </form>
       </div>
     </PageShell>

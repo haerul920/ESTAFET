@@ -42,7 +42,8 @@ export function contentSecurityPolicy({ nonce, dev = false, supabaseUrl }: CspOp
       turnstile,
       ...(dev ? ["ws://localhost:*", "ws://127.0.0.1:*"] : []),
     ],
-    "frame-src": [turnstile],
+    // Storage: the PDF preview shows the private file from its short-lived address.
+    "frame-src": [turnstile, ...(supabase ? [supabase] : [])],
     "worker-src": ["'self'", "blob:"],
     "object-src": ["'none'"],
     "base-uri": ["'self'"],

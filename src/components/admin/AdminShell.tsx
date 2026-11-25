@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import * as Popover from "@radix-ui/react-popover";
-import { ExternalLink, Menu, Rows3, Rows4, Search } from "lucide-react";
+import { ExternalLink, Menu, Search } from "lucide-react";
 import { LogoMark } from "@/components/ui/Logo";
-import type { EnvName } from "@/lib/admin/env";
-import { readDensity, saveDensity, subscribeDensity, type Density } from "@/lib/admin/density";
 import { cn } from "@/lib/cn";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/Dialog";
 import { Tip } from "@/components/ui/Tooltip";
 import { ToastProvider } from "@/components/ui/Toast";
 import { useTranslations } from "next-intl";
+import { motion } from "framer-motion";
+import { iconMotion } from "@/components/ui/motion-presets";
 
 const GROUPS: { group: string; items: { href: string; key: string; exact?: boolean }[] }[] = [
   { group: "groupOverview", items: [{ href: "/admin", key: "navOverview", exact: true }] },
@@ -33,15 +33,6 @@ const GROUPS: { group: string; items: { href: string; key: string; exact?: boole
     ],
   },
   {
-    group: "groupOperations",
-    items: [
-      { href: "/admin/pipeline", key: "navPipeline" },
-      { href: "/admin/emails", key: "navEmails" },
-      { href: "/admin/requests", key: "navRequests" },
-    ],
-  },
-  { group: "groupEvidence", items: [{ href: "/admin/trials", key: "navTrials" }] },
-  {
     group: "groupGovernance",
     items: [
       { href: "/admin/audit", key: "navAudit" },
@@ -49,28 +40,6 @@ const GROUPS: { group: string; items: { href: string; key: string; exact?: boole
     ],
   },
 ];
-
-const SHORTCUTS: [string, string, string][] = [
-  ["g then o", "navOverview", "/admin"],
-  ["g then p", "navProjects", "/admin/projects"],
-  ["g then r", "navReports", "/admin/reports"],
-  ["g then u", "navUsers", "/admin/users"],
-  ["g then a", "navAudit", "/admin/audit"],
-];
-const GO: Record<string, string> = {
-  o: "/admin",
-  p: "/admin/projects",
-  r: "/admin/reports",
-  u: "/admin/users",
-  a: "/admin/audit",
-};
-
-const ENV_STYLE = {
-  LOCAL: "bg-ok-bg text-ok",
-  DEMO: "bg-blue-tint text-blue-dark",
-  STAGING: "bg-warn-bg text-warn",
-  PRODUCTION: "bg-danger text-white",
-} as const;
 
 interface Hit {
   id: string;
@@ -204,57 +173,15 @@ function GlobalSearch() {
   );
 }
 
-export function AdminShell({
-  adminName,
-  env,
-  children,
-}: {
-  adminName: string;
-  env: EnvName;
-  children: React.ReactNode;
-}) {
+export function AdminShell({ adminName, children }: { adminName: string; children: React.ReactNode }) {
   const t = useTranslations("admin.shell");
   const pathname = usePathname();
-  const router = useRouter();
   const [drawer, setDrawer] = useState(false);
-  const [help, setHelp] = useState(false);
-  // Table density: stored in this browser only. Kept in memory as well, so the switch works when storage is blocked.
-  const storedDensity = useSyncExternalStore<Density>(subscribeDensity, readDensity, () => "comfortable");
-  const [densityChoice, setDensityChoice] = useState<Density | null>(null);
-  const density = densityChoice ?? storedDensity;
-  const compact = density === "compact";
   const [prevPath, setPrevPath] = useState(pathname);
   if (prevPath !== pathname) {
     setPrevPath(pathname);
     setDrawer(false);
   }
-
-  // g then <letter> navigation and "?" for help. Never fires while typing or with modifier keys.
-  useEffect(() => {
-    let armed = 0;
-    const onKey = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement | null;
-      if (
-        el &&
-        (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)
-      )
-        return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === "?") {
-        setHelp((v) => !v);
-        return;
-      }
-      if (e.key === "Escape") setHelp(false);
-      if (armed && Date.now() - armed < 1200 && GO[e.key]) {
-        armed = 0;
-        router.push(GO[e.key]);
-        return;
-      }
-      armed = e.key === "g" ? Date.now() : 0;
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [router]);
 
   // Navigation labels are picked by key (see messages admin.shell.*).
   const label = t as unknown as (key: string) => string;
@@ -293,56 +220,32 @@ export function AdminShell({
       <div className="flex min-h-screen bg-[#f7f8fa]">
         <aside className="sticky top-0 hidden h-screen w-[230px] flex-none flex-col gap-5 overflow-auto border-r border-line bg-surface p-4 min-[900px]:flex">
           <Link href="/admin" className="flex items-center gap-2 px-2 text-ink no-underline">
-            <LogoMark size={26} />
-            <span className="font-semibold tracking-[0.02em]">ESTAFET</span>
+            <LogoMark size={23} />
+            <span className="sr-only">ESTAFET</span>
             <span className="mono-label rounded bg-ink px-1.5 py-0.5 text-[10px] text-white">{t("tag")}</span>
           </Link>
           {nav}
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col" data-density={density}>
+        <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-sticky flex flex-wrap items-center gap-3 border-b border-line bg-white/90 px-4 py-2.5 backdrop-blur">
             <Dialog open={drawer} onOpenChange={setDrawer}>
               <DialogTrigger asChild>
-                <button
+                <motion.button
+                  {...iconMotion}
                   type="button"
                   aria-label={t("openMenu")}
-                  className="icon-btn flex h-11 w-11 cursor-pointer items-center justify-center rounded-full hover:bg-surface min-[900px]:hidden"
+                  className="icon-press flex h-11 w-11 cursor-pointer items-center justify-center rounded-full hover:bg-surface min-[900px]:hidden"
                 >
                   <Menu size={20} aria-hidden="true" />
-                </button>
+                </motion.button>
               </DialogTrigger>
               <DialogContent variant="drawer" title={t("menuTitle")} closeLabel={t("closeMenu")} className="bg-surface">
                 <div className="mt-10">{nav}</div>
               </DialogContent>
             </Dialog>
             <GlobalSearch />
-            <Tip label={t("env")}>
-              <span tabIndex={0} className={cn("mono-label rounded-full px-3 py-1 text-[11px]", ENV_STYLE[env])}>
-                {env}
-              </span>
-            </Tip>
             <div className="ml-auto flex items-center gap-3 text-sm">
-              <button
-                type="button"
-                aria-pressed={compact}
-                onClick={() => {
-                  const next: Density = compact ? "comfortable" : "compact";
-                  setDensityChoice(next);
-                  saveDensity(next);
-                }}
-                className="hidden min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full px-3 font-semibold text-text-2 hover:bg-surface aria-pressed:bg-blue-tint aria-pressed:text-blue-dark md:inline-flex"
-              >
-                {compact ? <Rows4 size={16} aria-hidden="true" /> : <Rows3 size={16} aria-hidden="true" />}
-                {t("compactRows")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setHelp(true)}
-                className="hidden cursor-pointer rounded-full px-3 py-1.5 font-semibold text-text-2 hover:bg-surface sm:block"
-              >
-                {t("shortcuts")}
-              </button>
               <Link href="/" className="inline-flex items-center gap-1 text-text-2 no-underline hover:text-ink">
                 {t("publicSite")} <ExternalLink size={14} aria-hidden="true" />
               </Link>
@@ -358,33 +261,6 @@ export function AdminShell({
           </main>
         </div>
       </div>
-
-      <Dialog open={help} onOpenChange={setHelp}>
-        <DialogContent title={t("helpTitle")} closeLabel={t("helpClose")} className="max-w-[380px]">
-          <table className="mt-3 w-full text-sm">
-            <tbody>
-              <tr>
-                <td className="py-1 font-code">/</td>
-                <td>{t("helpSearch")}</td>
-              </tr>
-              {SHORTCUTS.map(([k, l]) => (
-                <tr key={k}>
-                  <td className="py-1 font-code">{k}</td>
-                  <td>{t("helpGo", { page: label(l) })}</td>
-                </tr>
-              ))}
-              <tr>
-                <td className="py-1 font-code">?</td>
-                <td>{t("helpToggle")}</td>
-              </tr>
-              <tr>
-                <td className="py-1 font-code">{t("keyEnter")}</td>
-                <td>{t("helpRow")}</td>
-              </tr>
-            </tbody>
-          </table>
-        </DialogContent>
-      </Dialog>
     </ToastProvider>
   );
 }

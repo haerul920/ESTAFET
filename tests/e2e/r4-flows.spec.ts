@@ -1,11 +1,11 @@
 import "../../scripts/lib/env";
 import { expect, test } from "@playwright/test";
-import { adminDb as admin, newUserPage as newPage, signIn, signUp } from "./helpers";
+import { pickOption, adminDb as admin, newUserPage as newPage, signIn, signUp } from "./helpers";
 
 /**
  * R4 flows (run in English: the other specs do too).
  *  1. Manual mode and open access: share, publish, unpublish, publish again. No AI is involved.
- *  2. A project that is paused, then full, then open again, with "Notify me". Uses seeded demo data and restores it.
+ *  2. A project with one team slot that becomes full, with "Notify me". Uses seeded demo data and restores it.
  * The by-request approval, the declined request and "the same account shares and continues" are in core-flow.spec.ts.
  */
 const stamp = Date.now();
@@ -17,12 +17,8 @@ test("manual mode and open access: share, publish, unpublish and publish again",
   // ---- Step 1: basics
   await page.goto("/en/bagikan");
   await page.getByLabel("Project title").fill(title);
-  await page
-    .getByLabel("Short summary")
-    .fill("A synthetic project whose notes are written by hand, with no AI involved at any point.");
-  await page.getByLabel("Type of work").selectOption("hackathon");
-  await page.getByLabel("Faculty or field").selectOption("Engineering");
-  await page.getByLabel("Why did it stop?").selectOption("team_graduated");
+  await pickOption(page, "Type of work", "Hackathon");
+  await pickOption(page, "Faculty or field", "Faculty of Engineering (FT)");
   await page.getByRole("button", { name: "Save and continue" }).click();
   await page.waitForURL("**/berkas");
 
@@ -42,7 +38,7 @@ test("manual mode and open access: share, publish, unpublish and publish again",
   // ---- Step 4: team consent (there is no advisor step), open access with one team at a time
   await page.getByRole("button", { name: "I confirm" }).click();
   await page.getByRole("radio", { name: /^Open with an agreement/ }).check();
-  await page.getByLabel("How many continuing teams at once").selectOption("1");
+  await pickOption(page, "How many continuing teams at once", /^1 /);
   await page.getByRole("button", { name: "Save access rules" }).click();
   await expect(page.getByText("Access rules saved.")).toBeVisible();
   await page.getByRole("link", { name: "Continue to the preview" }).click();
@@ -81,7 +77,7 @@ test("manual mode and open access: share, publish, unpublish and publish again",
   await visitor.context.close();
 });
 
-test("paused, then full, then open again: the call to action changes and watchers are told", async ({ browser }) => {
+test("one team slot: the call to action changes when the project is full", async ({ browser }) => {
   const SLUG = "campus-waste-sorting-assistant";
   const PROJECT = "b0000000-0000-4000-8000-000000000002";
   const db = admin();
@@ -100,32 +96,12 @@ test("paused, then full, then open again: the call to action changes and watcher
     await signIn(watcher.page, "creator@estafet.demo");
     await signIn(taker.page, "adopter@estafet.demo");
 
-    // ---- The owner pauses access
+    // ---- The owner limits the project to one team at a time
     await owner.page.goto(`/en/proyek/${SLUG}/pengaturan`);
-    await owner.page.getByRole("radio", { name: /^Paused/ }).check();
-    await expect(owner.page.getByText(/From “Open with an agreement” to “Paused”/)).toBeVisible();
+    await expect(owner.page.getByRole("radio", { name: /^Paused/ })).toHaveCount(0);
+    await pickOption(owner.page, "How many continuing teams at once", /^1 /);
     await owner.page.getByRole("button", { name: "Save access rules" }).click();
     await expect(owner.page.getByText("Access rules saved.")).toBeVisible();
-
-    // ---- A visitor sees "paused" and asks to be told
-    await watcher.page.goto(`/en/projects/${SLUG}`);
-    await expect(watcher.page.getByRole("heading", { name: "New access is paused" })).toBeVisible();
-    await watcher.page.getByRole("button", { name: "Notify me" }).click();
-    await expect(watcher.page.getByRole("button", { name: "Stop notifying me" })).toBeVisible();
-
-    // ---- The owner opens access again with room for one team: the watcher gets exactly one notification
-    await owner.page.getByRole("radio", { name: /^Open with an agreement/ }).check();
-    await owner.page.getByLabel("How many continuing teams at once").selectOption("1");
-    await owner.page.getByRole("button", { name: "Save access rules" }).click();
-    await expect(owner.page.getByText("Access rules saved.")).toBeVisible();
-    const creator = await db.from("profiles").select("id").eq("full_name", "Demo Creator A").maybeSingle();
-    const notes = await db
-      .from("notifications")
-      .select("payload")
-      .eq("type", "watch_open")
-      .eq("payload->>project_id", PROJECT);
-    expect((notes.data ?? []).length).toBeGreaterThanOrEqual(1);
-    void creator;
 
     // ---- Another team takes the only slot: the project is full
     await taker.page.goto(`/en/projects/${SLUG}`);

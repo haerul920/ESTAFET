@@ -31,7 +31,10 @@ export function SegmentedTabs({
   const group = useId();
   return (
     <RTabs.Root value={value} onValueChange={onChange}>
-      <RTabs.List aria-label={label} className="mb-4 flex flex-wrap gap-2 border-b border-line">
+      <RTabs.List
+        aria-label={label}
+        className="mb-4 flex flex-wrap gap-2 border-b border-line max-sm:flex-nowrap max-sm:overflow-x-auto"
+      >
         {tabs.map((t) => {
           const active = t.id === value;
           return (
@@ -39,7 +42,7 @@ export function SegmentedTabs({
               key={t.id}
               value={t.id}
               className={cn(
-                "relative min-h-[44px] cursor-pointer px-4 py-3 text-base",
+                "relative min-h-[44px] flex-none cursor-pointer whitespace-nowrap px-4 py-3 text-base max-sm:px-3 max-sm:text-sm",
                 active ? "font-semibold text-blue" : "font-medium text-text-2 hover:text-ink",
               )}
             >

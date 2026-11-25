@@ -182,7 +182,7 @@ describe("R8 Authz 1: User A vs User B isolation & IDOR on project objects", () 
         (
           await coOwner.client.rpc("set_access_settings", {
             p_project_id: pub.projectId,
-            p_mode: "paused",
+            p_mode: "by_request",
             p_max: 1,
           })
         ).error,

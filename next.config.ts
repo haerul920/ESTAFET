@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
     return [
       { source: "/dashboard", destination: "/dasbor", permanent: false },
       { source: "/en/dashboard", destination: "/en/dasbor", permanent: false },
+      // "Account privacy" became "Settings". Links in emails already sent keep working.
+      { source: "/akun/privasi", destination: "/akun/setelan", permanent: true },
+      { source: "/en/akun/privasi", destination: "/en/akun/setelan", permanent: true },
       // R4: the share wizard moved to /bagikan with new step names. Old links and bookmarks keep working.
       { source: "/share", destination: "/bagikan", permanent: true },
       { source: "/en/share", destination: "/en/bagikan", permanent: true },
@@ -49,7 +52,7 @@ const nextConfig: NextConfig = {
     ];
   },
   poweredByHeader: false,
-  serverExternalPackages: ["pdfjs-dist", "@react-pdf/renderer", "jszip"],
+  serverExternalPackages: ["pdfjs-dist", "@react-pdf/renderer", "jszip", "sharp"],
   experimental: {
     serverActions: { bodySizeLimit: "30mb" },
   },

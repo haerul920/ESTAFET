@@ -61,13 +61,15 @@ const FILE_NS = {
   "src/lib/lineage.ts": { t: "lineage" },
   "src/lib/agreement/terms.ts": { t: "agreement" },
   "src/lib/errors.ts": { t: "errors" },
+  // The upload routes get their translators from openUpload().
+  "src/app/api/projects/[id]/files/route.ts": { api: "api", upload: "upload" },
+  "src/app/api/projects/[id]/files/prepare/route.ts": { api: "api", upload: "upload" },
 };
 // Keys that are built from data at run time (enum values, SQL hints), so a static scan cannot see them used.
 const DYNAMIC_PREFIXES = [
   "labels.",
   "email.",
   "errors.hints.",
-  "synth.error.",
   "lineage.events.",
   "report.r.",
   "auth.demo",
@@ -85,6 +87,15 @@ const DYNAMIC_PREFIXES = [
   "admin.settings.row.source",
   "admin.policies.terms",
   "admin.policies.privacy",
+  "admin.policies.guidelines",
+  "admin.policies.attribution",
+  // The built-in text of the legal pages is read from the message files by src/lib/legal/defaults.ts.
+  "legalExtras.",
+  // Chosen by a code: why a file was refused, what happened to it, and what a cited number counts.
+  "upload.reject.",
+  "upload.note.",
+  "workspace.ref.",
+  "synth.error.",
   "decision.status",
   "decision.action.",
   "myReports.status.",
@@ -247,29 +258,6 @@ for (const file of files) {
       if (words.length) fail(`${rel}:${i + 1}: hard-coded text "${s.slice(0, 60)}"`);
     }
   });
-}
-
-// 5. t.rich: a function value needs a <tag> in the message. With a plain {arg} placeholder next-intl inserts the
-// function itself, and React fails with "Functions are not valid as a React child" (seen on the files step).
-for (const file of files) {
-  const rel = relative(ROOT, file).replaceAll("\\", "/");
-  const src = readFileSync(file, "utf8");
-  for (const m of src.matchAll(/\.rich\(\s*"([\w.]+)"\s*,\s*\{([\s\S]*?)\}\s*\)/g)) {
-    const [, key, body] = m;
-    const fnArgs = [...body.matchAll(/(\w+)\s*:\s*(?:\(\s*\w*\s*\)|\w+)\s*=>/g)].map((x) => x[1]);
-    for (const [lang, map] of [
-      ["id", idMap],
-      ["en", enMap],
-    ]) {
-      // The namespace is not resolved here: the call is wrong when no message with this key has the tag.
-      const msgs = [...map].filter(([k]) => k === key || k.endsWith("." + key)).map(([, v]) => String(v));
-      for (const a of fnArgs)
-        if (msgs.length && msgs.every((v) => !v.includes(`<${a}>`)))
-          fail(
-            `${rel}: t.rich("${key}") passes a function for "${a}", but the ${lang} message has no <${a}>…</${a}> tag`,
-          );
-    }
-  }
 }
 
 if (errors.length) {

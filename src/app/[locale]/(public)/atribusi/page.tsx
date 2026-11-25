@@ -6,5 +6,5 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 export default function AttributionPage() {
-  return <LegalDocument doc="attribution" sections={5} />;
+  return <LegalDocument doc="attribution" />;
 }

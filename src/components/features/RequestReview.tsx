@@ -44,12 +44,8 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
   const [info, setInfo] = useState("");
   const [confirmDecline, setConfirmDecline] = useState(false);
   const [pending, start] = useTransition();
-  // Which button started the running action, so only that one shows the spinner.
-  const [busy, setBusy] = useState<"approve" | "ask" | "decline" | "withdraw" | null>(null);
 
-  // setBusy runs outside the transition: inside it, the update would wait until the action is done.
-  const run = (which: NonNullable<typeof busy>, fn: () => Promise<{ error?: string }>, ok?: string) => {
-    setBusy(which);
+  const run = (fn: () => Promise<{ error?: string }>, ok?: string) =>
     start(async () => {
       setError("");
       setInfo("");
@@ -60,7 +56,6 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
         router.refresh();
       }
     });
-  };
 
   if (status !== "pending") {
     const state =
@@ -100,9 +95,9 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
                 <Button
                   variant="danger"
                   size="md"
-                  pending={pending && busy === "withdraw"}
+                  loading={pending}
                   disabled={pending}
-                  onClick={() => run("withdraw", () => withdrawRequest(requestId))}
+                  onClick={() => run(() => withdrawRequest(requestId))}
                 >
                   {t("withdrawYes")}
                 </Button>
@@ -161,23 +156,23 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
       <div className="flex flex-wrap gap-3">
         <Button
           size="md"
-          pending={pending && busy === "approve"}
+          loading={pending}
           disabled={pending}
-          onClick={() => run("approve", () => decideRequest(requestId, "approved", message))}
+          onClick={() => run(() => decideRequest(requestId, "approved", message))}
         >
           {t("approve")}
         </Button>
         <Button
           variant="outline"
           size="md"
-          pending={pending && busy === "ask"}
+          loading={pending}
           disabled={pending}
           onClick={() => {
             if (!message.trim()) {
               setError(t("questionFirst"));
               return;
             }
-            run("ask", () => askQuestion(requestId, message), t("questionSent"));
+            run(() => askQuestion(requestId, message), t("questionSent"));
           }}
         >
           {t("ask")}
@@ -187,9 +182,9 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
             <Button
               variant="danger"
               size="md"
-              pending={pending && busy === "decline"}
+              loading={pending}
               disabled={pending}
-              onClick={() => run("decline", () => decideRequest(requestId, "declined", message))}
+              onClick={() => run(() => decideRequest(requestId, "declined", message))}
             >
               {t("declineYes")}
             </Button>
@@ -284,8 +279,8 @@ export function AgreementCard(p: ReviewProps) {
           <CheckboxField checked={accepted} onChange={(e) => setAccepted(e.target.checked)} label={t("acceptLabel")} />
           <Button
             size="md"
+            loading={pending}
             disabled={!accepted || pending || !p.verified}
-            pending={pending}
             onClick={accept}
             className="self-start"
           >
@@ -365,8 +360,8 @@ function RevokeControl({ accessId, requestId, name }: { accessId: string; reques
         <Button
           variant="danger"
           size="md"
+          loading={pending}
           disabled={pending || reason.trim().length < 15}
-          pending={pending}
           onClick={() =>
             start(async () => {
               setError("");

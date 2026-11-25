@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { AVATAR_BUCKET, ownAvatarPath } from "./avatar";
 
 /**
  * Finishes an account deletion after the 30 day grace period (CLAUDE.md 14.10).
@@ -47,12 +48,22 @@ export function scrubbedEmail(profileId: string): string {
 export async function processAccountDeletion(db: DeletionClient, profileId: string): Promise<DeletionResult> {
   const result: DeletionResult = { profileId, ok: false, draftsDeleted: 0, filesRemoved: 0 };
 
+  // Read first: anonymizing the account clears the column that names the photo.
+  const before = await db.from("profiles").select("avatar_url").eq("id", profileId);
+  if (before.error) return { ...result, error: before.error.message };
+  const stored = (before.data as { avatar_url: string | null }[] | null)?.[0]?.avatar_url;
   const anon = await db.rpc("anonymize_deleted_account", { p_profile: profileId });
   if (anon.error) return { ...result, error: anon.error.message };
   const drafts = ((anon.data as { draft_projects?: string[] } | null)?.draft_projects ?? []).filter(Boolean);
 
   // From here on the database step is done. A failure below is reported with the profile id so it can be finished by hand.
   try {
+    const photo = ownAvatarPath(profileId, stored);
+    if (photo) {
+      const r = await db.storage.from(AVATAR_BUCKET).remove([photo]);
+      if (r.error) throw new Error(r.error.message);
+      result.filesRemoved += 1;
+    }
     for (const projectId of drafts) {
       const files = await db
         .from("project_files")

@@ -4,6 +4,7 @@ import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { hasAcceptedPolicies } from "@/lib/db/access";
+import { claimPendingTeamInvites } from "@/lib/db/owner";
 import type { Profile } from "@/lib/db/types";
 
 export interface CurrentUser {
@@ -31,6 +32,9 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
+  if (user.email) {
+    await claimPendingTeamInvites(user.id, user.email);
+  }
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
   const p = (profile as Profile | null) ?? null;
   return {
@@ -44,30 +48,15 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 
 const policiesAccepted = cache(hasAcceptedPolicies);
 
-/** Asks the database (is_admin()), never a client flag. Cached per request. */
-export const isAdmin = cache(async (): Promise<boolean> => {
-  const supabase = await createClient();
-  const { data } = await supabase.rpc("is_admin");
-  return data === true;
-});
-
 /**
  * Redirects guests to the login page, then back to `next` after sign in. A person who has not accepted the CURRENT
  * Terms and Privacy Policy is sent to the re-acceptance screen first (a new version forces everyone to accept again).
- *
- * Admin accounts work in /admin only (owner decision, 2026-11-23): every user page and user action sends them to
- * /admin. They keep the public pages (home, Explore, teasers, legal pages), their own privacy page and the policy
- * screen, which pass `allowAdmin`.
  */
-export async function requireUser(
-  next: string,
-  options: { skipPolicyCheck?: boolean; allowAdmin?: boolean } = {},
-): Promise<CurrentUser> {
+export async function requireUser(next: string, options: { skipPolicyCheck?: boolean } = {}): Promise<CurrentUser> {
   const user = await getCurrentUser();
   const locale = await getLocale();
   if (!user) redirect({ href: `/login?next=${encodeURIComponent(next)}`, locale });
   if (user.suspended) redirect({ href: "/suspended", locale });
-  if (!options.allowAdmin && (await isAdmin())) redirect({ href: "/admin", locale });
   if (!options.skipPolicyCheck && !(await policiesAccepted())) {
     redirect({ href: `/kebijakan/setujui?next=${encodeURIComponent(next)}`, locale });
   }

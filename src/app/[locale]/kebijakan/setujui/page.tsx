@@ -8,8 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/validation";
 import { PageShell } from "@/components/ui/PageShell";
 import { Card } from "@/components/ui/Card";
-import { SubmitButton } from "@/components/ui/SubmitButton";
-import { FormMessage } from "@/components/ui/Field";
+import { Button } from "@/components/ui/Button";
 import { acceptPoliciesAndContinue } from "@/app/actions/account";
 import { signOut } from "@/app/actions/auth";
 
@@ -23,14 +22,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
  * Shown to a signed-in person when a newer version of the Terms or the Privacy Policy exists than the one they accepted.
  * Until they accept, protected pages send them here (see `requireUser`).
  */
-export default async function PolicyGatePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ next?: string; error?: string }>;
-}) {
-  const { next: rawNext, error } = await searchParams;
+export default async function PolicyGatePage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const { next: rawNext } = await searchParams;
   const next = safeNext(rawNext);
-  await requireUser(`/kebijakan/setujui?next=${encodeURIComponent(next)}`, { skipPolicyCheck: true, allowAdmin: true });
+  await requireUser(`/kebijakan/setujui?next=${encodeURIComponent(next)}`, { skipPolicyCheck: true });
   const locale = await getLocale();
   if (await hasAcceptedPolicies()) redirect({ href: next, locale });
 
@@ -58,10 +53,6 @@ export default async function PolicyGatePage({
             </Link>
           </li>
         </ul>
-        <p className="m-0 rounded-[14px] bg-warn-bg p-3 text-sm text-warn-ink">{t("draft")}</p>
-        {error === "unchecked" || error === "failed" ? (
-          <FormMessage tone="error">{t(error === "unchecked" ? "errorUnchecked" : "errorFailed")}</FormMessage>
-        ) : null}
         <form action={acceptPoliciesAndContinue} className="flex flex-col gap-4">
           <input type="hidden" name="next" value={next} />
           <label className="flex min-h-[44px] cursor-pointer items-start gap-3">
@@ -69,11 +60,13 @@ export default async function PolicyGatePage({
             <span className="text-[15px]">{t("accept")}</span>
           </label>
           <div className="flex flex-wrap items-center gap-3">
-            <SubmitButton>{t("button")}</SubmitButton>
+            <Button type="submit">{t("button")}</Button>
           </div>
         </form>
         <form action={signOut}>
-          <SubmitButton variant="outline">{t("signOut")}</SubmitButton>
+          <Button type="submit" variant="outline">
+            {t("signOut")}
+          </Button>
         </form>
       </Card>
     </PageShell>

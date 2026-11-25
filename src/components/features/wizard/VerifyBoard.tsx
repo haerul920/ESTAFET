@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
-import { Check, FlaskConical, Pencil, Plus, Sparkles, Trash2, Undo2 } from "lucide-react";
+import { FileText, Check, Pencil, Plus, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Badge, EvidenceChip } from "@/components/ui/Badge";
@@ -17,11 +17,13 @@ import { useLabels } from "@/lib/use-labels";
 import { cn } from "@/lib/cn";
 import type { DraftItem, ItemKind, ReviewStatus } from "@/lib/db/types";
 import type { SourceView } from "@/lib/db/owner";
+import { SaveExitButton } from "./SaveExit";
+import { useToast } from "@/components/ui/Toast";
+import { WizardActions } from "./WizardActions";
+
+const DESCRIPTION_MIN = 10;
 
 const FILTERS = [
-  { id: "all", key: "fAll" },
-  { id: "objective", key: "fObjectives" },
-  { id: "completed", key: "fCompleted" },
   { id: "next_task", key: "fNext" },
   { id: "lesson", key: "fLessons" },
 ] as const;
@@ -36,7 +38,6 @@ export function VerifyBoard({
   projectId,
   initialItems,
   sources,
-  mockMode,
   summary,
   draftSummary,
   manual = false,
@@ -44,7 +45,6 @@ export function VerifyBoard({
   projectId: string;
   initialItems: DraftItem[];
   sources: Record<string, SourceView>;
-  mockMode: boolean;
   summary: string;
   draftSummary: string | null;
   /** The owners chose "Isi manual tanpa AI": no AI draft, no evidence checks, items are written by hand. */
@@ -55,25 +55,38 @@ export function VerifyBoard({
   const L = useLabels();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
-  const [items, setItems] = useState(initialItems);
-  const [selected, setSelected] = useState<string | null>(
-    initialItems.find((i) => i.review_status === "pending")?.id ?? initialItems[0]?.id ?? null,
-  );
-  const [filter, setFilter] = useState("all");
+  const [items, setItems] = useState(() => initialItems.filter((i) => i.kind === "next_task" || i.kind === "lesson"));
+  // Open on the suggestions, or on the materials when there are only materials.
+  const [filter, setFilter] = useState<string>(() => {
+    const open = initialItems.filter((i) => i.review_status !== "removed");
+    return !open.some((i) => i.kind === "next_task") && open.some((i) => i.kind === "lesson") ? "lesson" : "next_task";
+  });
+  const [selected, setSelected] = useState<string | null>(() => {
+    const open = initialItems.filter((i) => i.kind === filter && i.review_status !== "removed");
+    return open.find((i) => i.review_status === "pending")?.id ?? open[0]?.id ?? null;
+  });
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState({ title: "", description: "" });
   const [error, setError] = useState("");
   const [adding, setAdding] = useState(manual && initialItems.length === 0);
-  const [, startTransition] = useTransition();
-  const [summaryUsed, setSummaryUsed] = useState(false);
+  const [savingSummary, startTransition] = useTransition();
+  // What is saved on the project wins. The text of the last AI run is only a fallback.
+  const [summaryText, setSummaryText] = useState(() => (summary?.trim() || draftSummary || "").trim());
+  const [editingSummary, setEditingSummary] = useState(false);
+  const [summaryDraftInput, setSummaryDraftInput] = useState(summaryText);
+  const toast = useToast();
 
-  const total = items.length;
-  const reviewed = items.filter((i) => i.review_status !== "pending").length;
-  const keptCount = items.filter((i) => i.review_status === "kept").length;
+  // A removed item is gone from the board. It stays in the database as "removed", so Undo can bring it back.
+  const shown = items.filter((i) => i.review_status !== "removed");
+  const total = shown.length;
+  const reviewed = shown.filter((i) => i.review_status !== "pending").length;
+  const keptCount = shown.filter((i) => i.review_status === "kept").length;
   const allReviewed = total > 0 && reviewed === total && keptCount > 0;
   // Review only needs the items. Team consent comes on the next step ("Team and access").
   const ready = allReviewed;
-  const visible = items.filter((i) => filter === "all" || i.kind === filter);
+  const visible = shown.filter((i) => i.kind === filter);
+  // The progress under the tabs belongs to the open tab. Going on still needs both tabs done.
+  const tabReviewed = visible.filter((i) => i.review_status !== "pending").length;
   const sel = items.find((i) => i.id === selected) ?? null;
   const source = sel ? sources[sel.id] : null;
 
@@ -95,6 +108,29 @@ export function VerifyBoard({
     void persist(item.id, { review_status: next }, item);
   }
 
+  function removeItem(item: DraftItem) {
+    const next = shown.filter((i) => i.id !== item.id && i.kind === item.kind);
+    if (editing === item.id) setEditing(null);
+    setSelected(next[0]?.id ?? null);
+    setItems((cur) => cur.map((i) => (i.id === item.id ? { ...i, review_status: "removed" } : i)));
+    void persist(item.id, { review_status: "removed" }, item);
+    toast.push({
+      message: t("removedToast", { title: item.title.slice(0, 60) }),
+      undo: async () => {
+        const { error: err } = await supabase
+          .from("draft_items")
+          .update({ review_status: item.review_status })
+          .eq("id", item.id);
+        if (err) return { error: t("saveFailed") };
+        setItems((cur) => cur.map((i) => (i.id === item.id ? { ...i, review_status: item.review_status } : i)));
+        setFilter(item.kind);
+        setSelected(item.id);
+        startTransition(() => router.refresh());
+        return {};
+      },
+    });
+  }
+
   function startEdit(item: DraftItem) {
     setEditing(item.id);
     setSelected(item.id);
@@ -105,6 +141,10 @@ export function VerifyBoard({
     const title = draft.title.trim();
     if (title.length < 3) {
       setError("A title needs at least 3 characters.");
+      return;
+    }
+    if (item.kind === "next_task" && draft.description.trim().length < DESCRIPTION_MIN) {
+      setError(t("descRequired", { min: DESCRIPTION_MIN }));
       return;
     }
     const patch = { title, description: draft.description.trim() };
@@ -135,69 +175,106 @@ export function VerifyBoard({
             {tf("switchBtn")}
           </ButtonLink>
         </div>
-      ) : mockMode ? (
-        <div role="status" className="mb-6 flex items-start gap-3 rounded-[18px] bg-warn-bg p-4 text-warn-ink">
-          <FlaskConical size={20} className="mt-0.5 flex-none" aria-hidden="true" />
-          <span>
-            <strong>{t("mockBold")}</strong> {t("mockText")}
-          </span>
-        </div>
       ) : null}
 
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-6">
-        <div className="min-w-[280px] flex-[1_1_440px]">
+      <div className="mb-6 flex flex-col gap-4">
+        <div>
           <h1 className="mb-2 mt-0 text-4xl font-medium max-sm:text-[28px]">{t("title")}</h1>
-          <p className="m-0 text-text-2">{t("intro")}</p>
-        </div>
-        <div className="flex-[0_1_280px]">
-          <div className="mb-1.5 text-sm" aria-live="polite">
-            <strong>{t("reviewedCount", { reviewed, total })}</strong>
-          </div>
-          <AnimatedBar pct={total ? (reviewed / total) * 100 : 0} track="#DDE1E5" label={t("barLabel")} />
+          <p className="m-0 text-text-2">{manual ? t("introManual") : t("intro")}</p>
         </div>
       </div>
 
-      {draftSummary && !summaryUsed && draftSummary.trim() !== summary.trim() ? (
-        <Card tone="blue" className="mb-6">
-          <h2 className="mb-1 mt-0 flex items-center gap-2 text-base">
-            <Sparkles size={16} aria-hidden="true" /> {t("summaryTitle")}
+      {/* Always here: this is where the summary is written, also when there is none yet. */}
+      <Card tone="blue" className="mb-6">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="m-0 flex items-center gap-2 text-base">
+            <FileText size={16} aria-hidden="true" /> {t("summaryTitle")}
           </h2>
-          <p className="mb-3 mt-0 text-[15px] text-text-3">{draftSummary}</p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="md"
-              variant="outlineBlue"
-              onClick={() =>
-                startTransition(async () => {
-                  const r = await applyDraftSummary(projectId, draftSummary);
-                  if (r.error) setError(r.error);
-                  else setSummaryUsed(true);
-                })
-              }
+          {!editingSummary ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSummaryDraftInput(summaryText);
+                setEditingSummary(true);
+              }}
+              className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-full border border-blue bg-white px-3.5 py-1 text-sm font-semibold text-blue hover:bg-blue-tint"
             >
-              {t("useSummary")}
-            </Button>
-            <Button size="md" variant="ghost" onClick={() => setSummaryUsed(true)}>
-              {t("keepSummary")}
-            </Button>
+              <Pencil size={14} aria-hidden="true" /> {summaryText ? t("edit") : t("summaryWrite")}
+            </button>
+          ) : null}
+        </div>
+        {editingSummary ? (
+          <div className="flex flex-col gap-3">
+            <TextArea
+              label={t("summaryTitle")}
+              hint={t("summaryHelp")}
+              rows={5}
+              maxLength={700}
+              value={summaryDraftInput}
+              onChange={(e) => setSummaryDraftInput(e.target.value)}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="md"
+                loading={savingSummary}
+                disabled={savingSummary}
+                onClick={() =>
+                  startTransition(async () => {
+                    const next = summaryDraftInput.trim();
+                    const r = await applyDraftSummary(projectId, next);
+                    if (r.error) setError(r.error);
+                    else {
+                      setSummaryText(next);
+                      setEditingSummary(false);
+                      router.refresh();
+                    }
+                  })
+                }
+              >
+                {t("save")}
+              </Button>
+              <Button size="md" variant="outline" onClick={() => setEditingSummary(false)}>
+                {t("cancel")}
+              </Button>
+            </div>
           </div>
-        </Card>
-      ) : null}
+        ) : (
+          <p className="m-0 text-[15px] text-text-3">{summaryText || t("summaryEmpty")}</p>
+        )}
+      </Card>
+
+      {/* The next steps are the owners' advice. Nobody who continues the project has to follow them. */}
+      <p className="mb-3 mt-0 text-[15px] text-text-2">{t("suggestNote")}</p>
 
       <SegmentedTabs
         label={t("filterLabel")}
         value={filter}
-        onChange={setFilter}
-        tabs={FILTERS.map((f) => ({ id: f.id, label: t(f.key), count: undefined }))}
+        onChange={(next) => {
+          setFilter(next);
+          setSelected(shown.find((i) => i.kind === next)?.id ?? null);
+        }}
+        tabs={FILTERS.map((f) => ({ id: f.id, label: t(f.key), count: shown.filter((i) => i.kind === f.id).length }))}
       >
+        <div className="mb-4">
+          <div className="mb-1.5 text-sm" aria-live="polite">
+            <strong>{t("reviewedCount", { reviewed: tabReviewed, total: visible.length })}</strong>
+          </div>
+          <AnimatedBar
+            key={filter}
+            pct={visible.length ? (tabReviewed / visible.length) * 100 : 0}
+            track="#DDE1E5"
+            label={t("barLabel")}
+          />
+        </div>
+
         {error ? (
           <div className="mb-4">
             <FormMessage tone="error">{error}</FormMessage>
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-start gap-6">
-          <section aria-label={t("itemsLabel")} className="flex min-w-0 flex-[1_1_560px] flex-col gap-3">
+        <div className="flex flex-col gap-6">
+          <section aria-label={t("itemsLabel")} className="flex min-w-0 flex-col gap-3">
             {visible.length === 0 ? (
               <Card tone="dashed" className="text-center text-text-2">
                 {total === 0 ? t("none") : t("noneGroup")}
@@ -310,23 +387,86 @@ export function VerifyBoard({
                       </button>
                       <button
                         type="button"
-                        aria-pressed={it.review_status === "removed"}
-                        onClick={() => setReview(it, "removed")}
-                        className={cn(
-                          "inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-danger px-[18px] py-2 text-[15px] font-semibold transition-colors",
-                          it.review_status === "removed"
-                            ? "bg-danger text-white"
-                            : "bg-white text-danger hover:bg-[#fdecea]",
-                        )}
+                        onClick={() => removeItem(it)}
+                        className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-danger bg-white px-[18px] py-2 text-[15px] font-semibold text-danger transition-colors hover:bg-[#fdecea]"
                       >
-                        {it.review_status === "removed" ? (
-                          <Undo2 size={16} aria-hidden="true" />
-                        ) : (
-                          <Trash2 size={16} aria-hidden="true" />
-                        )}
-                        {it.review_status === "removed" ? t("removed") : t("remove")}
+                        <Trash2 size={16} aria-hidden="true" /> {t("remove")}
                       </button>
                     </div>
+                    {/* The evidence of the chosen item, right under it. */}
+                    {isSel ? (
+                      <div
+                        role="region"
+                        aria-label={t("sourceViewer")}
+                        className="flex flex-col gap-3 border-t border-line-soft pt-3"
+                      >
+                        <h3 className="m-0 text-base">{t("sourceTitle")}</h3>
+                        {sel && source && sel.evidence.length > 0 ? (
+                          <>
+                            <div className="font-code text-[13px] text-text-2">
+                              {source.file}
+                              {source.pageLabel ? ` · ${source.pageLabel}` : ""}
+                            </div>
+                            {source.fromImage ? (
+                              <p className="m-0 rounded-[12px] bg-warn-bg px-3 py-2 text-[13px] text-warn-ink">
+                                {t("fromImage")}
+                              </p>
+                            ) : null}
+                            <AnimatePresence mode="wait">
+                              <motion.div
+                                key={sel.id}
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex flex-col gap-3"
+                              >
+                                <div className="rounded-[14px] border border-line-soft bg-white p-4 text-sm leading-[1.7] text-text-3">
+                                  {source.fileMissing ? (
+                                    <p className="m-0 italic text-text-2">{t("fileMissing")}</p>
+                                  ) : source.found ? (
+                                    <>
+                                      {source.before ? <p className="mb-3 mt-0">{source.before}</p> : null}
+                                      {source.quote ? (
+                                        <p className="mb-3 mt-0">
+                                          <mark className="rounded bg-[#F7D58A] px-1 py-0.5 text-ink">
+                                            {source.quote}
+                                          </mark>
+                                        </p>
+                                      ) : null}
+                                      {source.after ? <p className="m-0">{source.after}</p> : null}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <p className="mb-3 mt-0 italic text-text-2">{t("noMatch")}</p>
+                                      {source.context ? <p className="m-0">{source.context}</p> : null}
+                                    </>
+                                  )}
+                                </div>
+                                {source.fileMissing ? null : source.found ? (
+                                  <div className="rounded-[14px] bg-ok-bg p-3 text-sm text-ok">
+                                    <strong>{t("matchedBold")}</strong> {t("matchedText")}
+                                  </div>
+                                ) : (
+                                  <div className="rounded-[14px] bg-warn-bg p-3 text-sm text-warn-ink">
+                                    <strong>{t("notFoundBold")}</strong> {t("notFoundText")}
+                                    {source.quote ? (
+                                      <span className="mt-2 block text-[13px]">
+                                        {t("aiClaimed", { quote: source.quote })}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                )}
+                              </motion.div>
+                            </AnimatePresence>
+                          </>
+                        ) : (
+                          <p className="m-0 text-sm text-text-2">
+                            {sel?.origin === "creator" ? t("ownNoSource") : t("selectItem")}
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
                   </motion.div>
                 );
               })}
@@ -334,11 +474,14 @@ export function VerifyBoard({
 
             {adding ? (
               <AddItemForm
+                key={filter}
                 projectId={projectId}
+                kind={filter === "lesson" ? "lesson" : "next_task"}
                 nextPosition={Math.max(0, ...items.map((i) => i.position)) + 1}
                 onCancel={() => setAdding(false)}
                 onAdded={(row) => {
                   setItems((cur) => [...cur, row]);
+                  setFilter(row.kind);
                   setSelected(row.id);
                   setAdding(false);
                   startTransition(() => router.refresh());
@@ -355,100 +498,43 @@ export function VerifyBoard({
               </button>
             )}
           </section>
-
-          <aside
-            aria-label={t("sourceViewer")}
-            className="sticky top-4 flex min-w-[280px] flex-[0_1_400px] flex-col gap-3 max-lg:static"
-          >
-            <Card className="flex flex-col gap-3 !rounded-3xl !p-5">
-              <h2 className="m-0 text-base">{t("sourceTitle")}</h2>
-              {sel && source ? (
-                <>
-                  <div className="font-code text-[13px] text-text-2">
-                    {source.file}
-                    {source.pageLabel ? ` · ${source.pageLabel}` : ""}
-                  </div>
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={sel.id}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex flex-col gap-3"
-                    >
-                      <div className="rounded-[14px] border border-line-soft bg-white p-4 text-sm leading-[1.7] text-text-3">
-                        {source.fileMissing ? (
-                          <p className="m-0 italic text-text-2">{t("fileMissing")}</p>
-                        ) : source.found ? (
-                          <>
-                            {source.before ? <p className="mb-3 mt-0">{source.before}</p> : null}
-                            {source.quote ? (
-                              <p className="mb-3 mt-0">
-                                <mark className="rounded bg-[#F7D58A] px-1 py-0.5 text-ink">{source.quote}</mark>
-                              </p>
-                            ) : null}
-                            {source.after ? <p className="m-0">{source.after}</p> : null}
-                          </>
-                        ) : (
-                          <>
-                            <p className="mb-3 mt-0 italic text-text-2">{t("noMatch")}</p>
-                            {source.context ? <p className="m-0">{source.context}</p> : null}
-                          </>
-                        )}
-                      </div>
-                      {source.fileMissing ? null : source.found ? (
-                        <div className="rounded-[14px] bg-ok-bg p-3 text-sm text-ok">
-                          <strong>{t("matchedBold")}</strong> {t("matchedText")}
-                        </div>
-                      ) : (
-                        <div className="rounded-[14px] bg-warn-bg p-3 text-sm text-warn-ink">
-                          <strong>{t("notFoundBold")}</strong> {t("notFoundText")}
-                          {source.quote ? (
-                            <span className="mt-2 block text-[13px]">{t("aiClaimed", { quote: source.quote })}</span>
-                          ) : null}
-                        </div>
-                      )}
-                    </motion.div>
-                  </AnimatePresence>
-                </>
-              ) : (
-                <p className="m-0 text-sm text-text-2">
-                  {sel?.origin === "creator" ? t("ownNoSource") : t("selectItem")}
-                </p>
-              )}
-            </Card>
-          </aside>
         </div>
       </SegmentedTabs>
 
-      <Card className="mt-8 flex flex-wrap items-center justify-between gap-4 !rounded-3xl !p-5">
-        <div className="flex flex-col gap-1.5">
-          <span aria-live="polite" className="text-[15px]">
-            {footnote}
-          </span>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <ButtonLink href={`/bagikan/${projectId}/berkas`} variant="outline">
-            {t("back")}
-          </ButtonLink>
+      <div
+        className="mt-8 flex flex-col gap-4"
+        // An open edit form is not saved yet, so "Save and exit" asks first.
+        data-unsaved={editing !== null || editingSummary || adding || undefined}
+      >
+        <p aria-live="polite" className="m-0 text-[15px]">
+          {footnote}
+        </p>
+        <WizardActions
+          left={
+            <ButtonLink href={`/bagikan/${projectId}/berkas`} variant="outline" size="lg">
+              {t("back")}
+            </ButtonLink>
+          }
+        >
+          <SaveExitButton />
           {ready ? (
-            <ButtonLink href={`/bagikan/${projectId}/tim`} arrow>
+            <ButtonLink href={`/bagikan/${projectId}/tim`} arrow size="lg">
               {t("continueTeam")}
             </ButtonLink>
           ) : (
-            <Button disabled aria-disabled="true">
+            <Button size="lg" arrow disabled aria-disabled="true">
               {t("continueTeam")}
             </Button>
           )}
-        </div>
-      </Card>
+        </WizardActions>
+      </div>
     </LayoutGroup>
   );
 }
 
 function AddItemForm({
   projectId,
+  kind,
   nextPosition,
   onAdded,
   onCancel,
@@ -459,35 +545,37 @@ function AddItemForm({
   onAdded: (row: DraftItem) => void;
   onCancel: () => void;
   onError: (m: string) => void;
+  /** Follows the open tab. */
+  kind: "next_task" | "lesson";
 }) {
   const t = useTranslations("board");
   const L = useLabels();
   const supabase = useMemo(() => createClient(), []);
-  const [kind, setKind] = useState<ItemKind>("next_task");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [effort, setEffort] = useState<"small" | "medium" | "large">("medium");
   const [lessonType, setLessonType] = useState<"methodology" | "evaluation_feedback" | "funding_feedback" | "blocker">(
     "methodology",
   );
   const [saving, setSaving] = useState(false);
   const [fieldError, setFieldError] = useState("");
+  const [descriptionError, setDescriptionError] = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (title.trim().length < 3) {
-      setFieldError(t("titleMin"));
-      return;
-    }
+    const titleMissing = title.trim().length < 3;
+    // Suggestions are shown with their description, so one is required. A lesson is its title and type.
+    const descriptionMissing = kind === "next_task" && description.trim().length < DESCRIPTION_MIN;
+    setFieldError(titleMissing ? t("titleMin") : "");
+    setDescriptionError(descriptionMissing ? t("descRequired", { min: DESCRIPTION_MIN }) : "");
+    if (titleMissing || descriptionMissing) return;
     setSaving(true);
     const row = {
       project_id: projectId,
       kind,
       title: title.trim(),
       description: description.trim(),
-      effort: kind === "next_task" ? effort : null,
       lesson_type: kind === "lesson" ? lessonType : null,
-      objective_status: kind === "objective" ? "not_started" : null,
+      objective_status: null,
       evidence: [],
       evidence_status: "not_found",
       origin: "creator",
@@ -506,38 +594,21 @@ function AddItemForm({
   return (
     <form onSubmit={submit} className="flex flex-col gap-3 rounded-3xl border-2 border-blue bg-white p-4">
       <h3 className="m-0 text-base font-semibold tracking-normal">{t("addTitle")}</h3>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] gap-3">
-        <SelectField label={t("type")} value={kind} onChange={(e) => setKind(e.target.value as ItemKind)}>
-          <option value="next_task">{L.itemKind.next_task}</option>
-          <option value="objective">{L.itemKind.objective}</option>
-          <option value="completed">{L.itemKind.completed}</option>
-          <option value="lesson">{L.itemKind.lesson}</option>
-        </SelectField>
-        {kind === "next_task" ? (
-          <SelectField label={t("effort")} value={effort} onChange={(e) => setEffort(e.target.value as typeof effort)}>
-            <option value="small">{L.effort.small}</option>
-            <option value="medium">{L.effort.medium}</option>
-            <option value="large">{L.effort.large}</option>
-          </SelectField>
-        ) : null}
+      <div className="flex flex-col gap-3">
         {kind === "lesson" ? (
           <SelectField
             label={t("lessonType")}
             value={lessonType}
-            onChange={(e) => setLessonType(e.target.value as typeof lessonType)}
-          >
-            {Object.entries(L.lesson).map(([k, l]) => (
-              <option key={k} value={k}>
-                {l}
-              </option>
-            ))}
-          </SelectField>
+            onValueChange={(next) => setLessonType(next as typeof lessonType)}
+            options={Object.entries(L.lesson).map(([value, label]) => ({ value, label }))}
+          />
         ) : null}
       </div>
       <TextField label={t("fieldTitle")} value={title} onChange={(e) => setTitle(e.target.value)} error={fieldError} />
       {kind !== "lesson" ? (
         <TextArea
-          label={t("descOptional")}
+          label={t("fieldDescription")}
+          error={descriptionError}
           rows={2}
           value={description}
           onChange={(e) => setDescription(e.target.value)}

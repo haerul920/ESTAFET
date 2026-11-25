@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
-import { getTranslations } from "next-intl/server";
-import { apiLocale } from "@/i18n/api";
-import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getOwnedProject } from "@/lib/db/owner";
 import { ingestUpload, UploadRejected } from "@/lib/ingest";
 import { LIMITS } from "@/lib/ingest/limits";
 import { scanUpload } from "@/lib/ingest/scan";
+import { incomingFolder, openUpload } from "@/lib/ingest/upload-guard";
 import { allow } from "@/lib/rate-limit";
-import { getSettings, mbToBytes } from "@/lib/settings";
-import { getCurrentUser } from "@/lib/auth";
+import { errorFields, log } from "@/lib/log";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -25,66 +22,58 @@ interface UploadOutcome {
   note: string;
 }
 
-/** Uploads one or more files for a project the caller creates. Validates bytes, parses, stores privately. */
+const body = z.object({
+  uploads: z
+    .array(z.object({ path: z.string().max(200), name: z.string().min(1).max(255) }))
+    .min(1)
+    .max(LIMITS.maxFilesPerProject),
+});
+
+/**
+ * Step 2 of an upload: reads what the browser stored, checks the real bytes, reads the text and keeps the file in
+ * private storage. The waiting copy is removed whatever the result, so a refused file does not stay.
+ */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: projectId } = await params;
-  const locale = apiLocale(request);
-  const api = await getTranslations({ locale, namespace: "api" });
-  const errs = await getTranslations({ locale, namespace: "errors" });
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: api("uploadSignIn") }, { status: 401 });
-  if ((await getCurrentUser())?.suspended) return NextResponse.json({ error: errs("suspended") }, { status: 403 });
-  const maxBytes = mbToBytes((await getSettings()).max_upload_mb.value);
+  const guard = await openUpload(request, projectId);
+  if (!guard.ok) return guard.response;
+  const { api, upload, maxBytes, maxMb } = guard;
 
-  const project = await getOwnedProject(projectId);
-  if (!project) return NextResponse.json({ error: api("uploadNotOwner") }, { status: 403 });
-  if (!["draft", "unpublished"].includes(project.status)) {
-    return NextResponse.json({ error: api("uploadPublished") }, { status: 409 });
-  }
-
-  // 30 upload requests per hour per account. A person preparing a project stays far below this.
-  if (!(await allow({ scope: "upload", identity: user.id, max: 30, windowSeconds: 3600 })))
-    return NextResponse.json({ error: api("uploadRateLimited") }, { status: 429 });
-
-  let form: FormData;
-  try {
-    form = await request.formData();
-  } catch {
+  const parsed = body.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: api("uploadNone") }, { status: 400 });
+  // Only this project's waiting folder: a path from anywhere else is refused before anything is read.
+  const waiting = new RegExp(`^${incomingFolder(projectId)}/[0-9a-f-]{36}$`, "i");
+  if (!parsed.data.uploads.every((u) => waiting.test(u.path)))
     return NextResponse.json({ error: api("uploadUnreadable") }, { status: 400 });
-  }
-  const files = form.getAll("files").filter((f): f is File => f instanceof File);
-  if (files.length === 0) return NextResponse.json({ error: api("uploadNone") }, { status: 400 });
-
-  const { count } = await supabase
-    .from("project_files")
-    .select("id", { count: "exact", head: true })
-    .eq("project_id", projectId);
-  if ((count ?? 0) + files.length > LIMITS.maxFilesPerProject) {
+  if (guard.fileCount + parsed.data.uploads.length > LIMITS.maxFilesPerProject) {
     return NextResponse.json({ error: api("uploadTooMany", { max: LIMITS.maxFilesPerProject }) }, { status: 400 });
   }
+  if (!(await allow({ scope: "upload-finish", identity: guard.userId, max: 60, windowSeconds: 3600 })))
+    return NextResponse.json({ error: api("uploadRateLimited") }, { status: 429 });
 
   const admin = createAdminClient();
+  const originals = admin.storage.from("project-files");
+  const texts = admin.storage.from("extracted-text");
   const outcomes: UploadOutcome[] = [];
 
-  for (const file of files) {
-    if (file.size > maxBytes) {
-      outcomes.push({
-        name: file.name,
-        ok: false,
-        note: api("uploadTooBig", { mb: Math.round(maxBytes / 1024 / 1024) }),
-      });
-      continue;
-    }
+  for (const { path, name } of parsed.data.uploads) {
     try {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      if (!(await scanUpload(file.name, bytes)).clean) {
-        outcomes.push({ name: file.name, ok: false, note: api("uploadScanRejected") });
+      const stored = await originals.download(path);
+      if (stored.error || !stored.data) {
+        outcomes.push({ name, ok: false, note: upload("failed") });
         continue;
       }
-      const result = await ingestUpload(file.name, bytes, { maxBytes });
+      if (stored.data.size > maxBytes) {
+        outcomes.push({ name, ok: false, note: upload("reject.too_big", { mb: maxMb }) });
+        continue;
+      }
+      const bytes = new Uint8Array(await stored.data.arrayBuffer());
+      if (!(await scanUpload(name, bytes)).clean) {
+        outcomes.push({ name, ok: false, note: api("uploadScanRejected") });
+        continue;
+      }
+      const result = await ingestUpload(name, bytes, { maxBytes });
+      const note = upload(`note.${result.note.code}`, result.note.values);
       const fileId = crypto.randomUUID();
       let storagePath = "";
       let textPath: string | null = null;
@@ -92,22 +81,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       if (result.storeBytes && result.doc) {
         storagePath = `${projectId}/${fileId}-${safeName(result.storeName)}`;
         textPath = `${projectId}/${fileId}.json`;
-        const up = await admin.storage.from("project-files").upload(storagePath, result.storeBytes, {
-          contentType:
-            result.kind === "pdf"
-              ? "application/pdf"
-              : result.kind === "markdown"
-                ? "text/markdown"
-                : "application/json",
+        const up = await originals.upload(storagePath, result.storeBytes, {
+          contentType: result.contentType,
           upsert: false,
         });
         if (up.error) throw new Error("storage");
-        const tx = await admin.storage.from("extracted-text").upload(textPath, JSON.stringify(result.doc), {
+        const tx = await texts.upload(textPath, JSON.stringify(result.doc), {
           contentType: "application/json",
           upsert: false,
         });
         if (tx.error) {
-          await admin.storage.from("project-files").remove([storagePath]);
+          await originals.remove([storagePath]);
           throw new Error("storage");
         }
       }
@@ -117,21 +101,31 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         project_id: projectId,
         kind: result.kind,
         storage_path: storagePath,
-        original_name: file.name,
-        size_bytes: file.size,
+        original_name: name,
+        size_bytes: result.storeBytes?.length ?? bytes.length,
         page_count: result.pageCount,
         extracted_text_path: textPath,
         skipped_sensitive: result.skipped,
         ingest_status: result.status,
-        ingest_note: result.note,
-        created_by: user.id,
+        ingest_note: note,
+        created_by: guard.userId,
       });
-      if (error) throw new Error("db");
-      outcomes.push({ name: file.name, ok: true, status: result.status, note: result.note });
+      if (error) {
+        if (storagePath) await originals.remove([storagePath]);
+        if (textPath) await texts.remove([textPath]);
+        throw new Error("db");
+      }
+      outcomes.push({ name, ok: true, status: result.status, note });
     } catch (e) {
-      const message =
-        e instanceof UploadRejected ? e.message : "Something went wrong while reading this file. Nothing was stored.";
-      outcomes.push({ name: file.name, ok: false, note: message });
+      if (e instanceof UploadRejected) {
+        outcomes.push({ name, ok: false, note: upload(`reject.${e.code}`, e.values) });
+      } else {
+        // Never the file's name or content: only what went wrong.
+        log.error("upload.failed", { projectId, ...errorFields(e) });
+        outcomes.push({ name, ok: false, note: upload("failed") });
+      }
+    } finally {
+      await originals.remove([path]);
     }
   }
 

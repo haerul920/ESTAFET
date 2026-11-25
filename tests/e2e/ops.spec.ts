@@ -33,7 +33,6 @@ test("scheduled jobs run with the secret, and an unknown job is a 404", async ({
   expect(body.steps.map((s: { name: string }) => s.name)).toEqual([
     "expire_requests",
     "remind_expiring_requests",
-    "escalate_overdue_holds",
     "housekeeping",
     "account_deletions",
   ]);

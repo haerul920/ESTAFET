@@ -8,8 +8,6 @@ import { ReasonAction } from "@/components/admin/ReasonDialog";
 import { KeyValueList, PageHeader, Panel, StatusPill, Time, toneFor } from "@/components/admin/ui";
 import { bulkDismissSpam, handleReport } from "@/app/[locale]/admin/actions";
 import { NoteForm } from "@/components/admin/NoteForm";
-import { getSettings } from "@/lib/settings";
-import { slaFor } from "@/lib/admin/time";
 import { statusText, type StatusTranslator } from "@/lib/admin/labels";
 import { queryView } from "@/lib/admin/query";
 import { requireAdmin } from "@/lib/admin/guard";
@@ -39,22 +37,11 @@ interface Row {
   handled_by: string | null;
 }
 
-const REASONS = [
-  "copyright",
-  "personal_data",
-  "false_information",
-  "inappropriate",
-  "false_ownership",
-  "harmful_file",
-  "spam",
-  "other",
-];
-
 type Tr = (key: string, values?: Record<string, string | number>) => string;
 
 export default async function AdminReportsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
-  const me = await requireAdmin();
+  await requireAdmin();
   const [t, ts, tr] = await Promise.all([
     getTranslations("admin.reports"),
     getTranslations("admin.status"),
@@ -64,31 +51,16 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
   const status = (k: string) => statusText(ts as unknown as StatusTranslator, k);
   const reasonName = (k: string) => ((tr as unknown as StatusTranslator).has(k) ? tr(k as never) : k);
   /** Ready-made reasons. The admin can edit the text before saving. Owners read them, so they follow the admin's language. */
-  const templates = (group: "dismiss" | "hold" | "hide" | "remove") =>
+  const templates = (group: "dismiss" | "remove") =>
     ["1", "2", "3"].filter((n) => t.has(`tpl.${group}.${n}`)).map((n) => tt(`tpl.${group}.${n}`));
 
-  const mine = sp.mine === "1";
-  const reviewDays = (await getSettings()).hold_review_days.value;
+  const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
   const { rows, total, params } = await queryView<Row>("admin_reports_v", sp, {
     sortable: ["created_at", "project_title", "reason", "status"],
     defaultSort: "created_at",
     searchCols: ["project_title", "details"],
-    eq: { status: "status", reason: "reason" },
-    apply: (q) => (mine ? q.eq("handled_by", me.id) : q),
+    eq: { status: "status" },
   });
-
-  function sla(r: Row) {
-    if (r.status === "resolved" || r.status === "dismissed")
-      return <span className="text-text-2">{t("slaClosed")}</span>;
-    const s = slaFor(r.created_at, reviewDays);
-    if (s.state === "overdue")
-      return <StatusPill tone="danger">{t("slaOverdue", { days: Math.abs(s.days) || 1 })}</StatusPill>;
-    return (
-      <StatusPill tone={s.state === "soon" ? "warn" : "neutral"}>
-        {s.state === "soon" ? t("slaToday") : t("slaIn", { days: s.days })}
-      </StatusPill>
-    );
-  }
 
   const openId = typeof sp.open === "string" ? sp.open : null;
   let panel: React.ReactNode = null;
@@ -165,8 +137,10 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
                     { label: t("teaserSummary"), value: d?.project.summary || "—" },
                   ]}
                 />
-                <p className="mb-0 mt-3 text-sm">
+                {/* Look before deciding. A reported project stays public until an admin removes it. */}
+                <p className="mb-0 mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                   <Link href={`/admin/projects/${report.project_id}`}>{t("openProject")}</Link>
+                  <Link href={`/projects/${report.project_slug}`}>{t("viewPublic")}</Link>
                 </p>
               </Panel>
               <Panel title={t("internalNote")}>
@@ -192,21 +166,6 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
                         action={handleReport.bind(null, openId, "in_review")}
                       />
                     ) : null}
-                    <ReasonAction
-                      label={t("hold")}
-                      reasonLabel={t("whyHold")}
-                      templates={templates("hold")}
-                      consequence={t("holdEffect")}
-                      action={handleReport.bind(null, report.id, "hold")}
-                      successMessage={t("held")}
-                    />
-                    <ReasonAction
-                      label={t("hide")}
-                      consequence={t("hideEffect")}
-                      action={handleReport.bind(null, openId, "hide")}
-                      reasonLabel={t("noteOwners")}
-                      templates={templates("hide")}
-                    />
                     <ReasonAction
                       label={t("remove")}
                       tone="danger"
@@ -240,7 +199,6 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
       sortable: true,
       render: (r) => <StatusPill tone={toneFor(r.status)}>{status(r.status)}</StatusPill>,
     },
-    { key: "sla", label: t("colSla", { days: reviewDays }), render: (r) => sla(r) },
     { key: "handler_name", label: t("colHandler"), render: (r) => r.handler_name ?? "—" },
   ];
   const openSpam = rows.filter((r) => r.reason === "spam" && (r.status === "open" || r.status === "in_review"));
@@ -267,18 +225,16 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
         </div>
       ) : null}
       <FilterBar
+        dropdowns
         searchLabel={t("search")}
-        toggles={[{ key: "mine", label: t("assignedToMe") }]}
         filters={[
           {
             key: "status",
             label: t("filterStatus"),
-            options: ["open", "in_review", "resolved", "dismissed"].map((v) => ({ value: v, label: status(v) })),
-          },
-          {
-            key: "reason",
-            label: t("filterReason"),
-            options: REASONS.map((v) => ({ value: v, label: reasonName(v) })),
+            allLabel: t("allStatuses"),
+            options: ["in_review", "resolved", "dismissed"].map((v) => ({ value: v, label: capital(status(v)) })),
+            // Not in the menu. It shows when a link, such as the overview card, asks for it.
+            linkOnly: [{ value: "open", label: capital(status("open")) }],
           },
         ]}
       />

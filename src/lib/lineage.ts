@@ -1,11 +1,15 @@
-import { formatDate, formatMonthYear } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import type { TFn } from "@/lib/labels";
 import type { LineageEvent, TeaserLineageEvent } from "@/lib/db/types";
 import type { LineageStep } from "@/components/features/Lineage";
 
-/** Public lineage: original team, published, and who continued it (if anyone). `t` is the `lineage` namespace. */
+/**
+ * Public lineage: original team, published, and who continued it (if anyone). Every line comes from what the
+ * owners entered (start year, faculty) or from an event that happened. `faculty` is the label of their choice.
+ * `t` is the `lineage` namespace.
+ */
 export function buildPublicLineage(
-  project: { year: number; is_demo: boolean },
+  project: { year: number; faculty: string },
   events: TeaserLineageEvent[],
   t: TFn,
   locale: string,
@@ -13,13 +17,18 @@ export function buildPublicLineage(
   const published = events.find((e) => e.type === "published");
   const continued = events.filter((e) => e.type === "continued");
   const steps: LineageStep[] = [
-    { id: "origin", title: t("origin"), sub: t("originSub", { year: project.year }), state: "done" },
+    {
+      id: "origin",
+      title: t("origin"),
+      sub: [t("originSub", { year: project.year }), project.faculty].filter(Boolean).join(" · "),
+      state: "done",
+    },
   ];
   if (published) {
     steps.push({
       id: "published",
       title: t("published"),
-      sub: `${formatMonthYear(published.created_at, locale)}${project.is_demo ? t("demoSuffix") : ""}`,
+      sub: formatDate(published.created_at, locale),
       state: "done",
     });
   }
@@ -27,7 +36,7 @@ export function buildPublicLineage(
     steps.push({
       id: c.id,
       title: t("continued"),
-      sub: `${c.team ? c.team + " · " : ""}${formatMonthYear(c.created_at, locale)}`,
+      sub: `${c.team ? c.team + " · " : ""}${formatDate(c.created_at, locale)}`,
       state: "done",
     });
   }

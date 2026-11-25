@@ -48,7 +48,7 @@ describe("dispatchEmails", () => {
     const mail = sink.mails.find((m) => m.to.includes(ann.email));
     expect(mail, "a message to the test account").toBeDefined();
     expect(mail!.from).toBe("halo@estafet.test");
-    expect(mail!.data).toMatch(/^List-Unsubscribe: <https:\/\/estafet\.test\/akun\/privasi>/im);
+    expect(mail!.data).toMatch(/^List-Unsubscribe: <https:\/\/estafet\.test\/akun\/setelan>/im);
     const body = decodeQuotedPrintable(mail!.data);
     expect(body).toContain("Permintaan baru untuk Proyek Uji <b>");
     expect(body).toContain("&lt;b&gt;"); // escaped in the HTML part

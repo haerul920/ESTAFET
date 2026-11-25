@@ -4,21 +4,18 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { BotFields, useFillTimer } from "@/components/ui/BotFields";
 import { Button } from "@/components/ui/Button";
-import { CheckboxField, FormMessage, SelectField, TextField } from "@/components/ui/Field";
+import { CheckboxField, FormMessage, SearchableSelect, TextField } from "@/components/ui/Field";
 import { FACULTIES } from "@/lib/labels";
 import { useLabels } from "@/lib/use-labels";
 import type { FormState } from "@/lib/validation";
 
 type Action = (prev: FormState, fd: FormData) => Promise<FormState>;
 
-// Demo accounts are plain accounts. Each one both shares projects and continues other people's projects.
-const DEMO = [
-  { key: "demoA", email: "creator@estafet.demo" },
-  { key: "demoB", email: "adopter@estafet.demo" },
-  { key: "demoC", email: "alumni@estafet.demo" },
-] as const;
+// Demo account is a plain account that both shares projects and continues other people's projects.
+const DEMO = [{ key: "demoA", email: "creator@estafet.demo" }] as const;
 
 export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; action: Action; next: string }) {
   const t = useTranslations("auth");
@@ -54,14 +51,19 @@ export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; act
             error={fe.full_name}
             required
           />
-          <SelectField label={t("faculty")} name="faculty" defaultValue={v.faculty ?? ""} hint={t("facultyHint")}>
-            <option value="">{t("facultyNone")}</option>
-            {FACULTIES.map((f) => (
-              <option key={f} value={f}>
-                {L.faculty(f)}
-              </option>
-            ))}
-          </SelectField>
+          <SearchableSelect
+            label={t("faculty")}
+            name="faculty"
+            defaultValue={v.faculty ?? ""}
+            hint={t("facultyHint")}
+            searchPlaceholder={t("facultySearchPlaceholder")}
+            clearLabel={t("facultySearchClear")}
+            emptyText={t("facultyEmpty")}
+            options={[
+              { value: "", label: t("facultyNone") },
+              ...FACULTIES.map((f) => ({ value: f, label: L.faculty(f) })),
+            ]}
+          />
         </>
       ) : null}
       <TextField
@@ -80,30 +82,80 @@ export function AuthForm({ mode, action, next }: { mode: "login" | "signup"; act
         autoComplete={login ? "current-password" : "new-password"}
         hint={login ? undefined : t("passwordHint")}
         error={fe.password}
+        showPasswordLabel={t("showPassword")}
+        hidePasswordLabel={t("hidePassword")}
         required
       />
+      {!login ? (
+        <TextField
+          label={t("confirmPassword")}
+          name="confirm_password"
+          type="password"
+          autoComplete="new-password"
+          error={fe.confirm_password}
+          showPasswordLabel={t("showPassword")}
+          hidePasswordLabel={t("hidePassword")}
+          required
+        />
+      ) : null}
       {!login ? (
         <CheckboxField
           name="accept_policies"
           defaultChecked={v.accept_policies === "on"}
           error={fe.accept_policies}
           label={t.rich("accept", {
-            terms: (chunks) => <Link href="/terms">{chunks}</Link>,
-            privacy: (chunks) => <Link href="/privacy">{chunks}</Link>,
+            terms: (chunks) => (
+              <Link
+                href="/terms"
+                className="link-anim inline-flex items-center rounded-md px-1.5 py-0.5 font-semibold text-blue underline decoration-blue/35 decoration-1 underline-offset-4 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-tint hover:text-blue-dark hover:decoration-blue-dark"
+              >
+                {chunks}
+              </Link>
+            ),
+            privacy: (chunks) => (
+              <Link
+                href="/privacy"
+                className="link-anim inline-flex items-center rounded-md px-1.5 py-0.5 font-semibold text-blue underline decoration-blue/35 decoration-1 underline-offset-4 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-tint hover:text-blue-dark hover:decoration-blue-dark"
+              >
+                {chunks}
+              </Link>
+            ),
           })}
         />
       ) : null}
-      <Button type="submit" variant="primary" pending={pending} className="mt-2 justify-center">
+      <Button type="submit" variant="primary" disabled={pending} className="mt-2 justify-center">
         {pending ? t("wait") : login ? t("signIn") : t("create")}
       </Button>
-      <p className="m-0 text-center text-[15px] text-text-2">
+      <p className="m-0 flex flex-wrap items-center justify-center gap-2 text-center text-[15px] text-text-2">
         {login ? (
           <>
-            {t("newHere")} <Link href={`/signup${nextQuery}`}>{t("signupTitle")}</Link>
+            <span>{t("newHere")}</span>
+            <Link
+              href={`/signup${nextQuery}`}
+              className="group inline-flex items-center gap-1.5 rounded-full border border-blue/20 bg-blue-tint/45 px-3.5 py-1 font-semibold text-blue no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-blue/45 hover:bg-blue-tint hover:text-blue-dark hover:shadow-[0_6px_16px_rgba(23,96,214,0.14)] active:translate-y-0 active:scale-[0.98]"
+            >
+              <span className="link-anim">{t("signupTitle")}</span>
+              <ArrowRight
+                size={15}
+                aria-hidden="true"
+                className="transition-transform duration-200 group-hover:translate-x-1"
+              />
+            </Link>
           </>
         ) : (
           <>
-            {t("haveAccount")} <Link href={`/login${nextQuery}`}>{t("signIn")}</Link>
+            <span>{t("haveAccount")}</span>
+            <Link
+              href={`/login${nextQuery}`}
+              className="group inline-flex items-center gap-1.5 rounded-full border border-blue/20 bg-blue-tint/45 px-3.5 py-1 font-semibold text-blue no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-blue/45 hover:bg-blue-tint hover:text-blue-dark hover:shadow-[0_6px_16px_rgba(23,96,214,0.14)] active:translate-y-0 active:scale-[0.98]"
+            >
+              <span className="link-anim">{t("signIn")}</span>
+              <ArrowRight
+                size={15}
+                aria-hidden="true"
+                className="transition-transform duration-200 group-hover:translate-x-1"
+              />
+            </Link>
           </>
         )}
       </p>

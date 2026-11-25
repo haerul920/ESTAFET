@@ -60,6 +60,7 @@ export function RequestForm({ projectId, slug, tasks }: { projectId: string; slu
       </Fieldset>
 
       <Fieldset legend={t("f2")}>
+        <p className="mb-3 mt-0 text-[15px] text-text-2">{t("f2Hint")}</p>
         {tasks.length === 0 ? (
           <p className="m-0 text-text-2">{t("noTasks")}</p>
         ) : (
@@ -78,10 +79,7 @@ export function RequestForm({ projectId, slug, tasks }: { projectId: string; slu
                 />
                 <span>
                   <strong>{task.title}</strong>
-                  <br />
-                  <span className="text-sm text-text-2">
-                    {task.effort ? t("effort", { size: L.effort[task.effort] }) : t("unsized")}
-                  </span>
+                  {task.description ? <span className="block text-sm text-text-2">{task.description}</span> : null}
                 </span>
               </label>
             ))}
@@ -105,16 +103,14 @@ export function RequestForm({ projectId, slug, tasks }: { projectId: string; slu
           required
         />
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-4">
-          <SelectField label={t("purpose")} name="purpose" defaultValue={v.purpose ?? ""} error={fe.purpose} required>
-            <option value="" disabled>
-              {t("choose")}
-            </option>
-            {Object.entries(L.purpose).map(([k, l]) => (
-              <option key={k} value={k}>
-                {l}
-              </option>
-            ))}
-          </SelectField>
+          <SelectField
+            label={t("purpose")}
+            name="purpose"
+            defaultValue={v.purpose ?? ""}
+            error={fe.purpose}
+            placeholder={t("choose")}
+            options={Object.entries(L.purpose).map(([value, label]) => ({ value, label }))}
+          />
           <TextField
             label={t("targetDate")}
             name="target_date"
@@ -144,7 +140,7 @@ export function RequestForm({ projectId, slug, tasks }: { projectId: string; slu
       </Card>
 
       <div className="flex flex-wrap gap-3">
-        <Button type="submit" size="md" disabled={pending || tasks.length === 0} pending={pending} className="px-7">
+        <Button type="submit" size="md" disabled={pending} className="px-7">
           {pending ? t("sending") : t("send")}
         </Button>
         <ButtonLink href={`/projects/${slug}`} variant="outline">

@@ -2,7 +2,7 @@
 
 import { useId, useState, useTransition } from "react";
 import { useRouter } from "@/i18n/navigation";
-import { ShieldAlert } from "lucide-react";
+import { Loader2, ShieldAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
 import { useToast } from "@/components/ui/Toast";
@@ -235,10 +235,11 @@ export function ReasonAction({
             disabled={!reasonOk || !typedOk || pending || (needsReauth && password.length === 0)}
             onClick={run}
             className={cn(
-              "min-h-[44px] cursor-pointer rounded-full px-5 font-semibold disabled:cursor-not-allowed disabled:opacity-50",
+              "inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-full px-5 font-semibold disabled:cursor-not-allowed disabled:opacity-50",
               tone === "danger" ? "bg-danger text-white" : "bg-lime text-black",
             )}
           >
+            {pending ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : null}
             {pending ? t("working") : needsReauth ? t("confirmContinue") : label}
           </button>
         </div>

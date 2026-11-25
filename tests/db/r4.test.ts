@@ -68,8 +68,11 @@ describe("fill mode (manual or AI)", () => {
 });
 
 describe("watchers: Beri tahu saya", () => {
-  it("a visitor can watch a paused project and is told once when access opens again", async () => {
-    const f = await publishedProject(owner, { mode: "paused", max: 3 });
+  it("a visitor can watch a full project and is told once when there is room again", async () => {
+    const f = await publishedProject(owner, { mode: "open", max: 1 });
+    expect(
+      (await holder.client.rpc("take_access", { p_project_id: f.projectId, p_agreement_version: 1 })).error,
+    ).toBeNull();
     expect((await guest.client.rpc("watch_project", { p_project_id: f.projectId })).error).toBeNull();
     // a second call changes nothing
     expect((await guest.client.rpc("watch_project", { p_project_id: f.projectId })).error).toBeNull();
@@ -80,20 +83,20 @@ describe("watchers: Beri tahu saya", () => {
     expect(
       (await owner.client.rpc("set_access_settings", { p_project_id: f.projectId, p_mode: "open", p_max: 3 })).error,
     ).toBeNull();
-    const got = await notes(guest.id, "watch_open");
-    expect(got.filter((n) => (n.payload as { project_id: string }).project_id === f.projectId)).toHaveLength(1);
-    expect((got[0].payload as { reason: string }).reason).toBe("mode");
+    const mine = async () =>
+      (await notes(guest.id, "watch_open")).filter(
+        (n) => (n.payload as { project_id: string }).project_id === f.projectId,
+      );
+    const got = await mine();
+    expect(got).toHaveLength(1);
+    expect((got[0].payload as { reason: string }).reason).toBe("quota");
     // the wish is used up
     expect(
       (await guest.client.from("project_watchers").select("project_id").eq("project_id", f.projectId)).data,
     ).toHaveLength(0);
     // changing settings again does not notify again
     await owner.client.rpc("set_access_settings", { p_project_id: f.projectId, p_mode: "by_request", p_max: 3 });
-    expect(
-      (await notes(guest.id, "watch_open")).filter(
-        (n) => (n.payload as { project_id: string }).project_id === f.projectId,
-      ),
-    ).toHaveLength(1);
+    expect(await mine()).toHaveLength(1);
   });
 
   it("a freed team slot notifies watchers of a full project", async () => {
@@ -132,7 +135,7 @@ describe("watchers: Beri tahu saya", () => {
   });
 
   it("people only see their own watch list, and the internal notifier is closed to browsers", async () => {
-    const f = await publishedProject(owner, { mode: "paused", max: 3 });
+    const f = await publishedProject(owner, { mode: "open", max: 3 });
     await guest.client.rpc("watch_project", { p_project_id: f.projectId });
     expect(
       (await holder.client.from("project_watchers").select("project_id").eq("project_id", f.projectId)).data,
@@ -264,6 +267,13 @@ describe("backlog progress", () => {
     expect(hint((await guest.client.rpc("set_item_progress", { p_item: f.taskId, p_status: "done" })).error)).toBe(
       "no_access",
     );
+    // owners only look: they cannot record progress on their own project
+    expect(hint((await owner.client.rpc("set_item_progress", { p_item: f.taskId, p_status: "done" })).error)).toBe(
+      "owner_view_only",
+    );
+    expect(
+      (await holder.client.rpc("take_access", { p_project_id: f.projectId, p_agreement_version: 1 })).error,
+    ).toBeNull();
     const obj = await svc
       .from("draft_items")
       .insert({
@@ -276,10 +286,10 @@ describe("backlog progress", () => {
       })
       .select("id")
       .single();
-    expect(hint((await owner.client.rpc("set_item_progress", { p_item: obj.data!.id, p_status: "done" })).error)).toBe(
+    expect(hint((await holder.client.rpc("set_item_progress", { p_item: obj.data!.id, p_status: "done" })).error)).toBe(
       "not_a_task",
     );
-    expect(hint((await owner.client.rpc("set_item_progress", { p_item: f.taskId, p_status: "finished" })).error)).toBe(
+    expect(hint((await holder.client.rpc("set_item_progress", { p_item: f.taskId, p_status: "finished" })).error)).toBe(
       "bad_status",
     );
   });

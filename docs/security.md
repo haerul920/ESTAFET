@@ -35,10 +35,13 @@ The database is the authority. Row level security is on for every table, privile
 | Control | Where | Status |
 |---|---|---|
 | Size limit (setting `max_upload_mb`), file count per project | `src/lib/ingest/limits.ts`, files route | Tested (unit) |
-| Magic bytes, not the extension; PDF, Markdown and ZIP only | `src/lib/ingest/magic.ts` | Tested (unit) |
-| ZIP: entry count and uncompressed size limits, path traversal and absolute paths refused, **never unpacked or executed** (only the tree is listed) | `src/lib/ingest/zip-tree.ts` | Tested (unit) |
-| Secret scan of names and Markdown text (`.env`, keys, token patterns): skipped and reported | `src/lib/ingest/secrets-scan.ts` | Tested (unit) |
+| Magic bytes, not the extension; PDF, Markdown, JPG, PNG, .docx, .xlsx and .pptx only | `src/lib/ingest/magic.ts` | Tested (unit, browser) |
+| Office files: entry count and unpacked size limits, required parts, unsafe paths and macros refused, **never executed** | `src/lib/ingest/office.ts` | Tested (unit) |
+| Pictures are decoded and written again (removes camera data), with a pixel limit | `src/lib/ingest/image.ts` | Tested (unit, browser) |
+| Direct-to-storage upload: signed single-use address after the owner check; only the project's own waiting folder can be finished; the waiting file is deleted either way | `src/lib/ingest/upload-guard.ts`, files routes | Browser tested locally |
+| Secret scan of names and extracted text (`.env`, keys, token patterns): skipped and reported. **A picture cannot be scanned before the AI reads it**; the reading is scanned before it is kept | `src/lib/ingest/secrets-scan.ts` | Tested (unit, database with a faked AI) |
 | Content type is chosen by the server from the detected kind, never from the browser | files route | Reviewed, not separately tested |
+| PDF preview: same access check as a download, PDF only, 5-minute address, frames allowed from the storage origin only | download route, `src/lib/security-headers.ts` | Browser tested locally (owner 200, guest 401, other account 403). Not tested against cloud storage |
 | Malware scan hook: set `UPLOAD_SCAN_URL`; an infected answer, an error or a timeout rejects the file | `src/lib/ingest/scan.ts` | Tested against a local fake scanner (`tests/unit/scan.test.ts`). **No scanner service is bundled or deployed**, so by default uploads are not scanned for malware |
 | Downloads: authorization first (row level security through the user's own client), then a 60 second signed URL with `download` (the browser saves it, never renders it) | download route | Reviewed. Break glass downloads last 5 minutes, one file, audited |
 

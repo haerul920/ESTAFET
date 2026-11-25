@@ -37,7 +37,7 @@ interface Detail {
     tech: string[];
   };
   creators: { id: string; name: string }[];
-  items: { id: string; kind: string; title: string; effort: string | null; objective_status: string | null }[];
+  items: { id: string; kind: string; title: string; objective_status: string | null }[];
   evidence: { matched: number; partial: number; not_found: number };
   files: {
     id: string;
@@ -144,26 +144,28 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
             {d.files.length === 0 ? (
               <p className="m-0 text-sm text-text-2">{t("noFiles")}</p>
             ) : (
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="text-text-2">
-                    <th className="py-1 font-semibold">{t("fileName")}</th>
-                    <th className="font-semibold">{t("fileType")}</th>
-                    <th className="font-semibold">{t("fileSize")}</th>
-                    <th className="font-semibold">{t("fileSkipped")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {d.files.map((f) => (
-                    <tr key={f.id} className="border-t border-line">
-                      <td className="py-1.5 font-code text-[13px]">{f.name}</td>
-                      <td>{f.kind}</td>
-                      <td>{Math.max(1, Math.round(f.size_bytes / 1024))} KB</td>
-                      <td>{f.skipped}</td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="text-text-2">
+                      <th className="py-1 pr-3 font-semibold">{t("fileName")}</th>
+                      <th className="pr-3 font-semibold">{t("fileType")}</th>
+                      <th className="pr-3 font-semibold">{t("fileSize")}</th>
+                      <th className="font-semibold">{t("fileSkipped")}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {d.files.map((f) => (
+                      <tr key={f.id} className="border-t border-line">
+                        <td className="py-1.5 pr-3 font-code text-[13px]">{f.name}</td>
+                        <td className="pr-3">{f.kind}</td>
+                        <td className="whitespace-nowrap pr-3">{Math.max(1, Math.round(f.size_bytes / 1024))} KB</td>
+                        <td>{f.skipped}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </Panel>
 
@@ -188,51 +190,26 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ i
 
         <div className="flex min-w-0 flex-col gap-4">
           <Panel title={t("moderation")}>
+            {/* Two decisions only: remove, or restore. Nothing happens to a project without one of them. */}
             <div className="flex flex-wrap gap-2">
-              {mod === "ok" || mod === "held" ? (
-                <>
-                  {mod === "ok" ? (
-                    <ReasonAction
-                      label={t("hold")}
-                      consequence={t("holdEffect")}
-                      action={setProjectModeration.bind(null, id, "held")}
-                      undo={{ action: setProjectModeration.bind(null, id, "ok") }}
-                      successMessage={t("held")}
-                    />
-                  ) : (
-                    <ReasonAction
-                      label={t("restore")}
-                      tone="primary"
-                      consequence={t("restoreEffect")}
-                      action={setProjectModeration.bind(null, id, "ok")}
-                      successMessage={t("restored")}
-                    />
-                  )}
-                  <ReasonAction
-                    label={t("hide")}
-                    consequence={t("hideEffect")}
-                    action={setProjectModeration.bind(null, id, "hidden")}
-                    undo={{ action: setProjectModeration.bind(null, id, "ok") }}
-                    successMessage={t("hidden")}
-                  />
-                  <ReasonAction
-                    label={t("remove")}
-                    tone="danger"
-                    consequence={t("removeEffect")}
-                    action={setProjectModeration.bind(null, id, "removed")}
-                    successMessage={t("removed")}
-                  />
-                </>
-              ) : (
+              {mod !== "ok" ? (
                 <ReasonAction
                   label={t("restore")}
                   tone="primary"
                   consequence={t("restoreEffect")}
                   action={setProjectModeration.bind(null, id, "ok")}
-                  undo={mod === "hidden" ? { action: setProjectModeration.bind(null, id, "hidden") } : undefined}
                   successMessage={t("restored")}
                 />
-              )}
+              ) : null}
+              {mod !== "removed" ? (
+                <ReasonAction
+                  label={t("remove")}
+                  tone="danger"
+                  consequence={t("removeEffect")}
+                  action={setProjectModeration.bind(null, id, "removed")}
+                  successMessage={t("removed")}
+                />
+              ) : null}
             </div>
           </Panel>
 

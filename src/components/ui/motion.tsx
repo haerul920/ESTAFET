@@ -1,46 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
-
-const noopSubscribe = () => () => {};
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { motion } from "framer-motion";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { cn } from "@/lib/cn";
 import { observeLoop } from "@/lib/loop-observer";
 import { usePrefersReducedMotion } from "@/lib/use-reduced-motion";
 
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
 /*
- * Motion primitives (CLAUDE.md 14.8). Loops and reveals are CSS (src/styles/motion.css).
- * JavaScript only decides when something is in view, and drives the scroll parallax with
- * requestAnimationFrame. Everything is off when the visitor prefers reduced motion.
+ * Who animates what (CLAUDE.md 15.3). One owner per element and property, so two systems never fight:
+ *  - GSAP + ScrollTrigger: scroll reveals, staggers, the headline, count-ups, progress bars, parallax.
+ *  - Motion (the framer-motion package): hover, press, enter and exit, layout changes.
+ *  - CSS: endless loops (clouds, flowers, skeletons) and tiny states (link underline, colours, chips).
+ * Everything respects prefers-reduced-motion.
  */
 
 type Vars = CSSProperties & Record<`--${string}`, string | number | undefined>;
 
-/** Marks `data-in` once the element enters the viewport (once). */
-function useInViewOnce<T extends HTMLElement>(margin = "-60px") {
-  const ref = useRef<T>(null);
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    // Browsers without IntersectionObserver are not supported for reveals: the CSS shows content when
-    // scripting is unavailable, and every current browser has IntersectionObserver.
-    if (typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setInView(true);
-          io.disconnect();
-        }
-      },
-      { rootMargin: `0px 0px ${margin} 0px` },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [margin]);
-  return [ref, inView] as const;
-}
-
-/** Fades and lifts its children into view once. `delay` is in seconds. */
+/** Fades and lifts its children into view once via GSAP + ScrollTrigger. `delay` is in seconds. */
 export function Reveal({
   children,
   delay = 0,
@@ -54,11 +36,43 @@ export function Reveal({
   className?: string;
   as?: "div" | "section" | "li" | "article" | "aside";
 }) {
-  const [ref, inView] = useInViewOnce<HTMLElement>();
+  const ref = useRef<HTMLElement>(null);
+  const reduce = usePrefersReducedMotion();
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (reduce) {
+      el.dataset.in = "true";
+      gsap.set(el, { clearProps: "all" });
+      return;
+    }
+    const ctx = gsap.context(() => {
+      gsap.set(el, { opacity: 0, y });
+      ScrollTrigger.create({
+        trigger: el,
+        start: "top 92%",
+        once: true,
+        onEnter: () => {
+          el.dataset.in = "true";
+          gsap.to(el, {
+            opacity: 1,
+            y: 0,
+            duration: 0.65,
+            delay,
+            ease: "power3.out",
+            clearProps: "transform,opacity",
+          });
+        },
+      });
+    }, el);
+    return () => ctx.revert();
+  }, [delay, reduce, y]);
+
   return (
     <Tag
       ref={ref as never}
-      data-in={inView}
+      data-in={reduce ? true : undefined}
       className={cn("reveal", className)}
       style={{ "--delay": `${Math.round(delay * 1000)}ms`, "--reveal-y": `${y}px` } as Vars}
     >
@@ -67,7 +81,7 @@ export function Reveal({
   );
 }
 
-/** Container whose <StaggerItem> children enter one after another when it scrolls into view. `gap` is in seconds. */
+/** Container whose <StaggerItem> children enter one after another via GSAP + ScrollTrigger. `gap` is in seconds. */
 export function Stagger({
   children,
   gap = 0.08,
@@ -79,11 +93,44 @@ export function Stagger({
   className?: string;
   as?: "div" | "ul" | "ol" | "section";
 }) {
-  const [ref, inView] = useInViewOnce<HTMLElement>();
+  const ref = useRef<HTMLElement>(null);
+  const reduce = usePrefersReducedMotion();
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const items = el.querySelectorAll<HTMLElement>(":scope > .reveal-item");
+    if (reduce || items.length === 0) {
+      el.dataset.in = "true";
+      if (items.length > 0) gsap.set(items, { clearProps: "all" });
+      return;
+    }
+    const ctx = gsap.context(() => {
+      gsap.set(items, { opacity: 0, y: 22 });
+      ScrollTrigger.create({
+        trigger: el,
+        start: "top 92%",
+        once: true,
+        onEnter: () => {
+          el.dataset.in = "true";
+          gsap.to(items, {
+            opacity: 1,
+            y: 0,
+            duration: 0.6,
+            stagger: gap,
+            ease: "power3.out",
+            clearProps: "transform,opacity",
+          });
+        },
+      });
+    }, el);
+    return () => ctx.revert();
+  }, [gap, reduce]);
+
   return (
     <Tag
       ref={ref as never}
-      data-in={inView}
+      data-in={reduce ? true : undefined}
       className={cn("stagger", className)}
       style={{ "--gap": `${Math.round(gap * 1000)}ms` } as Vars}
     >
@@ -101,10 +148,11 @@ export function StaggerItem({
   className?: string;
   as?: "div" | "li" | "article";
 }) {
+  // GSAP owns this element's transform. A card that needs a hover lift wraps its content in <HoverLift>.
   return <Tag className={cn("reveal-item", className)}>{children}</Tag>;
 }
 
-/** Splits a headline into words that rise in one after another. Screen readers get the whole sentence once. */
+/** Splits a headline into words that rise in one after another via a GSAP timeline. Screen readers get the whole sentence once. */
 export function WordReveal({
   text,
   baseDelay = 100,
@@ -114,9 +162,42 @@ export function WordReveal({
   baseDelay?: number;
   className?: string;
 }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const reduce = usePrefersReducedMotion();
   const words = text.split(/\s+/).filter(Boolean);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // The words start hidden by CSS. Every path out of here has to switch that off, or the headline stays blank.
+    if (reduce) {
+      el.dataset.in = "true";
+      return;
+    }
+    const targets = el.querySelectorAll<HTMLElement>(".word");
+    if (targets.length === 0) return;
+    const ctx = gsap.context(() => {
+      // From here on GSAP sets each word's opacity, so the CSS that hid them before it ran is switched off.
+      el.dataset.in = "true";
+      gsap.fromTo(
+        targets,
+        { opacity: 0, y: "0.45em" },
+        {
+          opacity: 1,
+          y: "0em",
+          duration: 0.55,
+          stagger: 0.055,
+          delay: baseDelay / 1000,
+          ease: "power3.out",
+          clearProps: "transform,opacity",
+        },
+      );
+    }, el);
+    return () => ctx.revert();
+  }, [baseDelay, reduce, text]);
+
   return (
-    <span className={className}>
+    <span ref={ref} className={cn("word-reveal", className)}>
       <span className="sr-only">{text}</span>
       <span aria-hidden="true">
         {words.map((w, i) => (
@@ -133,36 +214,56 @@ export function WordReveal({
 }
 
 /**
- * Counts up to a number once, when it scrolls into view. CSS animates an integer property,
- * so there is no per-frame JavaScript. The final value is always in the accessible name.
+ * Counts up to a number once when scrolled into view using GSAP + ScrollTrigger.
+ * Mutates textContent directly on each GSAP tick to avoid React re-renders.
  */
 export function CountUp({ to, suffix = "", className }: { to: number; suffix?: string; className?: string }) {
-  const [ref, inView] = useInViewOnce<HTMLSpanElement>("-40px");
+  const ref = useRef<HTMLSpanElement>(null);
   const reduce = usePrefersReducedMotion();
-  // The server cannot know; it renders the final value. The browser switches to the animation after hydration.
-  const supported = useSyncExternalStore(
-    noopSubscribe,
-    () => typeof CSS !== "undefined" && "registerProperty" in CSS,
-    () => false,
-  );
-  const staticFinal = reduce || !supported;
   const final = `${to}${suffix}`;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (reduce) {
+      el.textContent = final;
+      return;
+    }
+    const counter = { val: 0 };
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: el,
+        start: "top 94%",
+        once: true,
+        onEnter: () => {
+          gsap.to(counter, {
+            val: to,
+            duration: 1.1,
+            ease: "power2.out",
+            onUpdate: () => {
+              el.textContent = `${Math.round(counter.val)}${suffix}`;
+            },
+            onComplete: () => {
+              el.textContent = final;
+            },
+          });
+        },
+      });
+    }, el);
+    return () => ctx.revert();
+  }, [final, reduce, suffix, to]);
+
   return (
     <span className={className}>
       <span className="sr-only">{final}</span>
-      <span
-        ref={ref}
-        aria-hidden="true"
-        className="count-up"
-        data-in={inView}
-        data-static={staticFinal}
-        style={{ "--to": to, "--suffix": JSON.stringify(suffix), "--final": JSON.stringify(final) } as Vars}
-      />
+      <span ref={ref} aria-hidden="true">
+        {final}
+      </span>
     </span>
   );
 }
 
-/** A progress bar whose fill grows to the given percentage (transform only). */
+/** A progress bar whose fill grows to the given percentage via GSAP + ScrollTrigger. */
 export function AnimatedBar({
   pct,
   height = 8,
@@ -179,10 +280,40 @@ export function AnimatedBar({
   className?: string;
 }) {
   const clamped = Math.max(0, Math.min(100, pct));
-  const [ref, inView] = useInViewOnce<HTMLDivElement>("-20px");
+  const trackRef = useRef<HTMLDivElement>(null);
+  const fillRef = useRef<HTMLDivElement>(null);
+  const reduce = usePrefersReducedMotion();
+
+  useEffect(() => {
+    const trackEl = trackRef.current;
+    const fillEl = fillRef.current;
+    if (!trackEl || !fillEl) return;
+    if (reduce) {
+      gsap.set(fillEl, { scaleX: clamped / 100 });
+      return;
+    }
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        fillEl,
+        { scaleX: 0 },
+        {
+          scaleX: clamped / 100,
+          duration: 0.85,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: trackEl,
+            start: "top 95%",
+            once: true,
+          },
+        },
+      );
+    }, trackEl);
+    return () => ctx.revert();
+  }, [clamped, reduce]);
+
   return (
     <div
-      ref={ref}
+      ref={trackRef}
       role="progressbar"
       aria-valuenow={Math.round(clamped)}
       aria-valuemin={0}
@@ -192,14 +323,39 @@ export function AnimatedBar({
       style={{ height, background: track }}
     >
       <div
+        ref={fillRef}
         className="h-full w-full origin-left rounded-full"
         style={{
           background: fill,
-          transform: `scaleX(${inView ? clamped / 100 : 0})`,
-          transition: "transform 900ms var(--ease)",
+          transform: `scaleX(${clamped / 100})`,
         }}
       />
     </div>
+  );
+}
+
+/** Motion hover lift for cards and feature blocks: 4 px up, a small press. */
+export function HoverLift({
+  children,
+  className,
+  y = -4,
+  scale = 1,
+}: {
+  children: ReactNode;
+  className?: string;
+  y?: number;
+  scale?: number;
+}) {
+  const reduce = usePrefersReducedMotion();
+  return (
+    <motion.div
+      className={className}
+      whileHover={reduce ? undefined : { y, scale }}
+      whileTap={reduce ? undefined : { scale: 0.99 }}
+      transition={{ type: "spring", stiffness: 380, damping: 26 }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -313,7 +469,7 @@ export function SwayGroup({
 }
 
 /**
- * Sets --py (0 to 24 px) on its own element while the page scrolls, throttled with requestAnimationFrame.
+ * Scrubs --py (0 to 24 px) on its own element while the page scrolls using GSAP + ScrollTrigger.
  * Children use the .parallax class (Cloud does). Does nothing when reduced motion is on.
  */
 export function ParallaxLayer({ children, className }: { children: ReactNode; className?: string }) {
@@ -322,20 +478,23 @@ export function ParallaxLayer({ children, className }: { children: ReactNode; cl
   useEffect(() => {
     const el = ref.current;
     if (!el || reduce) return;
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      el.style.setProperty("--py", `${Math.min(24, window.scrollY * 0.04).toFixed(1)}px`);
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (frame) cancelAnimationFrame(frame);
-    };
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        el,
+        { "--py": "0px" },
+        {
+          "--py": "24px",
+          ease: "none",
+          scrollTrigger: {
+            trigger: el,
+            start: "top top",
+            end: "bottom top",
+            scrub: 0.6,
+          },
+        },
+      );
+    }, el);
+    return () => ctx.revert();
   }, [reduce]);
   return (
     <div ref={ref} aria-hidden="true" className={cn("pointer-events-none absolute inset-0", className)}>

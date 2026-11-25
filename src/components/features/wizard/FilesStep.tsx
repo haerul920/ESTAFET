@@ -2,19 +2,26 @@
 
 import { useCallback, useRef, useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { FileText, FileCode2, Loader2, ShieldCheck, Trash2, UploadCloud, FileArchive } from "lucide-react";
+import { FileText, Loader2, ShieldCheck, Trash2, UploadCloud } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { FormMessage } from "@/components/ui/Field";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { SaveExitButton } from "./SaveExit";
 import { confirmTeamConsent, deleteFile } from "@/app/actions/projects";
-import { setFillMode } from "@/app/actions/owner";
+import { cancelAiDraft, setFillMode } from "@/app/actions/owner";
 import { cn } from "@/lib/cn";
 import type { ProjectFile } from "@/lib/db/types";
 
 import { useLabels } from "@/lib/use-labels";
+import { createClient as createBrowserSupabase } from "@/lib/supabase/client";
+import { ACCEPT_ATTRIBUTE } from "@/lib/ingest/accept";
+import { FileKindIcon } from "@/components/features/FileKindIcon";
+import { WizardActions } from "./WizardActions";
+import { PdfPreview } from "@/components/features/PdfPreview";
 
 function formatSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
@@ -22,29 +29,19 @@ function formatSize(bytes: number): string {
   return `${bytes} B`;
 }
 
+/** One line on the upload step (CLAUDE.md section 8). The full explanation is on the Privacy page. */
 function DataNotice() {
   const t = useTranslations("files");
   return (
-    <Card tone="blue">
-      <h2 className="mb-2 mt-0 flex items-center gap-2 text-base">
-        <ShieldCheck size={18} aria-hidden="true" /> {t("noticeTitle")}
-      </h2>
-      <ul className="m-0 flex list-none flex-col gap-2 p-0 text-[15px] text-text-3">
-        <li>
-          <strong>{t("readLabel")}</strong> {t("readText")}
-        </li>
-        <li>
-          <strong>{t("whoLabel")}</strong> {t("whoText")}
-        </li>
-        <li>
-          <strong>{t("privateLabel")}</strong> {t("privateText")}
-        </li>
-        <li>
-          <strong>{t("skippedLabel")}</strong>{" "}
-          {t.rich("skippedText", { env: (chunks) => <code className="font-code">{chunks}</code> })}
-        </li>
-      </ul>
-    </Card>
+    <p className="m-0 flex items-start gap-2 rounded-[18px] bg-blue-tint px-4 py-3 text-[15px] text-text-3">
+      <ShieldCheck size={18} aria-hidden="true" className="mt-0.5 flex-none text-blue" />
+      <span>
+        {t("noticeLine")}{" "}
+        <Link href="/privacy#berkas" target="_blank" className="font-semibold text-blue">
+          {t("noticeLink")}
+        </Link>
+      </span>
+    </p>
   );
 }
 
@@ -52,24 +49,28 @@ export function FilesStep({
   projectId,
   files,
   itemCount,
+  aiItemCount,
   canSynthesize,
   blockReason,
-  mockMode,
   selfConsented,
   othersPending,
   fillMode,
+  maxMb,
 }: {
   projectId: string;
   files: ProjectFile[];
   itemCount: number;
+  /** Items the AI drafted. They are removed when the owners take the AI back. */
+  aiItemCount: number;
   canSynthesize: boolean;
   blockReason: string;
-  mockMode: boolean;
   /** The signed-in owner already confirmed that the team agrees to share (and to AI reading the files). */
   selfConsented: boolean;
   /** Active team members other than the signed-in owner who have not confirmed yet. */
   othersPending: number;
   fillMode: "ai" | "manual" | null;
+  /** The upload limit in force, for the line under the button. */
+  maxMb: number;
 }) {
   const t = useTranslations("files");
   const L = useLabels();
@@ -92,15 +93,46 @@ export function FilesStep({
       setError("");
       setMessages([]);
       try {
-        const fd = new FormData();
-        for (const f of arr) fd.append("files", f);
-        const res = await fetch(`/api/projects/${projectId}/files?lang=${locale}`, { method: "POST", body: fd });
-        const json = (await res.json().catch(() => ({}))) as {
-          error?: string;
-          outcomes?: { name: string; ok: boolean; note: string }[];
+        // 1. Ask for one upload address per file. 2. Send each file straight to storage. 3. Let the server check them.
+        const post = async <T,>(path: string, body: unknown) => {
+          const res = await fetch(`/api/projects/${projectId}/files${path}?lang=${locale}`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const json = (await res.json().catch(() => ({}))) as T & { error?: string };
+          return { ok: res.ok, json };
         };
-        if (!res.ok) setError(json.error ?? t("uploadFailed"));
-        else setMessages((json.outcomes ?? []).filter((o) => !o.ok));
+        const asked = await post<{ tickets?: { name: string; path?: string; token?: string; error?: string }[] }>(
+          "/prepare",
+          { files: arr.map((f) => ({ name: f.name, size: f.size })) },
+        );
+        if (!asked.ok) {
+          setError(asked.json.error ?? t("uploadFailed"));
+          return;
+        }
+        const failed: { name: string; ok: boolean; note: string }[] = [];
+        const sent: { path: string; name: string }[] = [];
+        const storage = createBrowserSupabase().storage.from("project-files");
+        for (const [index, ticket] of (asked.json.tickets ?? []).entries()) {
+          if (!ticket.path || !ticket.token) {
+            failed.push({ name: ticket.name, ok: false, note: ticket.error ?? t("uploadFailed") });
+            continue;
+          }
+          const { error: sendError } = await storage.uploadToSignedUrl(ticket.path, ticket.token, arr[index], {
+            contentType: arr[index].type || "application/octet-stream",
+          });
+          if (sendError) failed.push({ name: ticket.name, ok: false, note: t("uploadFailed") });
+          else sent.push({ path: ticket.path, name: ticket.name });
+        }
+        if (sent.length > 0) {
+          const checked = await post<{ outcomes?: { name: string; ok: boolean; note: string }[] }>("", {
+            uploads: sent,
+          });
+          if (!checked.ok) setError(checked.json.error ?? t("uploadFailed"));
+          else failed.push(...(checked.json.outcomes ?? []).filter((o) => !o.ok));
+        }
+        setMessages(failed);
         router.refresh();
       } catch {
         setError(t("uploadOffline"));
@@ -141,7 +173,7 @@ export function FilesStep({
         selfConsented={selfConsented}
         othersPending={othersPending}
         fillMode={fillMode}
-        hasItems={itemCount > 0}
+        aiItemCount={aiItemCount}
         onError={setError}
       />
 
@@ -176,15 +208,23 @@ export function FilesStep({
           ref={inputRef}
           id="file-input"
           type="file"
+          // Hidden: the "choose files" button opens it. It still needs a name, and must not be a second Tab stop.
+          aria-label={t("choose")}
+          tabIndex={-1}
           multiple
-          accept=".pdf,.md,.markdown,.zip,application/pdf,text/markdown,application/zip"
+          accept={ACCEPT_ATTRIBUTE}
           className="sr-only"
           onChange={(e) => e.target.files && void upload(e.target.files)}
         />
-        <Button variant="outlineBlue" onClick={() => inputRef.current?.click()} disabled={uploading}>
+        <Button
+          variant="outlineBlue"
+          onClick={() => inputRef.current?.click()}
+          loading={uploading}
+          disabled={uploading}
+        >
           {t("choose")}
         </Button>
-        <p className="m-0 text-sm text-text-2">{t("accepted")}</p>
+        <p className="m-0 text-sm text-text-2">{t("accepted", { mb: maxMb })}</p>
       </div>
 
       <div aria-live="polite" className="flex flex-col gap-2">
@@ -206,7 +246,6 @@ export function FilesStep({
           <ul className="m-0 flex list-none flex-col gap-3 p-0">
             <AnimatePresence initial={false}>
               {files.map((f) => {
-                const Icon = f.kind === "pdf" ? FileText : f.kind === "markdown" ? FileCode2 : FileArchive;
                 return (
                   <motion.li
                     key={f.id}
@@ -217,17 +256,21 @@ export function FilesStep({
                     className="flex flex-col gap-2 rounded-[18px] border border-line-soft bg-white p-4"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <span className="flex items-center gap-2 font-code text-sm">
-                        <Icon size={18} aria-hidden="true" className="text-text-2" />
-                        {f.original_name}
+                      <span className="flex min-w-0 items-center gap-2 font-code text-sm">
+                        <FileKindIcon kind={f.kind} />
+                        <span className="min-w-0 [overflow-wrap:anywhere]">{f.original_name}</span>
                       </span>
-                      <span className="flex items-center gap-2 text-[13px] text-text-2">
+                      <span className="ml-auto flex flex-wrap items-center justify-end gap-2 text-[13px] text-text-2">
                         {L.fileKind[f.kind]} · {formatSize(f.size_bytes)}
+                        {f.kind === "pdf" && f.storage_path ? (
+                          <PdfPreview projectId={projectId} fileId={f.id} name={f.original_name} />
+                        ) : null}
                         {confirmDelete === f.id ? (
                           <span className="flex items-center gap-2">
                             <Button
                               variant="danger"
                               size="sm"
+                              loading={removing}
                               disabled={removing}
                               onClick={() =>
                                 startRemoving(async () => {
@@ -276,23 +319,32 @@ export function FilesStep({
 
       {!canSynthesize && readable > 0 ? <FormMessage tone="error">{blockReason}</FormMessage> : null}
 
-      <div className="flex flex-wrap justify-between gap-3">
-        <ButtonLink href={`/bagikan/${projectId}/info`} variant="outline">
-          {t("back")}
-        </ButtonLink>
-        {itemCount > 0 ? (
+      <WizardActions
+        left={
+          <ButtonLink href={`/bagikan/${projectId}/info`} variant="outline" size="lg">
+            {t("back")}
+          </ButtonLink>
+        }
+      >
+        <SaveExitButton />
+        {itemCount > 0 || fillMode === "manual" ? (
           <ButtonLink href={`/bagikan/${projectId}/tinjau`} arrow size="lg">
             {t("toVerify")}
           </ButtonLink>
         ) : (
-          <Button size="lg" arrow disabled={!canSynthesize || readable === 0 || drafting} onClick={draftAndContinue}>
+          <Button
+            size="lg"
+            arrow
+            loading={drafting}
+            disabled={!canSynthesize || readable === 0 || drafting}
+            onClick={draftAndContinue}
+          >
             {drafting ? t("drafting") : t("draftBtn")}
           </Button>
         )}
-      </div>
+      </WizardActions>
       {drafting ? (
         <p role="status" className="m-0 text-sm text-text-2">
-          {mockMode ? t("mockPrefix") : ""}
           {t("draftingText")}
         </p>
       ) : null}
@@ -309,25 +361,21 @@ function FillChoice({
   selfConsented,
   othersPending,
   fillMode,
-  hasItems,
+  aiItemCount,
   onError,
 }: {
   projectId: string;
   selfConsented: boolean;
   othersPending: number;
   fillMode: "ai" | "manual" | null;
-  hasItems: boolean;
+  aiItemCount: number;
   onError: (message: string) => void;
 }) {
   const t = useTranslations("fill");
   const router = useRouter();
   const [pending, start] = useTransition();
 
-  // Which of the two buttons started the running action, so only that one shows the spinner.
-  const [choice, setChoice] = useState<"ai" | "manual" | null>(null);
-
   function consent() {
-    setChoice("ai");
     start(async () => {
       onError("");
       const r = await confirmTeamConsent(projectId);
@@ -338,7 +386,6 @@ function FillChoice({
   }
 
   function manual() {
-    setChoice("manual");
     start(async () => {
       onError("");
       const r = await setFillMode(projectId, "manual");
@@ -350,9 +397,18 @@ function FillChoice({
     });
   }
 
+  // Neither choice is final: whatever the AI did can be taken back, and then both are open again.
+  const aiChosen = fillMode !== "manual" && (selfConsented || fillMode === "ai" || aiItemCount > 0);
+  const aiToRemove = fillMode === "ai" || aiItemCount > 0;
+
+  async function removeAi() {
+    onError("");
+    return cancelAiDraft(projectId);
+  }
+
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
-      <Card tone={fillMode === "manual" ? "white" : "lime"} className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
+      <Card tone={aiChosen ? "lime" : "white"} className="flex flex-col gap-3">
         <h2 className="m-0 flex items-center gap-2 text-lg">
           <ShieldCheck size={18} aria-hidden="true" /> {t("aiTitle")}
         </h2>
@@ -368,9 +424,10 @@ function FillChoice({
                 variant="outlineBlue"
                 size="md"
                 onClick={consent}
+                loading={pending}
                 disabled={pending}
-                pending={pending && choice === "ai"}
-                className="h-auto max-w-full whitespace-normal text-center"
+                // a long label: let it wrap instead of pushing the page sideways on small phones
+                className="h-auto max-w-full whitespace-normal py-2.5 text-center"
               >
                 {t("consentBtn")}
               </Button>
@@ -378,6 +435,20 @@ function FillChoice({
           )}
           {selfConsented && othersPending > 0 ? <p className="mb-0 mt-2 text-warn-ink">{t("consentOthers")}</p> : null}
         </div>
+        {selfConsented || aiToRemove ? (
+          <div>
+            <ConfirmDialog
+              trigger={t("cancelAi")}
+              triggerVariant="danger"
+              tone="danger"
+              title={t("cancelTitle")}
+              effect={t("cancelEffect", { count: aiItemCount })}
+              confirmLabel={t("cancelConfirm")}
+              onConfirm={removeAi}
+              onDone={() => router.refresh()}
+            />
+          </div>
+        ) : null}
       </Card>
       <Card tone={fillMode === "manual" ? "lime" : "white"} className="flex flex-col gap-3">
         <h2 className="m-0 flex items-center gap-2 text-lg">
@@ -385,14 +456,21 @@ function FillChoice({
         </h2>
         <p className="m-0 text-[15px] text-text-3">{t("manualText")}</p>
         <div className="mt-auto">
-          {hasItems && fillMode !== "manual" ? null : (
-            <Button
-              variant="outline"
-              size="md"
-              onClick={manual}
-              disabled={pending}
-              pending={pending && choice === "manual"}
-            >
+          {fillMode === "manual" ? null : aiToRemove ? (
+            <ConfirmDialog
+              trigger={t("manualBtn")}
+              tone="danger"
+              title={t("cancelTitle")}
+              effect={t("cancelEffect", { count: aiItemCount })}
+              confirmLabel={t("cancelConfirmManual")}
+              onConfirm={async () => {
+                const removed = await removeAi();
+                return removed.error ? removed : setFillMode(projectId, "manual");
+              }}
+              onDone={() => router.push(`/bagikan/${projectId}/tinjau`)}
+            />
+          ) : (
+            <Button variant="outline" size="md" onClick={manual} loading={pending} disabled={pending}>
               {t("manualBtn")}
             </Button>
           )}
