@@ -4,6 +4,8 @@ import { createContext, useCallback, useContext, useRef, useState } from "react"
 import * as RT from "@radix-ui/react-toast";
 import { CheckCircle2, TriangleAlert, X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { motion } from "framer-motion";
+import { iconMotion } from "@/components/ui/motion-presets";
 
 interface ToastItem {
   id: number;
@@ -78,11 +80,15 @@ export function ToastProvider({ children, labels }: { children: React.ReactNode;
                 {L.undo}
               </RT.Action>
             ) : null}
-            <RT.Close
-              aria-label={L.dismiss}
-              className="icon-btn flex h-8 w-8 cursor-pointer items-center justify-center rounded-full opacity-70 hover:opacity-100"
-            >
-              <X size={16} aria-hidden="true" />
+            <RT.Close asChild>
+              <motion.button
+                type="button"
+                {...iconMotion}
+                aria-label={L.dismiss}
+                className="icon-press flex h-8 w-8 cursor-pointer items-center justify-center rounded-full opacity-70 hover:opacity-100"
+              >
+                <X size={16} aria-hidden="true" />
+              </motion.button>
             </RT.Close>
           </RT.Root>
         ))}

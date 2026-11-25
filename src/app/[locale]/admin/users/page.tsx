@@ -4,6 +4,8 @@ import { DataTable, type Column } from "@/components/admin/DataTable";
 import { FilterBar } from "@/components/admin/FilterBar";
 import { PageHeader, StatusPill, Time } from "@/components/admin/ui";
 import { queryView } from "@/lib/admin/query";
+import { requireAdmin } from "@/lib/admin/guard";
+import { RoleControl } from "@/components/admin/RoleControl";
 import type { SearchParams } from "@/lib/admin/table";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -31,16 +33,10 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
     sortable: ["full_name", "email", "projects_count", "last_sign_in_at", "created_at"],
     defaultSort: "created_at",
     searchCols: ["full_name", "email"],
-    apply: (q) =>
-      sp.status === "suspended"
-        ? q.eq("suspended", true)
-        : sp.status === "active"
-          ? q.eq("suspended", false)
-          : sp.role === "admin"
-            ? q
-            : q,
+    // Filtered in the database, so the page count matches the rows.
+    apply: (q) => (sp.role === "admin" ? q.eq("is_admin", true) : sp.role === "member" ? q.eq("is_admin", false) : q),
   });
-  const filtered = sp.role === "admin" ? rows.filter((r) => r.is_admin) : rows;
+  const me = await requireAdmin();
 
   const columns: Column<Row>[] = [
     { key: "full_name", label: t("colName"), sortable: true },
@@ -49,7 +45,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
     {
       key: "is_admin",
       label: t("colRole"),
-      render: (r) => (r.is_admin ? <StatusPill tone="info">{t("admin")}</StatusPill> : t("member")),
+      render: (r) => <RoleControl userId={r.id} name={r.full_name} isAdmin={r.is_admin} self={r.id === me.id} />,
     },
     { key: "projects_count", label: t("colProjects"), sortable: true },
     {
@@ -74,23 +70,24 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
     <>
       <PageHeader title={t("title")} intro={t("intro")} />
       <FilterBar
+        dropdowns
         searchLabel={t("search")}
         filters={[
           {
-            key: "status",
-            label: t("filterStatus"),
+            key: "role",
+            label: t("filterRole"),
+            allLabel: t("allRoles"),
             options: [
-              { value: "active", label: t("active") },
-              { value: "suspended", label: t("suspended") },
+              { value: "admin", label: t("roleAdmin") },
+              { value: "member", label: t("roleMember") },
             ],
           },
-          { key: "role", label: t("filterRole"), options: [{ value: "admin", label: t("admins") }] },
         ]}
       />
       <DataTable
         columns={columns}
-        rows={filtered}
-        total={sp.role === "admin" ? filtered.length : total}
+        rows={rows}
+        total={total}
         params={params}
         sp={sp}
         basePath="/admin/users"

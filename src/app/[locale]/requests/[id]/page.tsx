@@ -5,7 +5,7 @@ import { requireUser, initials } from "@/lib/auth";
 import { getRequestDetail, getRequestMessages } from "@/lib/db/requests";
 import { PageShell, Breadcrumb } from "@/components/ui/PageShell";
 import { Card } from "@/components/ui/Card";
-import { Badge, DemoBadge } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/Badge";
 import { Stepper } from "@/components/ui/Stepper";
 import { AgreementCard, CreditLineCard, DecisionCard, type ReviewProps } from "@/components/features/RequestReview";
 import { RequestThread } from "@/components/features/RequestThread";
@@ -91,7 +91,6 @@ export default async function RequestReviewPage({ params }: { params: Promise<{ 
           <Card as="section" className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="m-0 text-[22px]">{r.adopter_team_name}</h2>
-              {project.is_demo ? <DemoBadge /> : null}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {members.map((m, i) => (
@@ -160,7 +159,7 @@ export default async function RequestReviewPage({ params }: { params: Promise<{ 
           />
         </div>
 
-        <aside className="flex min-w-[280px] flex-[0_1_400px] flex-col gap-4">
+        <aside className="flex w-full min-w-[280px] flex-[1_1_320px] flex-col gap-4 lg:flex-[0_0_400px]">
           <AgreementCard {...props} />
           <CreditLineCard creditLine={props.creditLine} />
         </aside>

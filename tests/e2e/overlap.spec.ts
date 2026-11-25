@@ -6,7 +6,7 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
  *  (a) the centre of every visible interactive element hits that element (or its label), so nothing covers it,
  *  (b) the page has no horizontal overflow,
  *  (c) text is not clipped by an overflow:hidden box,
- *  (d) on Home, the floating hero cards never touch the headline, the lead or the calls to action.
+ *  (d) on Home, the hero cards never touch the headline, the lead or the calls to action.
  * Reduced motion is on for (a) to (c) so reveals are instant and the result is deterministic; (d) runs with motion on.
  */
 
@@ -62,7 +62,7 @@ const SIGNED_IN: RouteCase[] = [
   { name: "dashboard adopter", path: "/dasbor", role: "adopter" },
   { name: "dashboard alumni", path: "/dasbor", role: "alumni" },
   { name: "my reports", path: "/laporan-saya", role: "adopter" },
-  { name: "account privacy", path: "/akun/privasi", role: "creator" },
+  { name: "settings", path: "/akun/setelan", role: "creator" },
   { name: "wizard start", path: "/bagikan", role: "creator" },
   { name: "wizard info", path: `/bagikan/${DRAFT_ID}/info`, role: "creator" },
   { name: "wizard team", path: `/bagikan/${DRAFT_ID}/tim`, role: "creator" },
@@ -85,10 +85,7 @@ const ADMIN_PAGES = [
   "/admin/users",
   "/admin/policies",
   "/admin/announcements",
-  "/admin/pipeline",
   "/admin/appeals",
-  "/admin/requests",
-  "/admin/trials",
   "/admin/audit",
   "/admin/settings",
 ];
@@ -111,7 +108,7 @@ async function contextFor(browser: Browser, role: Role) {
     const page = await ctx.newPage();
     await page.goto("/login");
     await page.getByLabel("Email", { exact: true }).fill(EMAIL[role]);
-    await page.getByLabel("Kata sandi").fill(PASSWORD);
+    await page.getByLabel("Kata sandi", { exact: true }).fill(PASSWORD);
     await page.getByRole("button", { name: "Masuk" }).last().click();
     await page.waitForURL(/\/(dasbor|admin|mulai)/);
     state = await ctx.storageState();
@@ -281,11 +278,11 @@ for (const group of [
   }
 }
 
-test("overlap audit: Home hero floating cards never touch the headline, the lead or the calls to action", async ({
+test("overlap audit: Home hero cards never touch the headline, the lead or the calls to action", async ({
   browser,
 }) => {
   test.setTimeout(240_000);
-  // Motion stays ON here: the cards are moving while we measure.
+  // Motion stays ON here: the cards are entering while we measure.
   const ctx = await browser.newContext({ locale: "id-ID" });
   const page = await ctx.newPage();
   const problems: string[] = [];
@@ -293,8 +290,8 @@ test("overlap audit: Home hero floating cards never touch the headline, the lead
     await page.setViewportSize(vp);
     await page.goto("/");
     await page.waitForLoadState("networkidle").catch(() => undefined);
-    await page.waitForTimeout(1500); // let the entrance animation finish
-    for (let sample = 0; sample < 6; sample++) {
+    for (let sample = 0; sample < 4; sample++) {
+      await page.waitForTimeout(500); // sample during and after the entrance animation
       const hits = await page.evaluate(() => {
         const hero = document.querySelector("h1")?.closest("section");
         if (!hero) return ["hero not found"];
@@ -303,31 +300,24 @@ test("overlap audit: Home hero floating cards never touch the headline, the lead
           hero.querySelector("p.fade-up"),
           ...hero.querySelectorAll("a.btn"),
         ].filter(Boolean) as Element[];
-        const floats = [...hero.querySelectorAll(".floating")].filter((f) => getComputedStyle(f).display !== "none");
+        const cards = [...hero.querySelectorAll(".reveal-item")];
         const out: string[] = [];
-        if (floats.length === 0) out.push("no floating cards");
-        for (const f of floats) {
-          const fr = f.getBoundingClientRect();
+        if (guarded.length < 4) out.push("headline, lead or calls to action not found");
+        if (cards.length === 0) out.push("no hero cards");
+        for (const c of cards) {
+          const cr = c.getBoundingClientRect();
           for (const g of guarded) {
             const gr = g.getBoundingClientRect();
-            const overlap = fr.left < gr.right && fr.right > gr.left && fr.top < gr.bottom && fr.bottom > gr.top;
+            const overlap = cr.left < gr.right && cr.right > gr.left && cr.top < gr.bottom && cr.bottom > gr.top;
             if (overlap)
               out.push(
-                `${(g as HTMLElement).tagName.toLowerCase()} "${(g.textContent ?? "").trim().slice(0, 24)}" overlaps a floating card`,
+                `${(g as HTMLElement).tagName.toLowerCase()} "${(g.textContent ?? "").trim().slice(0, 24)}" overlaps a hero card`,
               );
           }
         }
         return out;
       });
       problems.push(...hits.map((h) => `home @ ${vp.width}x${vp.height} sample ${sample}: ${h}`));
-      await page.waitForTimeout(1400);
-    }
-    if (vp.width <= 390) {
-      const visibleCards = await page.evaluate(
-        () => [...document.querySelectorAll(".floating")].filter((f) => getComputedStyle(f).display !== "none").length,
-      );
-      if (visibleCards !== 3)
-        problems.push(`home @ ${vp.width}: phones must show 3 floating cards, found ${visibleCards}`);
     }
   }
   await ctx.close();
@@ -355,7 +345,8 @@ test("overlap audit: the phone drawer and the account menu are never covered", a
     problems.push(...bad.map((b) => `${where}: "${b}" is covered`));
   }
 
-  for (const vp of [VIEWPORTS[0], VIEWPORTS[1], VIEWPORTS[2]]) {
+  // The menu button and its drawer exist below 768 px. 767 is the widest screen that still has them.
+  for (const vp of [VIEWPORTS[0], VIEWPORTS[1], { width: 767, height: 1024 }]) {
     await page.setViewportSize(vp);
     await page.goto("/explore");
     await page.getByRole("button", { name: "Buka menu" }).click();
@@ -372,6 +363,13 @@ test("overlap audit: the phone drawer and the account menu are never covered", a
     await expect(page.getByRole("button", { name: "Buka menu" })).toBeFocused();
   }
 
+  // From 768 px the links sit in the bar itself, so the menu button is gone and nothing in the bar is covered.
+  await page.setViewportSize(VIEWPORTS[2]);
+  await page.goto("/explore");
+  await expect(page.getByRole("button", { name: "Buka menu" })).toBeHidden();
+  await expect(page.locator('header nav a[href="/explore"]')).toBeVisible();
+  await hitCheck("nav bar @ 768", "header nav a, header nav button");
+
   for (const vp of VIEWPORTS) {
     await page.setViewportSize(vp);
     await page.goto("/explore");
@@ -386,6 +384,29 @@ test("overlap audit: the phone drawer and the account menu are never covered", a
   }
   await ctx.close();
   expect(problems).toEqual([]);
+});
+
+test("the Home headline is visible after navigating to Home, with and without reduced motion", async ({ browser }) => {
+  for (const reducedMotion of ["reduce", "no-preference"] as const) {
+    const ctx = await browser.newContext({ reducedMotion, viewport: { width: 1280, height: 800 }, locale: "id-ID" });
+    const page = await ctx.newPage();
+    // Arrive by clicking, not by loading the address: that is when the headline once stayed blank.
+    await page.goto("/explore");
+    await page.waitForLoadState("networkidle").catch(() => undefined);
+    await page.locator("nav ul a[href='/']").first().click();
+    await page.waitForURL((url) => url.pathname === "/");
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const words = [...document.querySelectorAll<HTMLElement>("main h1 .word")];
+            return words.length > 0 && words.every((w) => parseFloat(getComputedStyle(w).opacity) > 0.95);
+          }),
+        { message: `headline words visible (${reducedMotion})`, timeout: 15_000 },
+      )
+      .toBe(true);
+    await ctx.close();
+  }
 });
 
 test("overlap audit: prefers-reduced-motion disables looping animations (.floating and .cloud-drift)", async ({

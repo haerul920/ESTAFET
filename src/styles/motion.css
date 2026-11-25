@@ -57,12 +57,10 @@ html[data-page-hidden="true"] [data-loop] * {
 }
 
 /* ---------- Reveal on scroll (once) ---------- */
+/* GSAP does the movement. CSS only holds the state before it starts and after it ends: no transitions here. */
 .reveal {
   opacity: 0;
   transform: translate3d(0, var(--reveal-y, 24px), 0);
-  transition:
-    opacity var(--dur-reveal) var(--ease) var(--delay, 0ms),
-    transform var(--dur-reveal) var(--ease) var(--delay, 0ms);
 }
 .reveal[data-in="true"] {
   opacity: 1;
@@ -71,40 +69,10 @@ html[data-page-hidden="true"] [data-loop] * {
 .stagger > .reveal-item {
   opacity: 0;
   transform: translate3d(0, 22px, 0);
-  transition:
-    opacity var(--dur-reveal) var(--ease) calc(var(--i, 0) * var(--gap, 80ms) + 50ms),
-    transform var(--dur-reveal) var(--ease) calc(var(--i, 0) * var(--gap, 80ms) + 50ms);
 }
 .stagger[data-in="true"] > .reveal-item {
   opacity: 1;
   transform: none;
-}
-.stagger > .reveal-item:nth-child(1) {
-  --i: 0;
-}
-.stagger > .reveal-item:nth-child(2) {
-  --i: 1;
-}
-.stagger > .reveal-item:nth-child(3) {
-  --i: 2;
-}
-.stagger > .reveal-item:nth-child(4) {
-  --i: 3;
-}
-.stagger > .reveal-item:nth-child(5) {
-  --i: 4;
-}
-.stagger > .reveal-item:nth-child(6) {
-  --i: 5;
-}
-.stagger > .reveal-item:nth-child(7) {
-  --i: 6;
-}
-.stagger > .reveal-item:nth-child(8) {
-  --i: 7;
-}
-.stagger > .reveal-item:nth-child(n + 9) {
-  --i: 8;
 }
 
 /* Without scripting nothing may stay hidden. */
@@ -129,7 +97,16 @@ html[data-page-hidden="true"] [data-loop] * {
 }
 .word {
   display: inline-block;
-  animation: word-in 600ms var(--ease) calc(var(--i, 0) * 70ms + var(--base, 100ms)) both;
+}
+/* Hidden until GSAP takes over. If scripts never run, the headline still appears after 3 seconds. */
+.word-reveal:not([data-in]) .word {
+  opacity: 0;
+  animation: word-in 600ms var(--ease) 3s forwards;
+}
+@media (scripting: none) {
+  .word-reveal:not([data-in]) .word {
+    animation-delay: 0s;
+  }
 }
 
 /* Plain fade-up on load for hero copy and calls to action (no JavaScript needed). */
@@ -149,49 +126,18 @@ html[data-page-hidden="true"] [data-loop] * {
   animation: draw 1600ms var(--ease) var(--delay, 1200ms) forwards;
 }
 
-/* ---------- Count up (CSS only: an animated integer property) ---------- */
-@property --count-n {
-  syntax: "<integer>";
-  initial-value: 0;
-  inherits: false;
-}
-@keyframes count-up {
-  to {
-    --count-n: var(--to);
-  }
-}
-.count-up {
-  --count-n: 0;
-  counter-reset: cu var(--count-n);
-}
-.count-up::after {
-  content: counter(cu) var(--suffix, "");
-}
-.count-up[data-in="true"] {
-  animation: count-up 1200ms var(--ease) forwards;
-}
-.count-up[data-static="true"]::after {
-  content: var(--final);
-}
-.count-up[data-static="true"] {
-  animation: none;
-}
-
 /* ---------- Interactions (global) ---------- */
-/* Buttons lift and brighten, press scales to 0.98, the arrow nudges. */
+/* Motion lifts and presses buttons. CSS only brightens them and nudges the arrow, never their transform. */
 .btn {
   isolation: isolate;
   transition:
-    transform var(--dur-micro) var(--ease),
     background-color var(--dur-micro) var(--ease),
     filter var(--dur-micro) var(--ease);
 }
 .btn:not(:disabled):not([aria-disabled="true"]):hover {
-  transform: translate3d(0, -2px, 0);
   filter: brightness(1.05);
 }
 .btn:not(:disabled):not([aria-disabled="true"]):active {
-  transform: scale(0.98);
   filter: none;
 }
 .btn-arrow {
@@ -216,10 +162,9 @@ html[data-page-hidden="true"] [data-loop] * {
   opacity: 0.85;
 }
 
-/* Cards lift 4px; the soft shadow grows through an opacity layer. */
+/* Motion lifts cards 4px. CSS grows the soft shadow through an opacity layer. */
 .lift {
   position: relative;
-  transition: transform var(--dur-std) var(--ease);
 }
 .lift::after {
   content: "";
@@ -231,9 +176,6 @@ html[data-page-hidden="true"] [data-loop] * {
   opacity: 0;
   transition: opacity var(--dur-std) var(--ease);
   pointer-events: none;
-}
-.lift:hover {
-  transform: translate3d(0, -4px, 0);
 }
 .lift:hover::after {
   opacity: 1;
@@ -257,19 +199,14 @@ html[data-page-hidden="true"] [data-loop] * {
   transition: background-size var(--dur-std) var(--ease);
 }
 .link-anim:hover,
-.link-anim:focus-visible {
+.link-anim:focus-visible,
+.group:hover .link-anim {
   background-size: 100% 1.5px;
 }
 
-/* Icon buttons rotate or nudge. */
-.icon-btn {
-  transition: transform var(--dur-micro) var(--ease);
-}
-.icon-btn:hover {
-  transform: rotate(8deg) scale(1.06);
-}
-.icon-btn:active {
-  transform: scale(0.96);
+/* Pressed state of icon buttons. `scale` is separate from the transform that Motion animates. */
+.icon-press:active {
+  scale: 0.96;
 }
 
 /* The focus ring animates in (outline offset and colour transition, no layout change). */
@@ -285,14 +222,31 @@ html[data-page-hidden="true"] [data-loop] * {
 
 /* ---------- State changes ---------- */
 .skeleton {
-  background: linear-gradient(90deg, #e9ecef 0%, #f4f5f7 50%, #e9ecef 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s linear infinite;
+  background: linear-gradient(110deg, #e7ecef 20%, #f5f7f9 45%, #e7ecef 70%);
+  background-size: 220% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 14px;
+}
+.skeleton-strong {
+  background: linear-gradient(110deg, #dce2e7 20%, #eef2f5 45%, #dce2e7 70%);
+  background-size: 220% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 14px;
+}
+.skeleton-sky {
+  background: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0.24) 20%,
+    rgba(255, 255, 255, 0.48) 45%,
+    rgba(255, 255, 255, 0.24) 70%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
   border-radius: 14px;
 }
 @keyframes shimmer {
   to {
-    background-position: -200% 0;
+    background-position: -220% 0;
   }
 }
 
@@ -441,12 +395,13 @@ html[data-page-hidden="true"] [data-loop] * {
   .cloud-drift,
   .sway,
   .skeleton,
+  .skeleton-strong,
+  .skeleton-sky,
   .word,
   .fade-up,
   .item-in,
   .slide-in,
   .check-draw path,
-  .count-up,
   :focus-visible {
     animation: none !important;
   }
@@ -457,14 +412,14 @@ html[data-page-hidden="true"] [data-loop] * {
     animation: none !important;
     stroke-dashoffset: 0;
   }
+  .word-reveal .word {
+    opacity: 1 !important;
+  }
   .reveal,
   .stagger > .reveal-item {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
-  }
-  .count-up::after {
-    content: var(--final) !important;
   }
   .parallax {
     transform: none !important;
@@ -474,7 +429,6 @@ html[data-page-hidden="true"] [data-loop] * {
   .lift,
   .lift::after,
   .chip-hover,
-  .icon-btn,
   .link-anim,
   .btn-glow::before {
     transition: none !important;
@@ -482,7 +436,6 @@ html[data-page-hidden="true"] [data-loop] * {
   .btn:hover,
   .lift:hover,
   .chip-hover:hover,
-  .icon-btn:hover,
   .btn:hover .btn-arrow {
     transform: none !important;
   }

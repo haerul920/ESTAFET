@@ -33,13 +33,13 @@ test("the legal pages render in both languages, say they are drafts, and are lin
     await page.context().clearCookies();
     await page.goto(`/en/${p.path}`);
     await expect(page.getByRole("heading", { level: 1, name: p.en })).toBeVisible();
-    await expect(page.getByText("Draft, not yet reviewed by the competent authority")).toBeVisible();
+    await expect(page.getByText("Draft, not yet reviewed by the competent authority")).toHaveCount(0);
 
     // The language choice is remembered in a cookie, so start the Indonesian visit without it.
     await page.context().clearCookies();
     await page.goto(`/${p.path}`);
     await expect(page.getByRole("heading", { level: 1, name: p.id })).toBeVisible();
-    await expect(page.getByText("Draf, belum ditinjau pihak berwenang")).toBeVisible();
+    await expect(page.getByText("Draf, belum ditinjau pihak berwenang")).toHaveCount(0);
   }
   await page.goto("/en");
   const footer = page.getByRole("contentinfo");
@@ -50,8 +50,7 @@ test("the legal pages render in both languages, say they are drafts, and are lin
 
 test("a guest reports a project from the menu and receives a reference code", async ({ page }) => {
   await page.goto(`/en/projects/${SLUG}`);
-  await page.getByRole("button", { name: "Project menu" }).click();
-  await page.getByRole("menuitem", { name: /Report/ }).click();
+  await page.getByRole("button", { name: "Report project" }).click();
 
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("link", { name: "Community Guidelines" })).toBeVisible();

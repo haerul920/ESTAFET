@@ -68,8 +68,76 @@
 }
 
 html {
+  color-scheme: light;
   scroll-behavior: smooth;
   scroll-padding-top: 96px;
+}
+
+/* Custom capsule scrollbar (Chrome, Edge, Safari) — replaces default OS dark track & arrow buttons */
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--page);
+}
+
+body *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+body *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  min-height: 44px;
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  background-color: rgba(16, 21, 26, 0.22);
+  transition: background-color 180ms ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  border-width: 2px;
+  background-color: var(--blue);
+}
+
+::-webkit-scrollbar-thumb:active {
+  border-width: 2px;
+  background-color: var(--blue-dark);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox fallback — guarded so Chromium preserves custom ::-webkit-scrollbar rules */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(16, 21, 26, 0.25) transparent;
+  }
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
 }
 
 body {
@@ -143,4 +211,10 @@ body {
   .glass-strong {
     background: rgba(255, 255, 255, 0.4);
   }
+}
+
+/* The header once the page is scrolled: nearly solid, so its text stays readable over anything below it. */
+.glass.glass-stuck {
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 30px rgba(14, 26, 38, 0.14);
 }

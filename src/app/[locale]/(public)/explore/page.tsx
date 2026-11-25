@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { PackageSearch } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/ui/PageShell";
-import { DemoBadge } from "@/components/ui/Badge";
 import { ExploreFilters } from "@/components/features/ExploreFilters";
 import { ProjectGrid } from "@/components/features/ProjectGrid";
 import { ButtonLink } from "@/components/ui/Button";
 import { listTeasers } from "@/lib/db/public";
+import { parseAccessFilter, parseFilterYear } from "@/lib/explore";
 import { pageAlternates } from "@/lib/seo";
-import type { ProjectKind, StopReason } from "@/lib/db/types";
+import { after } from "next/server";
+import { translationsForList } from "@/lib/translate/server";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -22,13 +23,18 @@ const list = (v: string | string[] | undefined) => (Array.isArray(v) ? v : v ? [
 export default async function ExplorePage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
   const t = await getTranslations("explore");
-  const sort = typeof sp.sort === "string" && (sp.sort === "tasks" || sp.sort === "progress") ? sp.sort : "recent";
-  const projects = await listTeasers({
+  const found = await listTeasers({
     q: typeof sp.q === "string" ? sp.q : undefined,
-    kinds: list(sp.kind) as ProjectKind[],
-    reasons: list(sp.reason) as StopReason[],
     faculties: list(sp.faculty),
-    sort,
+    year: parseFilterYear(sp.year, new Date().getFullYear()),
+    access: parseAccessFilter(sp.access),
+  });
+  const translations = await translationsForList(found, (await getLocale()) === "en" ? "en" : "id", (work) =>
+    after(work),
+  );
+  const projects = found.map((p) => {
+    const text = translations.get(p.id);
+    return text ? { ...p, title: text.title, summary: text.summary } : p;
   });
 
   return (
@@ -38,7 +44,6 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
           <h1 className="mb-2 mt-0 text-[40px] font-medium max-sm:text-[32px]">{t("title")}</h1>
           <p className="m-0 text-text-2">{t("lead")}</p>
         </div>
-        <DemoBadge>{t("demo")}</DemoBadge>
       </div>
 
       <ExploreFilters resultCount={projects.length}>
@@ -52,7 +57,10 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
             </ButtonLink>
           </div>
         ) : (
-          <ProjectGrid projects={projects} />
+          <>
+            {translations.size > 0 ? <p className="mb-3 mt-0 text-sm text-text-2">{t("translatedNote")}</p> : null}
+            <ProjectGrid projects={projects} />
+          </>
         )}
       </ExploreFilters>
     </PageShell>

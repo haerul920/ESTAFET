@@ -67,7 +67,7 @@ describe("labels", () => {
       expect(L.accessMode.by_request).toBeTruthy();
       for (const f of FACULTIES) expect(L.faculty(f)).toBeTruthy();
     }
-    expect(buildLabels(translator("labels", "id")).faculty("Forestry")).toBe("Kehutanan");
+    expect(buildLabels(translator("labels", "id")).faculty("Forestry")).toBe("Fakultas Kehutanan (Fahut)");
   });
   it("shows an unknown faculty as typed", () => {
     expect(buildLabels(translator("labels", "id")).faculty("Teknik Mesin")).toBe("Teknik Mesin");

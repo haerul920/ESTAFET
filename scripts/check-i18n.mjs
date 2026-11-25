@@ -61,6 +61,9 @@ const FILE_NS = {
   "src/lib/lineage.ts": { t: "lineage" },
   "src/lib/agreement/terms.ts": { t: "agreement" },
   "src/lib/errors.ts": { t: "errors" },
+  // The upload routes get their translators from openUpload().
+  "src/app/api/projects/[id]/files/route.ts": { api: "api", upload: "upload" },
+  "src/app/api/projects/[id]/files/prepare/route.ts": { api: "api", upload: "upload" },
 };
 // Keys that are built from data at run time (enum values, SQL hints), so a static scan cannot see them used.
 const DYNAMIC_PREFIXES = [
@@ -84,6 +87,15 @@ const DYNAMIC_PREFIXES = [
   "admin.settings.row.source",
   "admin.policies.terms",
   "admin.policies.privacy",
+  "admin.policies.guidelines",
+  "admin.policies.attribution",
+  // The built-in text of the legal pages is read from the message files by src/lib/legal/defaults.ts.
+  "legalExtras.",
+  // Chosen by a code: why a file was refused, what happened to it, and what a cited number counts.
+  "upload.reject.",
+  "upload.note.",
+  "workspace.ref.",
+  "synth.error.",
   "decision.status",
   "decision.action.",
   "myReports.status.",

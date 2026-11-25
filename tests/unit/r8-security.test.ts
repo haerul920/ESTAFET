@@ -91,20 +91,16 @@ describe("R8 Item 5: API route handler authorization & environment guards", () =
     expect(res.status).toBe(401);
   });
 
-  it("GET /api/admin/audit/export and /api/admin/trials/export reject non-admins with 404 (defense-in-depth)", async () => {
+  it("GET /api/admin/audit/export rejects non-admins with 404 (defense-in-depth)", async () => {
     const serverMod = await import("@/lib/supabase/server");
     vi.spyOn(serverMod, "createClient").mockResolvedValue({
       rpc: async (fn: string) => ({ data: fn === "is_admin" ? false : null, error: null }),
     } as never);
 
     const auditRoute = await import("@/app/api/admin/audit/export/route");
-    const trialsRoute = await import("@/app/api/admin/trials/export/route");
 
     const auditRes = await auditRoute.GET(new Request("http://localhost:3100/api/admin/audit/export"));
     expect(auditRes.status).toBe(404);
-
-    const trialsRes = await trialsRoute.GET(new Request("http://localhost:3100/api/admin/trials/export"));
-    expect(trialsRes.status).toBe(404);
   });
 
   it("GET /api/cron/[job] rejects missing, short, or wrong CRON_SECRET with 401", async () => {
@@ -152,7 +148,8 @@ describe("R8 Item 7: Indonesian content, glossary compliance & XSS escaping", ()
 
   it("messages/id.json has no forbidden legacy terms, awkward literal translations, or placeholders", () => {
     const entries = flatten(idObj);
-    expect(entries.length).toBeGreaterThanOrEqual(2148);
+    // A guard against losing texts by accident. Lowered when admin pages were removed (CLAUDE.md 15.33 to 15.35).
+    expect(entries.length).toBeGreaterThanOrEqual(2101);
 
     const forbidden: [RegExp, string][] = [
       [/dosen\s+pembimbing/i, "Removed in R5 (no advisor flow)"],

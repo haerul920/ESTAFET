@@ -4,6 +4,8 @@ import * as RD from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
+import { motion } from "framer-motion";
+import { iconMotion } from "@/components/ui/motion-presets";
 
 /*
  * Dialogs and drawers (CLAUDE.md 14.9). Built on Radix: portal, focus trap, focus return, Escape and scroll lock
@@ -55,11 +57,15 @@ export function DialogContent({
         {description ? <RD.Description className="mb-0 mt-1 text-sm text-text-2">{description}</RD.Description> : null}
         {children}
         {showClose ? (
-          <RD.Close
-            aria-label={closeLabel ?? t("close")}
-            className="icon-btn absolute right-3 top-3 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-ink hover:bg-surface"
-          >
-            <X size={20} aria-hidden="true" />
+          <RD.Close asChild>
+            <motion.button
+              type="button"
+              {...iconMotion}
+              aria-label={closeLabel ?? t("close")}
+              className="icon-press absolute right-3 top-3 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-ink hover:bg-surface"
+            >
+              <X size={20} aria-hidden="true" />
+            </motion.button>
           </RD.Close>
         ) : null}
       </RD.Content>

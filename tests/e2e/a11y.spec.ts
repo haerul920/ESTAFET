@@ -7,7 +7,7 @@ const PASSWORD = "Demo-Pass-2026!";
 async function login(page: Page, email: string) {
   await page.goto("/en/login");
   await page.getByLabel("Email", { exact: true }).fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
+  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForURL(/\/(dasbor|dashboard|admin|mulai)/);
 }
@@ -30,10 +30,7 @@ const ADMIN_PAGES = [
   "/en/admin/projects",
   "/en/admin/reports",
   "/en/admin/users",
-  "/en/admin/pipeline",
   "/en/admin/appeals",
-  "/en/admin/requests",
-  "/en/admin/trials",
   "/en/admin/audit",
   "/en/admin/settings",
 ];
@@ -64,6 +61,15 @@ test("axe: the dialogs and the public report form have no serious issues", async
   await page.locator("#set-max_upload_mb").fill("27");
   await page.locator("[data-setting=max_upload_mb]").getByRole("button", { name: "Save" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  // Wait for the overlay and dialog fade-in to finish: axe would read half-transparent text.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a instanceof CSSAnimation && /^(overlay|dialog)-in$/.test(a.animationName))
+        .map((a) => a.finished),
+    ),
+  );
   expect(await serious(page)).toEqual([]);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
@@ -71,8 +77,7 @@ test("axe: the dialogs and the public report form have no serious issues", async
 
   const guest = await (await browser.newContext()).newPage();
   await guest.goto("/en/projects/mangrove-cover-classifier");
-  await guest.getByRole("button", { name: "Project menu" }).click();
-  await guest.getByRole("menuitem", { name: /Report/ }).click();
+  await guest.getByRole("button", { name: "Report project" }).click();
   await guest.waitForTimeout(1500); // let the fade-in animations finish: axe would read half-transparent text
   expect(await serious(guest)).toEqual([]);
 });
@@ -138,7 +143,7 @@ test("axe: Indonesian public, privacy, report and admin pages have no serious is
       for (const p of await serious(page)) problems.push(`${path} @ ${vp.width}px: ${p}`);
     }
     await login(page, "creator@estafet.demo");
-    for (const path of ["/dasbor", "/laporan-saya", "/akun/privasi", "/proyek/mangrove-cover-classifier/pengaturan"]) {
+    for (const path of ["/dasbor", "/laporan-saya", "/akun/setelan", "/proyek/mangrove-cover-classifier/pengaturan"]) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(1200);
@@ -170,10 +175,10 @@ test("keyboard navigation: skip link, visible focus ring, honeypot tabIndex=-1, 
 
   // 3. Report dialog opens via keyboard, has honeypot tabIndex === -1, and Escape closes it
   await page.goto("/projects/mangrove-cover-classifier");
-  const menuBtn = page.getByRole("button", { name: "Menu proyek" });
-  await menuBtn.focus();
-  await page.keyboard.press("Enter");
-  await expect(page.getByRole("menuitem", { name: /Laporkan/ })).toBeVisible();
+  // Wait until the page is interactive.
+  await page.waitForLoadState("networkidle");
+  const reportBtn = page.getByRole("button", { name: "Laporkan proyek" });
+  await reportBtn.focus();
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();

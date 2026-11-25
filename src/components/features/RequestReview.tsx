@@ -95,6 +95,7 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
                 <Button
                   variant="danger"
                   size="md"
+                  loading={pending}
                   disabled={pending}
                   onClick={() => run(() => withdrawRequest(requestId))}
                 >
@@ -153,12 +154,18 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
         />
       </div>
       <div className="flex flex-wrap gap-3">
-        <Button size="md" disabled={pending} onClick={() => run(() => decideRequest(requestId, "approved", message))}>
+        <Button
+          size="md"
+          loading={pending}
+          disabled={pending}
+          onClick={() => run(() => decideRequest(requestId, "approved", message))}
+        >
           {t("approve")}
         </Button>
         <Button
           variant="outline"
           size="md"
+          loading={pending}
           disabled={pending}
           onClick={() => {
             if (!message.trim()) {
@@ -175,6 +182,7 @@ export function DecisionCard({ requestId, status, isOwner, isTeam, decisionNote,
             <Button
               variant="danger"
               size="md"
+              loading={pending}
               disabled={pending}
               onClick={() => run(() => decideRequest(requestId, "declined", message))}
             >
@@ -269,7 +277,13 @@ export function AgreementCard(p: ReviewProps) {
         <div className="flex flex-col gap-3">
           {!p.verified ? <FormMessage tone="error">{t("verifyFirst")}</FormMessage> : null}
           <CheckboxField checked={accepted} onChange={(e) => setAccepted(e.target.checked)} label={t("acceptLabel")} />
-          <Button size="md" disabled={!accepted || pending || !p.verified} onClick={accept} className="self-start">
+          <Button
+            size="md"
+            loading={pending}
+            disabled={!accepted || pending || !p.verified}
+            onClick={accept}
+            className="self-start"
+          >
             {pending ? t("saving") : t("acceptBtn")}
           </Button>
         </div>
@@ -346,6 +360,7 @@ function RevokeControl({ accessId, requestId, name }: { accessId: string; reques
         <Button
           variant="danger"
           size="md"
+          loading={pending}
           disabled={pending || reason.trim().length < 15}
           onClick={() =>
             start(async () => {

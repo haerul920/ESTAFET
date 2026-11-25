@@ -84,12 +84,6 @@ function lessonType(text: string): SynthesisOutput["lessons"][number]["type"] {
   if (/delay|permit|graduat|corrod|failed|stayed|blocker|clash/i.test(text)) return "blocker";
   return "methodology";
 }
-function effortOf(text: string): "small" | "medium" | "large" {
-  if (/\b(guide|deploy|pilot|build|app|system|test with|train)\b/i.test(text)) return "large";
-  if (/\b(plan|check|agree|label|write|add)\b/i.test(text)) return "small";
-  return "medium";
-}
-
 export function mockSynthesize(docs: ExtractedDoc[]): SynthesisOutput {
   const all = sentencesOf(docs);
   const nonEmpty = all.length > 0;
@@ -134,7 +128,6 @@ export function mockSynthesize(docs: ExtractedDoc[]): SynthesisOutput {
         {
           title: "Deploy the project as a web service",
           description: "Mock mode adds one unsupported item on purpose so you can see how missing evidence looks.",
-          effort: "large" as const,
           evidence: [
             {
               file: unsupportedSource.fileName,
@@ -158,7 +151,6 @@ export function mockSynthesize(docs: ExtractedDoc[]): SynthesisOutput {
       ...nextS.map((s) => ({
         title: sentenceTitle(s.text),
         description: "",
-        effort: effortOf(s.text),
         evidence: ev(s),
       })),
       ...(nonEmpty ? unsupported : []),

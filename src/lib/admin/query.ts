@@ -10,7 +10,7 @@ export interface QueryConfig {
   searchCols?: string[];
   /** URL param -> column, matched with eq. */
   eq?: Record<string, string>;
-  /** Hide demo rows unless `demo=1` (CLAUDE.md 13.4 demo mode). Names the boolean column. */
+  /** Demo rows are left out of admin lists (CLAUDE.md 15.29). Names the boolean column. */
   demoCol?: string;
   /** Extra filter, for example date ranges. */
   // The Postgrest builder type is deeply generic; callers only chain filter methods on it.
@@ -44,7 +44,7 @@ export async function queryView<Row>(
     const v = first(sp[param]);
     if (v) q = q.eq(col, v);
   }
-  if (cfg.demoCol && first(sp.demo) !== "1") q = q.eq(cfg.demoCol, false);
+  if (cfg.demoCol) q = q.eq(cfg.demoCol, false);
   if (cfg.apply) q = cfg.apply(q, sp);
   const [from, to] = rangeFor(params);
   const { data, count, error } = await q.order(params.sort, { ascending: params.dir === "asc" }).range(from, to);

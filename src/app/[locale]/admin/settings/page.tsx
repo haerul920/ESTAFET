@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { PageHeader, Panel } from "@/components/admin/ui";
 import { SettingRow } from "@/components/admin/SettingRow";
-import { PurgeControl } from "@/components/admin/PurgeControl";
 import { getSettings } from "@/lib/settings";
-import { environmentName, isProduction } from "@/lib/admin/env";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -14,7 +12,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function AdminSettingsPage() {
   const [s, t] = await Promise.all([getSettings(), getTranslations("admin.settings")]);
-  const env = environmentName();
   const onOff = (v: boolean) => (v ? t("on") : t("off"));
   return (
     <>
@@ -93,29 +90,6 @@ export default async function AdminSettingsPage() {
         />
       </Panel>
 
-      <Panel title={t("groupModeration")} className="mb-4">
-        <SettingRow
-          settingKey="report_hold_threshold"
-          label={t("threshold.label")}
-          help={t("threshold.help")}
-          kind="number"
-          unit={t("threshold.unit")}
-          value={String(s.report_hold_threshold.value)}
-          source={s.report_hold_threshold.source}
-          fallback={`${s.report_hold_threshold.fallback} ${t("threshold.unit")}`}
-        />
-        <SettingRow
-          settingKey="hold_review_days"
-          label={t("review.label")}
-          help={t("review.help")}
-          kind="number"
-          unit={t("days")}
-          value={String(s.hold_review_days.value)}
-          source={s.hold_review_days.source}
-          fallback={`${s.hold_review_days.fallback} ${t("days")}`}
-        />
-      </Panel>
-
       <Panel title={t("groupDisplay")} className="mb-4">
         <SettingRow
           settingKey="show_demo_banner"
@@ -127,14 +101,6 @@ export default async function AdminSettingsPage() {
           fallback={onOff(s.show_demo_banner.fallback)}
         />
       </Panel>
-
-      <section aria-labelledby="danger-h" className="rounded-3xl border-2 border-danger bg-[#fdecea] p-5">
-        <h2 id="danger-h" className="mt-0 text-base text-danger">
-          {t("danger")}
-        </h2>
-        <p className="mb-3 mt-1 text-sm text-text-3">{t("dangerText", { env })}</p>
-        <PurgeControl blocked={isProduction()} env={env} />
-      </section>
     </>
   );
 }

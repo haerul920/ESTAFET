@@ -52,7 +52,6 @@ async function daily(): Promise<Step[]> {
   return [
     await step("expire_requests", rpc("expire_requests")),
     await step("remind_expiring_requests", rpc("remind_expiring_requests", { p_days: 3 })),
-    await step("escalate_overdue_holds", rpc("escalate_overdue_holds")),
     await step("housekeeping", async () => {
       const { error } = await db.rpc("housekeeping");
       if (error) throw error;

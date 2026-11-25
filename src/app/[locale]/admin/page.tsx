@@ -3,7 +3,6 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, Panel, StatCard, StatusPill, Time, toneFor, EmptyState } from "@/components/admin/ui";
-import { FilterBar } from "@/components/admin/FilterBar";
 import { getSettings } from "@/lib/settings";
 import { environmentName } from "@/lib/admin/env";
 import { statusText, type StatusTranslator } from "@/lib/admin/labels";
@@ -17,12 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 interface Overview {
   open_reports: number;
   new_reports_24h: number;
-  held_projects: number;
-  overdue_holds: number;
-  hidden_projects: number;
   open_appeals: number;
-  failed_runs_24h: number;
-  stale_requests: number;
   median_days_to_publish: number | null;
   projects_by_status: Record<string, number>;
   projects_by_moderation: Record<string, number>;
@@ -32,7 +26,6 @@ interface Overview {
   reports_by_outcome: Record<string, number>;
   users_total: number;
   users_suspended: number;
-  demo_projects: number;
 }
 interface AuditRow {
   id: string;
@@ -58,8 +51,7 @@ function Counts({ map, empty, label }: { map: Record<string, number>; empty: str
   );
 }
 
-export default async function AdminOverviewPage({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
-  const { demo } = await searchParams;
+export default async function AdminOverviewPage() {
   const [t, ts, tr, tm] = await Promise.all([
     getTranslations("admin.overview"),
     getTranslations("admin.status"),
@@ -67,32 +59,23 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
     getTranslations("admin.modes"),
   ]);
   const status = (k: string) => statusText(ts as unknown as StatusTranslator, k);
-  const includeDemo = demo === "1";
   const supabase = await createClient();
-  const [{ data }, { data: audit }, settings, { count: failedEmails }] = await Promise.all([
-    supabase.rpc("admin_overview", { p_include_demo: includeDemo }),
+  const [{ data }, { data: audit }, settings] = await Promise.all([
+    // Real data only: demo rows never count towards these numbers (CLAUDE.md 13.4).
+    supabase.rpc("admin_overview", { p_include_demo: false }),
     supabase
       .from("admin_audit_v")
       .select("id, actor_name, action, target_type, reason, created_at")
       .order("created_at", { ascending: false })
       .limit(10),
     getSettings(),
-    // Emails that failed after every attempt (any age: they stay until someone looks).
-    supabase.from("admin_email_log_v").select("id", { count: "exact", head: true }).eq("status", "failed"),
   ]);
   const o = data as Overview;
-  const demoQuery = includeDemo ? "?demo=1" : "";
   const sum = (m: Record<string, number>) => Object.values(m).reduce((a, b) => a + b, 0);
 
   return (
     <>
       <PageHeader title={t("title")} intro={t("intro")} />
-      <FilterBar searchLabel={null} toggles={[{ key: "demo", label: t("demoToggle", { count: o.demo_projects }) }]} />
-      {!includeDemo && o.demo_projects > 0 ? (
-        <p className="mb-4 mt-0 rounded-2xl bg-warn-bg px-4 py-2.5 text-sm text-warn-ink">
-          {t("demoHidden", { count: o.demo_projects })}
-        </p>
-      ) : null}
 
       <h2 className="mono-label mb-2 mt-0 text-xs font-normal text-text-2">{t("queues")}</h2>
       <div className="mb-6 grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-3">
@@ -104,41 +87,10 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
           tone={o.open_reports ? "warn" : "grey"}
         />
         <StatCard
-          label={t("heldProjects")}
-          value={o.held_projects}
-          hint={o.overdue_holds ? t("pastTarget", { count: o.overdue_holds }) : undefined}
-          href="/admin/projects?moderation=held"
-          tone={o.overdue_holds ? "danger" : o.held_projects ? "warn" : "grey"}
-        />
-        <StatCard
           label={t("openAppeals")}
           value={o.open_appeals}
           href="/admin/appeals?status=open"
           tone={o.open_appeals ? "warn" : "grey"}
-        />
-        <StatCard
-          label={t("hiddenRemoved")}
-          value={o.hidden_projects}
-          href="/admin/projects?moderation=hidden"
-          tone="grey"
-        />
-        <StatCard
-          label={t("failedRuns")}
-          value={o.failed_runs_24h}
-          href="/admin/pipeline?status=failed"
-          tone={o.failed_runs_24h ? "danger" : "grey"}
-        />
-        <StatCard
-          label={t("failedEmails")}
-          value={failedEmails ?? 0}
-          href="/admin/emails?status=failed"
-          tone={failedEmails ? "danger" : "grey"}
-        />
-        <StatCard
-          label={t("stale")}
-          value={o.stale_requests}
-          href="/admin/requests?state=stale"
-          tone={o.stale_requests ? "warn" : "grey"}
         />
       </div>
 
@@ -234,7 +186,6 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
           </ul>
         )}
       </Panel>
-      <span className="sr-only">{demoQuery}</span>
     </>
   );
 }

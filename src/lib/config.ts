@@ -26,7 +26,7 @@ const shape = z.object({
   APP_URL: z.preprocess(blank, z.string().url().optional()),
   LLM_PROVIDER: z.preprocess((v) => blank(v)?.toString().toLowerCase(), z.enum(PROVIDERS).default("mock")),
   EMAIL_PROVIDER: z.preprocess((v) => blank(v)?.toString().toLowerCase(), z.enum(EMAIL_PROVIDERS).default("none")),
-  MAX_UPLOAD_MB: optionalInt(1, 100),
+  MAX_UPLOAD_MB: optionalInt(1, 50),
   SYNTHESIS_DAILY_CAP: optionalInt(0, 10_000),
   SYNTHESIS_GLOBAL_DAILY_CAP: optionalInt(0, 1_000_000),
   REPORT_HOLD_THRESHOLD: optionalInt(2, 20),

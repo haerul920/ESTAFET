@@ -4,13 +4,14 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { PageShell, Breadcrumb } from "@/components/ui/PageShell";
 import { Card } from "@/components/ui/Card";
-import { OwnerVerified, DemoBadge } from "@/components/ui/Badge";
 import { RequestForm } from "@/components/features/RequestForm";
 import { getTeaserBySlug, getTeaserItems } from "@/lib/db/public";
 import { isProjectOwner } from "@/lib/db/access";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getLabels } from "@/lib/get-labels";
+import { translationFor } from "@/lib/translate/server";
+import { withTranslation } from "@/lib/translate/core";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -45,7 +46,11 @@ export default async function RequestPage({ params }: { params: Promise<{ slug: 
     .maybeSingle();
   if (open) redirect({ href: `/requests/${open.id}`, locale });
 
-  const tasks = (await getTeaserItems(project.id)).filter((i) => i.kind === "next_task");
+  const original = await getTeaserItems(project.id);
+  const translation = await translationFor(project, original, (await getLocale()) === "en" ? "en" : "id");
+  const tasks = (translation ? withTranslation(project, original, translation).items : original).filter(
+    (i) => i.kind === "next_task",
+  );
 
   return (
     <PageShell>
@@ -60,16 +65,13 @@ export default async function RequestPage({ params }: { params: Promise<{ slug: 
       <p className="mb-8 mt-0 max-w-[640px] text-text-2">{t("lead")}</p>
       <div className="flex flex-wrap items-start gap-8">
         <RequestForm projectId={project.id} slug={slug} tasks={tasks} />
-        <aside className="flex min-w-[260px] flex-[0_1_340px] flex-col gap-4">
+        <aside className="flex w-full min-w-[260px] flex-[1_1_300px] flex-col gap-4 lg:flex-[0_0_340px]">
           <Card>
             <h2 className="mb-2 mt-0 text-lg">{project.title}</h2>
             <p className="mb-3 mt-0 text-sm text-text-2">
               {L.kind[project.kind]} · {project.year} · {L.faculty(project.field)}
             </p>
-            <div className="flex flex-wrap gap-2">
-              <OwnerVerified />
-              {project.is_demo ? <DemoBadge /> : null}
-            </div>
+            <div className="flex flex-wrap gap-2"></div>
           </Card>
           <Card>
             <h2 className="mb-4 mt-0 text-base">{t("next")}</h2>

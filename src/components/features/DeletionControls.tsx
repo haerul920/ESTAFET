@@ -22,6 +22,7 @@ export function DeletionControls({ scheduled }: { scheduled: boolean }) {
         <div>
           <Button
             variant="outlineBlue"
+            loading={pending}
             disabled={pending}
             onClick={() =>
               start(async () => {

@@ -5,17 +5,16 @@ import { useSearchParams } from "next/navigation";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { EXPLORE_FACULTIES } from "@/lib/labels";
+import { filterYears } from "@/lib/explore";
+import { FACULTIES } from "@/lib/labels";
 import { useLabels } from "@/lib/use-labels";
-import { SelectField } from "@/components/ui/Field";
-import type { ProjectKind, StopReason } from "@/lib/db/types";
+import { SearchableSelect } from "@/components/ui/Field";
 
-const KINDS: ProjectKind[] = ["student_program", "hackathon", "research"];
-const REASONS: StopReason[] = ["funding_not_granted", "team_graduated", "time_or_people"];
-
-/** Search, sort and checkbox filters. Everything lives in the URL so results can be shared. */
+/** Search, faculty, year and access. Everything lives in the URL so results can be shared. */
 export function ExploreFilters({ resultCount, children }: { resultCount: number; children: React.ReactNode }) {
   const t = useTranslations("explore");
+  // The faculty picker is the one from sign-up, so it uses the same search texts.
+  const ta = useTranslations("auth");
   const L = useLabels();
   const router = useRouter();
   const pathname = usePathname();
@@ -27,14 +26,6 @@ export function ExploreFilters({ resultCount, children }: { resultCount: number;
   function push(next: URLSearchParams) {
     const qs = next.toString();
     startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
-  }
-
-  function setMulti(key: string, value: string, on: boolean) {
-    const next = new URLSearchParams(params.toString());
-    const current = next.getAll(key).filter((v) => v !== value);
-    next.delete(key);
-    for (const v of on ? [...current, value] : current) next.append(key, v);
-    push(next);
   }
 
   function setSingle(key: string, value: string) {
@@ -52,12 +43,13 @@ export function ExploreFilters({ resultCount, children }: { resultCount: number;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
-  const active = ["q", "kind", "reason", "faculty"].some((k) => params.has(k));
+  const active = ["q", "faculty", "year", "access"].some((k) => params.has(k));
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-wrap gap-3">
-        <div className="flex flex-[1_1_320px] flex-col gap-1.5">
+    <div className="flex flex-col gap-6">
+      {/* Search and the filters share one row, so the results below can use the whole width. */}
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex min-w-0 flex-[1_1_240px] flex-col gap-1.5">
           <label htmlFor="q" className="text-sm font-semibold">
             {t("search")}
           </label>
@@ -77,41 +69,56 @@ export function ExploreFilters({ resultCount, children }: { resultCount: number;
             />
           </div>
         </div>
-        <SelectField
-          label={t("sort")}
-          className="flex-[0_1_220px]"
-          value={params.get("sort") ?? "recent"}
-          onChange={(e) => setSingle("sort", e.target.value === "recent" ? "" : e.target.value)}
-        >
-          <option value="recent">{t("sortRecent")}</option>
-          <option value="tasks">{t("sortTasks")}</option>
-          <option value="progress">{t("sortProgress")}</option>
-        </SelectField>
+        <SearchableSelect
+          label={t("legendFaculty")}
+          name="faculty"
+          className="flex-[0_1_250px] max-md:flex-[1_1_100%]"
+          value={params.get("faculty") ?? ""}
+          onValueChange={(value) => setSingle("faculty", value)}
+          options={[
+            { value: "", label: t("allFaculties") },
+            ...FACULTIES.map((f) => ({ value: f, label: L.faculty(f) })),
+          ]}
+          searchPlaceholder={ta("facultySearchPlaceholder")}
+          clearLabel={ta("facultySearchClear")}
+          emptyText={ta("facultyEmpty")}
+        />
+        <SearchableSelect
+          label={t("year")}
+          name="year"
+          className="flex-[0_1_150px] max-md:flex-[1_1_100%]"
+          value={params.get("year") ?? ""}
+          onValueChange={(value) => setSingle("year", value)}
+          options={[
+            { value: "", label: t("allYears") },
+            ...filterYears(new Date().getFullYear()).map((y) => ({ value: String(y), label: String(y) })),
+          ]}
+          searchPlaceholder={t("searchYear")}
+          clearLabel={ta("facultySearchClear")}
+          emptyText={t("noYear")}
+        />
+        <SearchableSelect
+          label={t("access")}
+          name="access"
+          className="flex-[0_1_200px] max-md:flex-[1_1_100%]"
+          value={params.get("access") ?? ""}
+          onValueChange={(value) => setSingle("access", value)}
+          options={[
+            { value: "", label: t("allAccess") },
+            { value: "open", label: t("accessOpen") },
+            { value: "by_request", label: t("accessApproval") },
+          ]}
+          searchPlaceholder={t("searchAccess")}
+          clearLabel={ta("facultySearchClear")}
+          emptyText={t("noAccess")}
+        />
       </div>
 
-      <div className="flex flex-wrap items-start gap-8">
-        <aside aria-label={t("filters")} className="flex flex-[0_0_240px] flex-col gap-6 max-md:flex-[1_1_100%]">
-          <FilterGroup
-            legend={t("legendKind")}
-            name="kind"
-            options={KINDS.map((k) => ({ value: k, label: L.kind[k] }))}
-            selected={params.getAll("kind")}
-            onToggle={setMulti}
-          />
-          <FilterGroup
-            legend={t("legendReason")}
-            name="reason"
-            options={REASONS.map((r) => ({ value: r, label: L.stopReason[r] }))}
-            selected={params.getAll("reason")}
-            onToggle={setMulti}
-          />
-          <FilterGroup
-            legend={t("legendFaculty")}
-            name="faculty"
-            options={EXPLORE_FACULTIES.map((f) => ({ value: f, label: L.faculty(f) }))}
-            selected={params.getAll("faculty")}
-            onToggle={setMulti}
-          />
+      <section aria-label={t("results")} className="min-w-0" aria-busy={pending}>
+        <div className="mb-4 flex min-h-[44px] flex-wrap items-center justify-between gap-3">
+          <p className="m-0 text-sm text-text-2" aria-live="polite">
+            {pending ? t("updating") : t("count", { count: resultCount })}
+          </p>
           {active ? (
             <button
               type="button"
@@ -124,47 +131,9 @@ export function ExploreFilters({ resultCount, children }: { resultCount: number;
               <X size={16} aria-hidden="true" /> {t("clear")}
             </button>
           ) : null}
-        </aside>
-        <section aria-label={t("results")} className="min-w-0 flex-[1_1_560px]" aria-busy={pending}>
-          <p className="mb-4 mt-0 text-sm text-text-2" aria-live="polite">
-            {pending ? t("updating") : t("count", { count: resultCount })}
-          </p>
-          <div className={pending ? "opacity-60 transition-opacity" : "transition-opacity"}>{children}</div>
-        </section>
-      </div>
+        </div>
+        <div className={pending ? "opacity-60 transition-opacity" : "transition-opacity"}>{children}</div>
+      </section>
     </div>
-  );
-}
-
-function FilterGroup({
-  legend,
-  name,
-  options,
-  selected,
-  onToggle,
-}: {
-  legend: string;
-  name: string;
-  options: { value: string; label: string }[];
-  selected: string[];
-  onToggle: (key: string, value: string, on: boolean) => void;
-}) {
-  return (
-    <fieldset className="m-0 border-0 p-0">
-      <legend className="mb-2 p-0 font-semibold">{legend}</legend>
-      <div className="flex flex-col gap-2">
-        {options.map((o) => (
-          <label key={o.value} className="flex min-h-[44px] cursor-pointer items-center gap-2.5">
-            <input
-              type="checkbox"
-              className="h-[18px] w-[18px] accent-[#1760d6]"
-              checked={selected.includes(o.value)}
-              onChange={(e) => onToggle(name, o.value, e.target.checked)}
-            />
-            {o.label}
-          </label>
-        ))}
-      </div>
-    </fieldset>
   );
 }

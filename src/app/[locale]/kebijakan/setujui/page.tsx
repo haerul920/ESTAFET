@@ -53,7 +53,6 @@ export default async function PolicyGatePage({ searchParams }: { searchParams: P
             </Link>
           </li>
         </ul>
-        <p className="m-0 rounded-[14px] bg-warn-bg p-3 text-sm text-warn-ink">{t("draft")}</p>
         <form action={acceptPoliciesAndContinue} className="flex flex-col gap-4">
           <input type="hidden" name="next" value={next} />
           <label className="flex min-h-[44px] cursor-pointer items-start gap-3">

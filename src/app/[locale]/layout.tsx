@@ -38,6 +38,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
     title: { default: t("title"), template: "%s · ESTAFET" },
     description: t("description"),
+    icons: {
+      icon: [
+        { url: "/favicon.ico", type: "image/x-icon" },
+        { url: "/brand/logo-tile.png", type: "image/png" },
+      ],
+      shortcut: "/favicon.ico",
+      apple: "/brand/logo-tile.png",
+    },
     openGraph: {
       title: t("title"),
       description: t("ogDescription"),

@@ -75,7 +75,7 @@ export interface Fixture {
 /** A published project owned by `owner`: one file, one kept next task, team consented. */
 export async function publishedProject(
   owner: TestUser,
-  opts: { mode?: "open" | "by_request" | "paused"; max?: number | null; title?: string } = {},
+  opts: { mode?: "open" | "by_request"; max?: number | null; title?: string } = {},
 ): Promise<Fixture> {
   const { data, error } = await owner.client
     .from("projects")

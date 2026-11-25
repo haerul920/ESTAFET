@@ -25,7 +25,8 @@ function requestSchema(v: TFn) {
     slug: z.string().min(1),
     team_name: z.string().trim().min(2, v("teamNameMin")).max(60, v("teamNameMax")),
     teammates: z.string().trim().min(1, v("teammatesMin")),
-    task_ids: z.array(z.string().uuid()).min(1, v("tasksMin")),
+    // The owners' suggestions are optional: the next team may follow its own plan.
+    task_ids: z.array(z.string().uuid()).max(50),
     plan: z.string().trim().min(40, v("planMin")).max(1500, v("planMax")),
     purpose: z.enum(["competition", "research", "course", "other"], { message: v("purpose") }),
     target_date: z
@@ -131,17 +132,25 @@ export async function withdrawRequest(requestId: string): Promise<{ error?: stri
   return {};
 }
 
-export async function markNotificationsRead(ids: string[]): Promise<void> {
+/** The "mark all as read" button: every unread notification of the signed-in user, and nobody else's. */
+export async function markAllNotificationsRead(): Promise<void> {
   const user = await requireUser("/dasbor");
   const supabase = await createClient();
-  if (ids.length === 0) {
-    await supabase
-      .from("notifications")
-      .update({ read_at: new Date().toISOString() })
-      .eq("user_id", user.id)
-      .is("read_at", null);
-  } else {
-    await supabase.from("notifications").update({ read_at: new Date().toISOString() }).in("id", ids);
-  }
+  await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .is("read_at", null);
   revalidatePath("/dasbor");
+  revalidatePath("/notifikasi");
+}
+
+/** Marks the opened notifications as read. Row level security limits this to the signed-in user's own rows. */
+export async function markNotificationsRead(ids: string[]): Promise<void> {
+  await requireUser("/dasbor");
+  if (ids.length === 0) return;
+  const supabase = await createClient();
+  await supabase.from("notifications").update({ read_at: new Date().toISOString() }).in("id", ids);
+  revalidatePath("/dasbor");
+  revalidatePath("/notifikasi");
 }

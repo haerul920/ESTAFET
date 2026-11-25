@@ -4,6 +4,7 @@ import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { hasAcceptedPolicies } from "@/lib/db/access";
+import { claimPendingTeamInvites } from "@/lib/db/owner";
 import type { Profile } from "@/lib/db/types";
 
 export interface CurrentUser {
@@ -31,6 +32,9 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
+  if (user.email) {
+    await claimPendingTeamInvites(user.id, user.email);
+  }
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
   const p = (profile as Profile | null) ?? null;
   return {

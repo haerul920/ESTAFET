@@ -1,6 +1,32 @@
-export type UploadKind = "pdf" | "markdown" | "zip";
+import { checkName, extensionOf, type UploadKind } from "./accept";
 
-export class UploadRejected extends Error {}
+export type { UploadKind } from "./accept";
+
+/** Why a file was refused. The upload route turns the code into the person's language (`upload.reject.<code>`). */
+export type RejectCode =
+  | "empty"
+  | "type"
+  | "zip"
+  | "old_office"
+  | "mismatch"
+  | "too_big"
+  | "pdf_broken"
+  | "pdf_pages"
+  | "office_broken"
+  | "office_unsafe"
+  | "office_macros"
+  | "image_broken"
+  | "image_too_large";
+
+export class UploadRejected extends Error {
+  constructor(
+    readonly code: RejectCode,
+    readonly values: Record<string, string | number> = {},
+  ) {
+    super(code);
+    this.name = "UploadRejected";
+  }
+}
 
 function startsWith(buf: Uint8Array, bytes: number[], offset = 0): boolean {
   if (buf.length < offset + bytes.length) return false;
@@ -16,12 +42,11 @@ function looksLikePdf(buf: Uint8Array): boolean {
   return false;
 }
 
-function looksLikeZip(buf: Uint8Array): boolean {
-  return (
-    startsWith(buf, [0x50, 0x4b, 0x03, 0x04]) || // local file header
-    startsWith(buf, [0x50, 0x4b, 0x05, 0x06]) // empty archive
-  );
-}
+/** Word, Excel and PowerPoint files are ZIP containers. What is inside is checked when they are read. */
+const looksLikeZipContainer = (buf: Uint8Array) => startsWith(buf, [0x50, 0x4b, 0x03, 0x04]);
+
+const looksLikeJpeg = (buf: Uint8Array) => startsWith(buf, [0xff, 0xd8, 0xff]);
+const looksLikePng = (buf: Uint8Array) => startsWith(buf, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 /** Markdown has no magic bytes: require valid UTF-8 text with no NUL bytes. */
 function looksLikeText(buf: Uint8Array): boolean {
@@ -35,28 +60,22 @@ function looksLikeText(buf: Uint8Array): boolean {
   }
 }
 
+function contentMatches(kind: UploadKind, ext: string, buf: Uint8Array): boolean {
+  if (kind === "pdf") return looksLikePdf(buf);
+  if (kind === "image") return ext === ".png" ? looksLikePng(buf) : looksLikeJpeg(buf);
+  if (kind === "markdown") return !looksLikePdf(buf) && !looksLikeZipContainer(buf) && looksLikeText(buf);
+  return looksLikeZipContainer(buf);
+}
+
 /**
- * Decides what an upload really is from its bytes, then checks that the extension agrees.
- * Throws UploadRejected with a plain-language message otherwise.
+ * Decides what an upload really is: the extension names it and the first bytes have to agree.
+ * Throws UploadRejected otherwise.
  */
 export function detectUploadKind(name: string, buf: Uint8Array): UploadKind {
-  const lower = name.toLowerCase();
-  const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".")) : "";
-  if (buf.length === 0) throw new UploadRejected("This file is empty.");
-
-  if (ext === ".pdf") {
-    if (!looksLikePdf(buf)) throw new UploadRejected("This file is named .pdf but its content is not a PDF.");
-    return "pdf";
-  }
-  if (ext === ".zip") {
-    if (!looksLikeZip(buf)) throw new UploadRejected("This file is named .zip but its content is not a ZIP archive.");
-    return "zip";
-  }
-  if (ext === ".md" || ext === ".markdown") {
-    if (looksLikePdf(buf) || looksLikeZip(buf) || !looksLikeText(buf)) {
-      throw new UploadRejected("This file is named .md but its content is not Markdown text.");
-    }
-    return "markdown";
-  }
-  throw new UploadRejected("Only PDF reports, Markdown notes (.md) and ZIP archives are accepted.");
+  const named = checkName(name);
+  if (!named.ok) throw new UploadRejected(named.code);
+  if (buf.length === 0) throw new UploadRejected("empty");
+  const ext = extensionOf(name);
+  if (!contentMatches(named.kind, ext, buf)) throw new UploadRejected("mismatch", { ext });
+  return named.kind;
 }

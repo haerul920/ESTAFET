@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/guard";
-import { ReasonAction } from "@/components/admin/ReasonDialog";
-import { EmptyState, PageHeader, Panel, StatusPill, Time } from "@/components/admin/ui";
-import { publishPolicy } from "@/app/[locale]/admin/actions";
+import { Link } from "@/i18n/navigation";
+import { ButtonLink } from "@/components/ui/Button";
+import { PageHeader, Panel, StatusPill, Time } from "@/components/admin/ui";
+import { LEGAL_DOCS, LEGAL_PATHS, type LegalDocName } from "@/lib/legal/content";
+import { getLegalDocument } from "@/lib/legal/load";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -22,39 +24,47 @@ interface Row {
   is_current: boolean;
 }
 
-const KINDS = ["terms", "privacy"] as const;
-
-/** Policy versions. Publishing a new one makes every signed-in person accept it again before they continue. */
+/**
+ * The four documents. Each opens in a full page editor. Publishing the Terms or the Privacy Policy also publishes a new
+ * version, which every signed-in person accepts again before they continue.
+ */
 export default async function AdminPoliciesPage() {
   await requireAdmin();
   const [t, ts] = await Promise.all([getTranslations("admin.policies"), getTranslations("admin.status")]);
   const supabase = await createClient();
-  const { data } = await supabase.from("admin_policies_v").select("*").order("version", { ascending: false });
+  const [{ data }, documents] = await Promise.all([
+    supabase.from("admin_policies_v").select("*").order("version", { ascending: false }),
+    Promise.all(LEGAL_DOCS.map(async (doc) => [doc, await getLegalDocument(doc)] as const)),
+  ]);
   const rows = (data ?? []) as Row[];
+  const names: Record<LegalDocName, string> = {
+    terms: t("terms"),
+    privacy: t("privacy"),
+    guidelines: t("guidelines"),
+    attribution: t("attribution"),
+  };
 
   return (
     <>
       <PageHeader title={t("title")} intro={t("intro")} />
-      {rows.length === 0 ? (
-        <EmptyState title={t("emptyTitle")} text={t("emptyText")} />
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {KINDS.map((kind) => {
-            const list = rows.filter((r) => r.kind === kind);
-            const current = list.find((r) => r.is_current);
-            const next = (current?.version ?? 0) + 1;
-            const percent =
-              current && current.people > 0 ? ` (${Math.round((current.accepted / current.people) * 100)}%)` : "";
-            return (
-              <Panel key={kind} title={t(kind)}>
-                <p className="mb-3 mt-0 text-sm">
-                  {t("currentVersion", { version: current?.version ?? t("none") })}
-                  {current
-                    ? ` · ${t("acceptedBy", { accepted: current.accepted, people: current.people, percent })}`
-                    : ""}
-                </p>
+      <div className="grid gap-4 md:grid-cols-2">
+        {documents.map(([doc, current]) => {
+          const versions = rows.filter((r) => r.kind === doc);
+          return (
+            <Panel key={doc} title={names[doc]}>
+              <p className="mb-3 mt-0 text-sm">
+                {current.publishedAt ? (
+                  <>
+                    {t("lastPublished", { revision: current.revision })}{" "}
+                    <Time iso={current.publishedAt} className="inline" />
+                  </>
+                ) : (
+                  t("builtIn")
+                )}
+              </p>
+              {versions.length > 0 ? (
                 <ul className="m-0 mb-4 flex list-none flex-col gap-1.5 p-0 text-sm">
-                  {list.map((r) => (
+                  {versions.map((r) => (
                     <li key={r.id} className="flex flex-wrap items-center justify-between gap-2">
                       <span>
                         {t("versionFrom", { version: r.version })} <Time iso={r.effective_at} className="inline" />
@@ -70,19 +80,23 @@ export default async function AdminPoliciesPage() {
                     </li>
                   ))}
                 </ul>
-                <ReasonAction
-                  label={t("publish", { version: next })}
-                  tone="outline"
-                  consequence={t("effect", { version: next })}
-                  reasonLabel={t("reasonLabel")}
-                  action={publishPolicy.bind(null, kind, next)}
-                  successMessage={t("published", { version: next })}
-                />
-              </Panel>
-            );
-          })}
-        </div>
-      )}
+              ) : null}
+              <div className="flex flex-wrap items-center gap-3">
+                <ButtonLink
+                  href={`/admin/policies/${doc}`}
+                  variant="outlineBlue"
+                  aria-label={t("editAria", { name: names[doc] })}
+                >
+                  {t("edit")}
+                </ButtonLink>
+                <Link href={LEGAL_PATHS[doc]} className="text-sm font-semibold">
+                  {t("viewPage")}
+                </Link>
+              </div>
+            </Panel>
+          );
+        })}
+      </div>
     </>
   );
 }

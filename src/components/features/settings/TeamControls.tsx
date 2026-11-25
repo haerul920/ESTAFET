@@ -101,19 +101,19 @@ export function TeamControls({
       <form action={action} noValidate className="flex flex-col gap-3">
         <input type="hidden" name="project_id" value={projectId} />
         <h3 className="m-0 text-base">{t("invite")}</h3>
-        <div className="flex flex-wrap items-end gap-3">
-          <TextField
-            label={t("inviteLabel")}
-            name="email"
-            type="email"
-            autoComplete="off"
-            error={state.fieldErrors?.email}
-            className="min-w-[240px] flex-1"
-          />
-          <Button type="submit" variant="outlineBlue" disabled={pending}>
-            {t("inviteBtn")}
-          </Button>
-        </div>
+        <TextField
+          label={t("inviteLabel")}
+          name="email"
+          type="email"
+          autoComplete="off"
+          error={state.fieldErrors?.email}
+          hint={t("inviteHint")}
+          after={
+            <Button type="submit" variant="outlineBlue" disabled={pending} className="shrink-0">
+              {t("inviteBtn")}
+            </Button>
+          }
+        />
         {state.ok && state.message ? <FormMessage tone="success">{state.message}</FormMessage> : null}
       </form>
 
@@ -143,16 +143,13 @@ export function TeamControls({
                 <SelectField
                   label={t("transferPick")}
                   value={pick}
-                  onChange={(e) => setPick(e.target.value)}
+                  onValueChange={setPick}
                   className="min-w-[240px] flex-1"
-                >
-                  <option value="">—</option>
-                  {eligible.map((m) => (
-                    <option key={m.profile_id} value={m.profile_id}>
-                      {m.full_name}
-                    </option>
-                  ))}
-                </SelectField>
+                  options={[
+                    { value: "", label: "—" },
+                    ...eligible.map((m) => ({ value: m.profile_id, label: m.full_name })),
+                  ]}
+                />
                 {target ? (
                   <ConfirmDialog
                     trigger={t("transferBtn")}
@@ -178,10 +175,10 @@ export function TeamControls({
           <p className="m-0 font-semibold">{t("transferOfferedToMe", { name: transfer.from_name })}</p>
           {answerError ? <FormMessage tone="error">{answerError}</FormMessage> : null}
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => answer(true)} disabled={answering}>
+            <Button onClick={() => answer(true)} loading={answering} disabled={answering}>
               {t("transferAccept")}
             </Button>
-            <Button variant="outline" onClick={() => answer(false)} disabled={answering}>
+            <Button variant="outline" onClick={() => answer(false)} loading={answering} disabled={answering}>
               {t("transferDecline")}
             </Button>
           </div>

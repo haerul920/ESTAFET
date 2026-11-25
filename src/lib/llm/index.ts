@@ -2,7 +2,7 @@ import type { ExtractedDoc } from "@/lib/ingest/types";
 import { mockSynthesize } from "./mock";
 import { chunkDocuments, estimateTokens, renderDocuments, userPrompt } from "./prompts";
 import { callAnthropic, callGemini } from "./providers";
-import { synthesisSchema, SynthesisError, type SynthesisOutput } from "./schema";
+import { providerFailure, synthesisSchema, SynthesisError, type SynthesisOutput } from "./schema";
 
 export { SynthesisError } from "./schema";
 export type { SynthesisOutput } from "./schema";
@@ -16,9 +16,16 @@ export interface SynthesisConfig {
 }
 
 export function getConfig(): SynthesisConfig {
-  const p = (process.env.LLM_PROVIDER ?? "mock").toLowerCase();
+  const rawProvider = process.env.LLM_PROVIDER?.trim().toLowerCase();
+  const autoGemini = !rawProvider && !process.env.VITEST && Boolean(process.env.GEMINI_API_KEY?.trim());
+  const p = rawProvider || (autoGemini ? "gemini" : "mock");
   const provider: Provider = p === "gemini" || p === "anthropic" ? p : "mock";
-  return { provider, model: process.env.LLM_MODEL ?? "", mode: provider === "mock" ? "mock" : "live" };
+  const defaultModel = provider === "gemini" ? "gemini-3.6-flash" : provider === "anthropic" ? "claude-sonnet-4-6" : "";
+  return {
+    provider,
+    model: process.env.LLM_MODEL?.trim() || defaultModel,
+    mode: provider === "mock" ? "mock" : "live",
+  };
 }
 
 const MAX_INPUT_TOKENS = 60_000;
@@ -33,7 +40,7 @@ export async function callAndValidate(call: RawCall, docs: ExtractedDoc[]): Prom
     try {
       raw = await call(userPrompt(docs, note));
     } catch (e) {
-      throw new SynthesisError(e instanceof Error ? e.message : "The AI request failed.");
+      throw new SynthesisError(e instanceof Error ? e.message : "The AI request failed.", providerFailure(e));
     }
     try {
       const parsed = synthesisSchema.safeParse(JSON.parse(raw));
@@ -46,9 +53,7 @@ export async function callAndValidate(call: RawCall, docs: ExtractedDoc[]): Prom
       note = "The answer was not valid JSON.";
     }
   }
-  throw new SynthesisError(
-    `The AI answer did not match the expected format after one retry (${note}). Try again, or add the items by hand.`,
-  );
+  throw new SynthesisError(`The AI answer did not match the expected format after one retry (${note}).`, "badAnswer");
 }
 
 function merge(parts: SynthesisOutput[]): SynthesisOutput {
@@ -93,7 +98,7 @@ export async function synthesize(
   language: "id" | "en" = "en",
 ): Promise<SynthesisOutput> {
   if (docs.every((d) => d.pages.every((p) => p.text.trim() === ""))) {
-    throw new SynthesisError("The uploaded files contain no readable text.");
+    throw new SynthesisError("The uploaded files contain no readable text.", "noText");
   }
   if (config.provider === "mock" && !rawCall) {
     return synthesisSchema.parse(mockSynthesize(docs));

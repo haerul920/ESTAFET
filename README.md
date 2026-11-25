@@ -14,7 +14,7 @@ Built by team **Beban Server** for STACK 2026 (GDGoC ITB), Case 1 "Smarter Campu
 There is **one account type**. "Owner" (shares a project) and "adopter" (continues one) are relationships per project, so the same account can do both. Admin is an extra flag.
 
 1. An owner fills the basics and the team confirms. There is no advisor or lecturer step: ESTAFET is for students.
-2. The owner uploads PDF reports, Markdown notes or a ZIP of the code folder (tree only).
+2. The owner uploads PDF, Markdown, JPG, PNG, Word (.docx), Excel (.xlsx) or PowerPoint (.pptx) files, up to 50 MB each. ZIP files and the old .doc, .xls and .ppt formats are refused. Pictures are read by the AI only when a draft is made.
 3. A synthesis step drafts a summary, objectives, completed work, candidate next tasks and lessons. Every item carries evidence (file, page, quote), and the server checks that the quote exists on the cited page. It runs only after every team member consented.
 4. The owner keeps, edits or removes every item. Publishing is blocked until all items are reviewed, every active team member has confirmed and the current Terms and Privacy Policy are accepted.
 5. A public teaser is published. Files stay private.
@@ -113,7 +113,8 @@ select public.promote_admin('person@student.unhas.ac.id');   -- demote_admin(...
 | Database, RLS, state rules | **Done** | 12 tables, all with RLS. Rules live in SQL functions. Verified by `pnpm test:db`. |
 | Creator wizard (Basics, Consent, Files, Verify, Publish) | **Done** | Autosaves a draft per step, resume from the dashboard. |
 | Advisor consent | **Removed (R5)** | The owner decided that ESTAFET has no advisor role. The page, the token endpoint and the database functions are gone. Old columns stay in the database, marked deprecated, until a cleanup migration. |
-| Upload + ingestion (PDF, Markdown, ZIP tree) | **Done** | Magic bytes, size limit, ZIP safety, secrets scan. Unit tested. |
+| Upload + ingestion (PDF, Markdown, Word, Excel, PowerPoint, JPG, PNG; 50 MB) | **Done, local stack only** | Files go straight to private storage, then the server checks them: content (not only the name), size, container safety, secrets scan. Camera data is removed from pictures. Unit, database and browser tested locally. Not yet run against the cloud database or a hosted deployment. |
+| AI reading of pictures (Gemini, Anthropic) | **Partial: not tested live** | Tested only with a faked provider. Mock mode reads no pictures and invents nothing. Evidence from a picture is never shown as matched. |
 | Synthesis, **mock** provider | **Done** | Deterministic, labeled, one unsupported item on purpose. |
 | Synthesis, **live** providers (Gemini, Anthropic) | **Partial: not tested live** | Adapters, Zod validation, retry-once and chunking are implemented and unit-tested with a stubbed model. They have **not** been run against a real API with real data. |
 | Evidence matcher | **Done** | Exact, hyphenated line breaks, whitespace, wrong page, fabricated quote, fuzzy at 0.9. |

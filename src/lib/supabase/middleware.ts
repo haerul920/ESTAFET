@@ -6,6 +6,7 @@ import { SUPABASE_PUBLIC_KEY, SUPABASE_URL, sessionCookieOptions } from "./keys"
 const PROTECTED_PREFIXES = [
   "/dasbor",
   "/dashboard",
+  "/notifikasi",
   "/mulai",
   "/bagikan",
   "/proyek",

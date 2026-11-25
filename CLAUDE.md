@@ -417,3 +417,197 @@ ESTAFET is for students only. There is no dosen pembimbing anywhere in the produ
 
 ### 15.2 Any email address can sign up. Decided 2026-11-21
 Sign-up and sign-in work with any email, not only a university email. UI copy says "Email", never "university email". `ALLOWED_EMAIL_DOMAINS` stays only as an optional admin restriction and is empty (off) by default. Email confirmation is still required before sharing a project or taking access.
+
+### 15.3 Motion stack: GSAP, Motion and Lenis. Decided 2026-11-25
+This replaces the library rules in 14.8 ("prefer CSS", "motion library only for orchestration", "no JS driven per frame animation").
+- GSAP + ScrollTrigger: scroll reveals and staggers (all pages in `PageShell`), headline, count-up, progress bars, parallax.
+- Motion (installed as the `framer-motion` package): hover, press, enter and exit, layout changes, wizard transitions.
+- Lenis: smooth scrolling site-wide, driven by the GSAP ticker. Areas that scroll on their own keep native scrolling, and Lenis stops while a dialog or menu locks the page.
+- One owner per element and property. Never animate the same property with two systems (for example a CSS transition and GSAP).
+- CSS stays for endless loops (clouds, flowers, skeletons), overlay keyframes and tiny states (link underline, colours, chips).
+- Still in force from 14.8 and 14.9: animate transform and opacity, honour `prefers-reduced-motion` (Lenis off too), cards lift 4px, clouds drift in 40 to 70 s, no layer covers another.
+- The admin area stays calm: no scroll reveals there (13.1).
+
+### 15.4 No floating cards in the Home hero. Decided 2026-11-25
+The owner removed the floating card row. This replaces the hero card rules in 14.8 and 14.9 (d). Do not restore it without a new decision from the owner. The hero text and buttons must still never be covered.
+
+### 15.5 No "why it stopped" reason; Explore filters. Decided 2026-11-25
+- The stop reason is removed from the product: the Explore filter, the badge on project cards, the field in the share wizard, its validation and its texts. This replaces the stop reason in sections 5 and 6.
+- The `projects.stop_reason` column and its enum stay in the database, marked deprecated. It has a default (`other`), so the app no longer writes it. Do not read or show it.
+- "Where it stopped" (`stopped_note`) is a different thing and stays.
+- A year filter offers 2024 up to the current year, plus all years.
+- An access filter, in the same row: all, open access ("Akses terbuka"), or approval needed ("Perlu persetujuan"). The owner asked for "public / not public"; this is what was agreed. It never lists projects that are not published. Paused projects appear under "all" only.
+- Explore filters are: search and one faculty dropdown (the same picker and faculty list as sign-up, plus "all faculties"), side by side in one row. There is no "type of work" filter, no sort control and no side column. Projects are always listed newest first, three to a row on wide screens.
+
+### 15.6 No AI search on Explore. Decided 2026-11-25
+The owner had "Search with AI" built and then removed it as not needed. Explore has the normal search only. Do not add AI search again without a new decision from the owner.
+
+### 15.7 Share wizard layout and pickers. Decided 2026-11-25
+- The wizard steps use one column. There is no side rail: the "before you can publish" card and the "what becomes public" card are gone from the Files and Team steps. The publish step keeps the checklist below the preview.
+- "Type of work" and "Faculty or field" use the same searchable picker as sign-up.
+- The free-text note `stopped_note` is labelled "Why it stopped" / "Alasan berhenti". It is still optional. (This updates the wording in 15.5; the removed fixed list of reasons stays removed.)
+
+### 15.8 Name of the review step. Decided 2026-11-25
+The step, its page title and the publish checklist are called "Review the draft" / "Tinjau Draft" (the owner's spelling), without "AI". This replaces the glossary row "Verify the AI draft" in 14.7. Notices that say an AI wrote or suggested something stay.
+
+### 15.9 Taking the AI back, save and exit, and wizard information. Decided 2026-11-25
+- Choosing the AI draft is never final. "Cancel AI use" deletes everything the AI made for the project (items, its summary while unchanged, the list of tools), withdraws that owner's agreement and reopens the choice. Not allowed while the project is published or archived. Text already sent to the provider cannot be recalled, and the dialog says so.
+- Opening a page never records anyone's consent and never sends files to a provider without it.
+- Every wizard step has "Save and exit". On the Info step it saves the valid fields (a new draft needs a title) and says which fields were not saved. Publishing needs title, a summary of 30 characters or more, and the faculty or field.
+- Single-column wizard steps are centred and narrower.
+- The explanations from the wizard panels live on the Terms (`#syarat-terbit`) and Privacy (`#berkas`, `#publik`) pages. The upload step keeps one line and a link, which satisfies the data notice rule in section 8. The owner still has to publish a new policy version.
+
+### 15.10 Header, footer and contact. Decided 2026-11-25
+- The header stays in view while the page scrolls. Once scrolled it turns nearly solid with dark text.
+- Header links, left to right: Home ("Beranda"), then Explore projects ("Jelajahi Proyek"). There is no Dashboard link in the header; it is in the account menu.
+- Explore has no "sample data" sentence beside its intro, and the footer note no longer says that the shown projects are demo data (demo project pages included). The demo environment banner and the "Demo data" badges stay, as section 2 requires.
+- The official contact address is estafet.info@gmail.com (default of `CONTACT_EMAIL`).
+
+### 15.11 One column and one width in the share wizard. Decided 2026-11-25
+- All five steps have the same width and a single column. On the review step the evidence of the chosen item shows under that item instead of in a side panel. The publish preview stacks its side column; the public project page keeps its layout.
+- The Info step no longer asks for a summary. It is written (or drafted by the AI) on the "Review the draft" step, where the box is always present. Publishing still needs a summary of 30 characters or more. This updates 15.9.
+
+### 15.12 Project cards. Decided 2026-11-25
+Project cards (Explore) show only the kind and year, the title, the summary and the faculty. No "Demo data" badge, no "Creator-verified" badge, no progress bar and no objective or task counts. Demo data stays labelled by the demo environment banner (section 2); do not remove that banner. The public project page keeps its badges.
+
+### 15.13 Suggested next steps do not bind the next team. Decided 2026-11-25
+The owner: people who publish may suggest where the project could go next; the team that adopts it is not bound and may have its own plan.
+- "Next tasks" are called suggestions everywhere ("Saran lanjutan"). The public page says they are not obligations.
+- A continuation request may pick some suggestions or none. The plan field stays required. This replaces "tasks they take" in section 1 step 6 and the rule that a project without tasks cannot be requested.
+- The database rule is changed by migration `20261127000001_suggestions_not_binding.sql`.
+
+### 15.14 Public project page. Decided 2026-11-25
+One column, with the main action right after "what this project is". A visible "Report project" button replaces the "..." menu (and the second report box). No "Demo data" or "Creator-verified" badges on user-facing pages (admin tables keep the demo badge). Demo data stays labelled by the demo environment banner; do not remove that banner.
+
+### 15.15 No "where it stands" section, and the report button. Decided 2026-11-25
+- The public project page (and the wizard preview) has no objectives, progress bar or "completed work" section: publishing does not collect that data. "Why it stopped" stays, under the description. Texts that listed objectives as public content were updated. This narrows the goals in sections 1 and 7 to summary, suggested next steps and lessons on the public page.
+- The "Report project" button is compact (44 px high) and turns red on hover, with a small Motion lift.
+
+### 15.16 Wizard button row. Decided 2026-11-25
+All five steps end with the same row (`WizardActions`): Back on the left (on the first step, the autosave status), and on the right "Save and exit" followed by the button that goes on, always the rightmost. All buttons have the same size. On phones they stack with that button on top.
+
+### 15.17 Removed review items disappear. Decided 2026-11-25
+An item removed on the review step leaves the list at once, with an Undo notice. It stays in the database as "removed" but is not shown or counted anywhere (review progress, publish checklist, dashboard).
+The review step has two tabs, suggested next steps and materials, each with its item count. There is no "All" tab.
+The review progress sits under the tabs and counts the open tab only. Going on still needs every item in both tabs.
+
+### 15.18 Adding an item, and no workload. Decided 2026-11-25
+- The add form has no "type" choice: the item is a suggestion or a material according to the open tab. A material still asks for its lesson type.
+- A suggestion needs a description (at least 10 characters), when it is added and when it is edited.
+- Workload / effort ("beban kerja") is removed from the product: forms, pages, labels and the AI output format. This replaces `effort` in sections 6 and 7. The `draft_items.effort` column stays, deprecated and unused.
+
+### 15.19 Order of the public project page. Decided 2026-11-25
+Order: what the project is, why it stopped (its own card), suggested next steps, lessons, private files, tools, lineage, and last the card that offers to continue the project, so people read before they decide. This replaces "main action right after what the project is" in 15.14 and the place of "why it stopped" in 15.15. The public page does not show source file names; owners still see sources on the review step.
+The public page has no "Built with" (tools) section. The locked files card says "all files of this project are locked" and when they open.
+
+### 15.20 Real lineage data, start year, quiet autosave. Decided 2026-11-25
+- The public lineage shows only what the owners entered (start year, faculty) and events that happened, with full dates. No "(sample)" suffix.
+- The year field on the Info step is labelled "Tahun Mulai Proyek" / "Project start year".
+- Autosave stays. The "saved automatically" text is gone; a message appears only when autosave could not save.
+
+### 15.21 Deleting a draft. Decided 2026-11-25
+- The dashboard shows "Delete" next to "Continue" on a draft. It is permanent and asks for confirmation.
+- Allowed only for the main owner, and only for a draft that was never published and has no continuation request, access row, report or moderation. The database function `delete_draft_project` enforces this (migration `20261128000001_delete_draft_project.sql`).
+- This is a second documented exception to append-only lineage: the draft's own lineage rows go with it. Published, unpublished and archived projects still cannot be deleted (14.5).
+
+### 15.22 No paused access mode; access rules save with the step. Decided 2026-11-25
+- The "paused" access mode is removed. Access is `open` or `by_request`. This replaces `paused` in 14.4, 14.5 and 15.5. Migration `20261128000002_remove_paused_access.sql` moves paused projects to `by_request` and blocks the value; the enum value stays, retired. "Notify me" stays for full projects.
+- On the "Team and access" step the access rules sit above the button row, which is always last. There is no separate save button there: Back, "Save and exit" and "Save and continue" save them first. The project settings page keeps its own save button.
+- Inviting a co-owner explains that someone without an account creates one with that email first, then accepts the invitation on their dashboard.
+
+### 15.23 Dropdowns, notifications, small controls. Decided 2026-11-25
+- No browser-default dropdowns: every dropdown is `SearchableSelect`, or `SelectField` (the same look without the search box).
+- The "What will change" box in the access settings is gone.
+- Notifications have no "mark all as read". A notification becomes read when it is opened, an invitation when it is answered.
+- A team member is removed with a "Remove" ("Hapus") button and a confirmation, not a cross icon.
+
+### 15.24 Back button and active tab on project pages. Decided 2026-11-25
+- The public project page has a "Back" ("Kembali") button to Explore, left of "Report project", the same 44 px height.
+- The "Explore projects" header tab stays active on every page under `/projects/`.
+
+### 15.25 Settings replaces "Account privacy". Decided 2026-11-25
+- The account menu item is "Settings" ("Setelan") at `/akun/setelan`; `/akun/privasi` redirects there. It has everything the old page had, with a profile card on top: photo, name (editable) and email (read only).
+- Photos are optional. The browser crops and re-encodes them to a small JPEG (which drops camera metadata). The server checks size and magic bytes and stores them in the private `avatars` bucket (migration `20261128000003_avatars_bucket.sql`). Only the person sees their own photo, through `/api/account/avatar`. `profiles.avatar_url` is trusted only when it points into the person's own folder. Account deletion removes the photo.
+
+### 15.26 Card height, agreement card, one-column workspace. Decided 2026-11-25
+- Explore cards cut the title after two lines and the description after four, ending with "…".
+- On the open-access card the Attribution Agreement is always visible as its own card titled "Baca Perjanjian Atribusi": no collapsing, no version number in the title. The accepted version is still recorded.
+- The project workspace is one column. The credit line card and the lineage card are removed from it. This replaces "lineage" for the workspace in section 5. Lineage is still recorded; the credit line is still on the request page and in the agreement PDF.
+- The two buttons at the top of the workspace have the same height and text size.
+
+### 15.27 Only the continuing team changes task progress. Decided 2026-11-25
+- In the workspace, people who hold access change a task's status. Owners and co-owners only see it, read only.
+- `set_item_progress` enforces this (migration `20261128000004_progress_by_adopters_only.sql`).
+
+### 15.28 Simpler admin overview. Decided 2026-11-25
+- The overview has no "include demo data" switch or notice; its numbers are real data only. This replaces the toggle in 13.4 for the overview.
+- The cards "hidden or removed", "failed AI runs" and "failed emails" are gone from the overview. The moderation, pipeline and email log pages remain.
+
+### 15.29 No demo switch or field filter in admin. Decided 2026-11-25
+- The "include sample projects" switch is gone from every admin page, and with it `?demo=1`. Admin lists, trial figures and the trial CSV show real rows only. This replaces the toggle in 13.4.
+- The "Sample" column is gone from the admin tables and the trial chart table. This updates 15.14.
+- The admin projects page has no field filter.
+- To remove the sample projects for good, an admin uses the audited "Purge demo data" in admin settings (not available in production).
+- On the admin projects page, Status and Moderation are dropdowns beside the search box, like Explore. Status offers all, draft and published. Moderation offers all, normal, removed and "Appeal" (projects with an open appeal). Owners can still unpublish or archive, and holds and hiding still exist; such projects show under "all", and a link that asks for them (the overview's held card) adds that choice to the menu.
+- The admin reports page has no reason filter (the reason column stays).
+
+### 15.30 An admin decides every report. Decided 2026-11-25
+- A report never changes a project by itself. The automatic hold in 14.6 is switched off (migration `20261129000001_admin_decides_and_roles.sql`). The project stays public until an admin looks and decides.
+- Report decisions are: mark in review, dismiss, or remove. The admin project page offers remove and restore. The hold and hide buttons are gone; the database states stay, and a project already in one can be restored.
+- Owners appeal a removal from the decision page (linked from the dashboard), and an admin decides the appeal.
+- There is no review target: no column, no setting, no overdue escalation. This replaces the review target in 14.6.
+- The overview has no "held" card. Reports and appeals pages: the status filter is a dropdown beside search, without "open" in the menu (rows still show it; "all" lists them).
+
+### 15.31 Roles on the Users page; simpler admin top bar. Decided 2026-11-25
+- Admins can make a member an admin and back, on the Users page. This replaces "never through the UI" in 13.4. Safeguards: the SQL function `admin_set_role`, a reason of 15 characters, a recent password check, an audit row, no change to your own role, no promotion of a suspended account; the last admin stays protected.
+- The Users page has one filter, role (all, admin, member), as a dropdown beside search. No status filter.
+- The admin top bar has no environment badge, compact rows switch or shortcuts. The "/" key still focuses the search.
+
+### 15.32 No draft banner on legal pages. Decided 2026-11-25
+- The owner says the documents have been reviewed. The "draft, not yet reviewed" banner is gone from every legal page and from the policy gate. This updates "drafts for campus review" in 14.10. The Attribution Agreement keeps its "not legal advice" line (section 8).
+
+### 15.33 No "Operations" section in admin. Decided 2026-11-25
+- The admin pages AI pipeline, email log and requests are removed, with their menu group, the "requests waiting 7+ days" card, and the actions only they used (cancel or retry an AI run, resend an email). This replaces `/admin/pipeline` and `/admin/requests` in 13.2. AI runs, emails and requests are still recorded in the database.
+
+### 15.34 No "Evidence" section in admin. Decided 2026-11-25
+- The admin onboarding-trials page, its CSV export, chart, form and the action to record a session are removed, with their menu group. This replaces `/admin/trials` in 13.2. The `trial_sessions` table and its data stay. Trial results for the competition now have to be collected and reported outside the app.
+
+### 15.35 No danger zone in admin settings. Decided 2026-11-25
+- The owner removed the demo data, so "Purge demo data" is gone from admin settings, with its action. This replaces the last line of 15.29 and the purge exception in 13.1. The SQL function `admin_purge_demo` stays in the database.
+
+### 15.36 Legal documents are written in the app. Decided 2026-11-25
+- Admins write the Terms, the Privacy Policy, the Community Guidelines and the Attribution Agreement page in a full page editor at `/admin/policies/[doc]`. It opens with the text readers see now, in both languages, has a preview that uses the public component, and publishes both languages together. This replaces "text changes through a code release" and the small publish popup.
+- Revisions are stored in `legal_documents` (append-only, migration `20261129000002_legal_documents.sql`) through `admin_publish_document`, with a reason, a recent password check and an audit row. Publishing the Terms or the Privacy Policy also publishes the next policy version, so people accept again. Without a revision, a page shows the text in the message files.
+- The text format is plain: paragraphs, "- " lists, bold and code. No HTML is stored. Sections that other pages link to cannot be removed.
+- Not editable from the app: the contact page, and the four clauses of the Attribution Agreement that people accept (`agreement.t1` to `t4`). Changing those needs a new agreement version.
+
+### 15.37 Every admin reviews every report; admin link in the menu. Decided 2026-11-25
+- The "assigned to me" filter is gone from the reports page. Any admin can act on any report. The column that records who handled it stays.
+- Admins see an "Admin" item in the account menu (and the mobile menu) that opens the admin area. Others never see it.
+
+### 15.38 "Mark all as read" is back. Decided 2026-11-25
+- The owner asked for it again. The notifications page shows the button while something is unread. This replaces the second line of 15.23. Opening a notification still marks it read.
+
+### 15.39 Published project text is translated for the reader. Decided 2026-11-25
+- Owners write in whatever language they like. A reader using the other language (id or en) sees a machine translation of the public text: title, summary, why it stopped, suggested next steps and lessons. This is on Explore cards, the public project page and the request form. Private files, evidence quotes and anything not on the public page are never sent. (This is not the AI search that 15.6 removed.)
+- It is labelled as an AI translation, with the original one click away. The publish step and the privacy text say so.
+- Translations are cached in `project_translations` (migration `20261129000003_project_translations.sql`), keyed by a fingerprint of the source text, and made once per version: in the background, the first time someone reads it in the other language. Limits: 4 tries per project and language per hour, and `TRANSLATION_DAILY_CAP` per day.
+- No translation is invented: in mock mode, on a failed or implausible answer, or past a limit, readers see the original. Names and acronyms are kept.
+- Explore search still matches the original text only.
+
+### 15.40 Upload formats. Decided 2026-11-25
+- Accepted: PDF, Markdown, JPG, PNG, Word (.docx), Excel (.xlsx) and PowerPoint (.pptx), up to 50 MB per file. ZIP uploads are no longer accepted, and the old .doc, .xls and .ppt formats are refused with advice to save them in the new format. This replaces the ZIP and 25 MB rules in sections 1, 3, 7 and 8. Older projects keep their code folder files.
+- Files go from the browser straight to private storage through single-use addresses, so large files work on serverless hosting. The server then reads the stored bytes, checks size, magic bytes and structure, and keeps or deletes the file. A waiting file is deleted either way.
+- Office files must contain the right parts (a renamed ZIP is refused), are limited in entries and unpacked size, have safe paths and no macros, and their text goes through the secrets scan.
+- Pictures are decoded and written again, which removes camera data such as location. The AI reads them only while making a draft, after the consent and rate limit checks, from a smaller copy. A picture cannot be scanned for secrets before it is sent (the privacy text says so); what is read is scanned before it is kept. Mock mode reads no pictures and invents nothing. Evidence from a picture is never "matched", and the reader is told to compare with the picture. Taking the AI back deletes what it read.
+
+### 15.41 Types of work. Decided 2026-11-25
+- The share wizard offers: student creativity program, hackathon, research ("Penelitian"), community service ("Pengabdian") and other ("Lainnya"), in this order. This replaces the three values of `kind` in section 6.
+- "Research project" is now called "Research" (same stored value). "Other" has no free-text field. Explore still has no filter by type (15.5).
+- Migration `20261130000003_project_kinds.sql`.
+
+### 15.42 PDF preview on the Files step, and plain AI error messages. Decided 2026-11-26
+- Every uploaded PDF on the Files step has a "Preview" ("Pratinjau") button. It opens the browser's own PDF viewer in a window, with "Open in a new tab". A browser without a viewer shows that link only. Other file types have no preview.
+- The browser asks `download?preview=1`, which makes the same access check as a download and returns an address that lasts 5 minutes. The file comes straight from storage, and the CSP allows frames from the storage address. This is the one exception to "downloads are served as attachments" in 14.10: PDF only, from the storage origin, with the type the server set after checking the content. Downloads are still attachments.
+- When the AI draft fails, the person reads a plain message in their language that says what to do (`synth.error.*`). The provider's technical reason is kept in `synthesis_runs.error`. Retrying and the run limits are unchanged.
+

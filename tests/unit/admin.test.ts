@@ -6,9 +6,7 @@ import { environmentName, isProduction } from "@/lib/admin/env";
 import { likePattern, parseTableParams, rangeFor, withParams } from "@/lib/admin/table";
 import { formatWita, fromWitaInput, relativeTime, slaFor, toWitaInput } from "@/lib/admin/time";
 import { auditCsv, diffObjects, type AuditEvent } from "@/lib/admin/audit";
-import { methodsParagraph, tooFew, trialsCsv, type CohortSummary, type TrialRow } from "@/lib/admin/trials";
 import { isEmailAllowedBy, mbToBytes, resolveSettings, SETTING_SCHEMAS } from "@/lib/settings-core";
-import { trialSchema } from "@/lib/admin/trial-schema";
 import { ingestUpload, UploadRejected } from "@/lib/ingest";
 import { makePdf } from "@/lib/demo/make-pdf";
 
@@ -51,7 +49,7 @@ describe("settings override env defaults", () => {
     const s = resolveSettings([], env);
     expect(s.max_upload_mb).toMatchObject({ value: 30, source: "env" });
     expect(s.allowed_email_domains.value).toEqual(["student.unhas.ac.id"]);
-    expect(resolveSettings([], {}).max_upload_mb.value).toBe(25);
+    expect(resolveSettings([], {}).max_upload_mb.value).toBe(50);
   });
   it("a stored setting wins and remembers the fallback", () => {
     const s = resolveSettings(
@@ -79,6 +77,7 @@ describe("settings override env defaults", () => {
     expect(SETTING_SCHEMAS.max_upload_mb.safeParse(0).success).toBe(false);
     expect(SETTING_SCHEMAS.max_upload_mb.safeParse(500).success).toBe(false);
     expect(SETTING_SCHEMAS.max_upload_mb.safeParse(50).success).toBe(true);
+    expect(SETTING_SCHEMAS.max_upload_mb.safeParse(51).success).toBe(false);
     expect(SETTING_SCHEMAS.allowed_email_domains.safeParse(["not a domain"]).success).toBe(false);
     expect(SETTING_SCHEMAS.contact_email.safeParse("").success).toBe(true);
     expect(SETTING_SCHEMAS.contact_email.safeParse("nope").success).toBe(false);
@@ -116,98 +115,6 @@ describe("table params and time", () => {
     expect(formatWita("2026-11-20T00:00:00Z")).toContain("WITA");
     expect(relativeTime("2026-11-20T00:00:00Z", Date.parse("2026-11-20T00:10:00Z"))).toBe("10 mins ago");
     expect(relativeTime("2026-11-18T00:00:00Z", Date.parse("2026-11-20T00:10:00Z"))).toBe("2 days ago");
-  });
-});
-
-describe("trials: CSV, methods text and sample-size rule", () => {
-  const rows: TrialRow[] = [
-    {
-      id: "1",
-      participant_code: "P01",
-      cohort: "estafet",
-      project_title: 'Mangrove, the "classifier"',
-      started_at: "2026-11-20T01:00:00Z",
-      minutes_to_understand: 24,
-      completed: true,
-      correct_answers: 4,
-      total_questions: 5,
-      sus_score: 80,
-      is_demo: false,
-    },
-    {
-      id: "2",
-      participant_code: "=P02",
-      cohort: "baseline",
-      project_title: null,
-      started_at: "2026-11-20T02:00:00Z",
-      minutes_to_understand: null,
-      completed: false,
-      correct_answers: null,
-      total_questions: null,
-      sus_score: null,
-      is_demo: true,
-    },
-  ];
-  it("exports pseudonym codes only and neutralizes formulas", () => {
-    const csv = trialsCsv(rows);
-    expect(csv.split("\n")[0]).toBe(
-      "participant_code,cohort,project,started_at_utc,minutes_to_understand,completed,correct_answers,total_questions,sus_score,is_demo",
-    );
-    expect(csv).toContain('"Mangrove, the ""classifier"""');
-    expect(csv).toContain("'=P02");
-    expect(csv).not.toMatch(/@|full_name|email|name/i);
-  });
-  it("requires at least 5 sessions per cohort to conclude", () => {
-    expect(tooFew(4)).toBe(true);
-    expect(tooFew(5)).toBe(false);
-    expect(tooFew(undefined)).toBe(true);
-  });
-  const s = (cohort: "baseline" | "estafet", n: number): CohortSummary => ({
-    cohort,
-    n,
-    completed_n: n,
-    median_minutes: 30,
-    mean_minutes: 31,
-    completion_rate: 1,
-    mean_score: 0.8,
-    mean_sus: 75,
-    within30_n: 3,
-    within30_share: 0.6,
-  });
-  it("the methods paragraph states n, one university and that results are indicative", () => {
-    const t = methodsParagraph([s("baseline", 6), s("estafet", 6)], {
-      includesDemo: false,
-      first: "2026-11-01T00:00:00Z",
-      last: "2026-11-20T00:00:00Z",
-    });
-    expect(t).toContain("12 onboarding trial sessions");
-    expect(t).toContain("one university");
-    expect(t).toContain("indicative only");
-    expect(t).not.toContain("fewer than 5");
-  });
-  it("warns when a cohort is too small and when demo rows are included", () => {
-    const t = methodsParagraph([s("baseline", 3), s("estafet", 6)], { includesDemo: true });
-    expect(t).toContain("fewer than 5 sessions");
-    expect(t).toContain("includes demo rows");
-    expect(methodsParagraph([], { includesDemo: false })).toContain("No sessions");
-  });
-  it("validates a session: pseudonym, consent, SUS range, correct <= asked", () => {
-    const ok = {
-      participant_code: "P01",
-      cohort: "estafet",
-      started_at: "2026-11-20T01:00",
-      minutes_to_understand: 20,
-      completed: true,
-      correct_answers: 4,
-      total_questions: 5,
-      consent_confirmed: true,
-      is_demo: false,
-    };
-    expect(trialSchema.safeParse(ok).success).toBe(true);
-    expect(trialSchema.safeParse({ ...ok, participant_code: "Budi Santoso" }).success).toBe(false);
-    expect(trialSchema.safeParse({ ...ok, consent_confirmed: false }).success).toBe(false);
-    expect(trialSchema.safeParse({ ...ok, sus_score: 120 }).success).toBe(false);
-    expect(trialSchema.safeParse({ ...ok, correct_answers: 9 }).success).toBe(false);
   });
 });
 

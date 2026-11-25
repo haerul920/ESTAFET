@@ -4,6 +4,8 @@ import { useState, useSyncExternalStore } from "react";
 import { Info, OctagonAlert, TriangleAlert, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
+import { motion } from "framer-motion";
+import { iconMotion } from "@/components/ui/motion-presets";
 
 export interface PublicAnnouncement {
   id: string;
@@ -83,7 +85,8 @@ export function SystemBanners({ items }: { items: PublicAnnouncement[] }) {
               {locale === "id" ? a.text_id : a.text_en}
             </span>
             {a.dismissible ? (
-              <button
+              <motion.button
+                {...iconMotion}
                 type="button"
                 aria-label={t("dismissAnnouncement")}
                 onClick={() => {
@@ -95,10 +98,10 @@ export function SystemBanners({ items }: { items: PublicAnnouncement[] }) {
                     /* storage blocked: it only stays dismissed until the next page load */
                   }
                 }}
-                className="icon-btn -my-2 flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-full hover:bg-white/50"
+                className="icon-press -my-2 flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-full hover:bg-white/50"
               >
                 <X size={16} aria-hidden="true" />
-              </button>
+              </motion.button>
             ) : null}
           </div>
         );

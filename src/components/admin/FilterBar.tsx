@@ -6,22 +6,28 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
+import { SelectField } from "@/components/ui/Field";
 
 export interface FilterGroup {
   key: string;
   label: string;
   options: { value: string; label: string }[];
+  /** The first choice of a dropdown, for example "All statuses". */
+  allLabel?: string;
+  /** Choices a dropdown shows only while a link has selected them, so they read properly. */
+  linkOnly?: { value: string; label: string }[];
 }
 
 /** Search plus filter chips. Everything is saved in the URL (and resets to page 1 on change). */
 export function FilterBar({
   searchLabel,
   filters = [],
-  toggles = [],
+  dropdowns = false,
 }: {
   searchLabel?: string | null;
   filters?: FilterGroup[];
-  toggles?: { key: string; label: string }[];
+  /** One row: the search box and a dropdown per filter, as on the Explore page. Otherwise rows of chips. */
+  dropdowns?: boolean;
 }) {
   const tc = useTranslations("admin.common");
   const router = useRouter();
@@ -52,13 +58,13 @@ export function FilterBar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
-  const active = ["q", ...filters.map((f) => f.key), ...toggles.map((t) => t.key)].some((k) => params.has(k));
+  const active = ["q", ...filters.map((f) => f.key)].some((k) => params.has(k));
 
   return (
     <div className={cn("mb-4 flex flex-col gap-3", pending && "opacity-70")} role="search">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className={cn("flex flex-wrap gap-3", dropdowns ? "items-end" : "items-center")}>
         {label ? (
-          <div className="relative min-w-[240px] flex-1">
+          <div className={cn("relative min-w-[240px] flex-1", dropdowns && "self-end")}>
             <label htmlFor="admin-q" className="sr-only">
               {label}
             </label>
@@ -73,21 +79,29 @@ export function FilterBar({
               value={q}
               placeholder={label}
               onChange={(e) => setQ(e.target.value)}
-              className="min-h-[44px] w-full rounded-full border border-line-strong bg-white py-2 pl-10 pr-4 text-[15px]"
+              className={cn(
+                "w-full border border-line-strong bg-white py-2 pl-10 pr-4 text-[15px]",
+                dropdowns ? "min-h-[48px] rounded-[14px]" : "min-h-[44px] rounded-full",
+              )}
             />
           </div>
         ) : null}
-        {toggles.map((t) => (
-          <label key={t.key} className="flex min-h-[44px] cursor-pointer items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={params.get(t.key) === "1"}
-              onChange={(e) => set(t.key, e.target.checked ? "1" : null)}
-              className="h-[18px] w-[18px] accent-[#1760d6]"
-            />
-            {t.label}
-          </label>
-        ))}
+        {dropdowns
+          ? filters.map((f) => (
+              <SelectField
+                key={f.key}
+                label={f.label}
+                className="flex-[0_1_220px] max-md:flex-[1_1_100%]"
+                value={params.get(f.key) ?? ""}
+                onValueChange={(value) => set(f.key, value || null)}
+                options={[
+                  { value: "", label: f.allLabel ?? tc("all") },
+                  ...f.options,
+                  ...(f.linkOnly ?? []).filter((o) => o.value === params.get(f.key)),
+                ]}
+              />
+            ))
+          : null}
         {active ? (
           <button
             type="button"
@@ -101,7 +115,7 @@ export function FilterBar({
           </button>
         ) : null}
       </div>
-      {filters.map((f) => {
+      {(dropdowns ? [] : filters).map((f) => {
         const current = params.get(f.key);
         return (
           <div key={f.key} role="group" aria-label={f.label} className="flex flex-wrap items-center gap-2">

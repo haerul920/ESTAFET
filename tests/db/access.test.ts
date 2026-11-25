@@ -164,8 +164,7 @@ describe("lifecycle: draft, published, unpublished, archived", () => {
     expect(hint((await owner.client.rpc("publish_project", { p_project_id: fx.projectId })).error)).toBe("archived");
     expect(
       hint(
-        (await owner.client.rpc("set_access_settings", { p_project_id: fx.projectId, p_mode: "paused", p_max: 3 }))
-          .error,
+        (await owner.client.rpc("set_access_settings", { p_project_id: fx.projectId, p_mode: "open", p_max: 3 })).error,
       ),
     ).toBe("archived");
     expect(
@@ -305,32 +304,21 @@ describe("access, open mode", () => {
     expect(await lineage(fx.projectId)).toContain("access_settings_changed");
   });
 
-  it("paused blocks new access but keeps existing access", async () => {
+  it("the retired paused mode cannot be chosen any more", async () => {
     const fx2 = await publishedProject(owner, { mode: "open" });
-    const holder = await mk("holder");
-    const newcomer = await mk("newcomer");
-    expect(
-      (await holder.client.rpc("take_access", { p_project_id: fx2.projectId, p_agreement_version: 1 })).error,
-    ).toBeNull();
     expect(
       (await owner.client.rpc("set_access_settings", { p_project_id: fx2.projectId, p_mode: "paused", p_max: 3 }))
         .error,
-    ).toBeNull();
-    expect(
-      hint((await newcomer.client.rpc("take_access", { p_project_id: fx2.projectId, p_agreement_version: 1 })).error),
-    ).toBe("paused");
-    expect(
-      hint((await newcomer.client.rpc("create_continuation_request", requestArgs(fx2.projectId, fx2.taskId))).error),
-    ).toBe("paused");
-    expect(await files(holder, fx2.projectId)).toHaveLength(1);
-    expect(
-      (
-        await createClient(URL, ANON, { auth: { persistSession: false } })
-          .from("public_project_teaser")
-          .select("id")
-          .eq("id", fx2.projectId)
-      ).data,
-    ).toHaveLength(1);
+    ).not.toBeNull();
+    const now = await owner.client.from("projects").select("access_mode").eq("id", fx2.projectId).single();
+    expect(now.data?.access_mode).toBe("open");
+  });
+
+  it("accepts a request that picks no suggestion: the team may follow its own plan", async () => {
+    const f = await publishedProject(owner, { mode: "by_request" });
+    const u = await mk("own-plan");
+    const r = await u.client.rpc("create_continuation_request", requestArgs(f.projectId, f.taskId, { p_task_ids: [] }));
+    expect(r.error).toBeNull();
   });
 
   it("by_request mode refuses direct access, open mode refuses requests", async () => {
@@ -371,11 +359,15 @@ describe("access, by request", () => {
     mate = await mk("mate");
   });
 
-  it("a request needs a verified task, and files stay locked while it is pending", async () => {
+  it("a chosen suggestion must belong to the project, and owners cannot request their own", async () => {
     expect(
       hint(
-        (await team.client.rpc("create_continuation_request", requestArgs(fx.projectId, fx.taskId, { p_task_ids: [] })))
-          .error,
+        (
+          await team.client.rpc(
+            "create_continuation_request",
+            requestArgs(fx.projectId, fx.taskId, { p_task_ids: ["00000000-0000-4000-8000-000000000000"] }),
+          )
+        ).error,
       ),
     ).toBe("no_task");
     expect(

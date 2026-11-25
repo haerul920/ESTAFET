@@ -9,6 +9,8 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CheckboxField, FormMessage } from "@/components/ui/Field";
 import { acceptPolicies, publishProject } from "@/app/actions/projects";
+import { SaveExitButton } from "./SaveExit";
+import { WizardActions } from "./WizardActions";
 
 export function PublishBar({
   projectId,
@@ -25,7 +27,6 @@ export function PublishBar({
   verified: boolean;
 }) {
   const t = useTranslations("publishBar");
-  const tw = useTranslations("wizard");
   const router = useRouter();
   const [confirmed, setConfirmed] = useState(false);
   const [policies, setPolicies] = useState(policiesAccepted);
@@ -44,8 +45,22 @@ export function PublishBar({
       {!policiesAccepted ? (
         <CheckboxField
           label={t.rich("accept", {
-            terms: (chunks) => <Link href="/terms">{chunks}</Link>,
-            privacy: (chunks) => <Link href="/privacy">{chunks}</Link>,
+            terms: (chunks) => (
+              <Link
+                href="/terms"
+                className="link-anim inline-flex items-center rounded-md px-1.5 py-0.5 font-semibold text-blue underline decoration-blue/35 decoration-1 underline-offset-4 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-tint hover:text-blue-dark hover:decoration-blue-dark"
+              >
+                {chunks}
+              </Link>
+            ),
+            privacy: (chunks) => (
+              <Link
+                href="/privacy"
+                className="link-anim inline-flex items-center rounded-md px-1.5 py-0.5 font-semibold text-blue underline decoration-blue/35 decoration-1 underline-offset-4 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-tint hover:text-blue-dark hover:decoration-blue-dark"
+              >
+                {chunks}
+              </Link>
+            ),
           })}
           checked={policies}
           onChange={(e) => setPolicies(e.target.checked)}
@@ -55,17 +70,17 @@ export function PublishBar({
       {!verified ? <FormMessage tone="error">{t("verifyFirst")}</FormMessage> : null}
       {!ready ? <FormMessage tone="error">{reason}</FormMessage> : null}
       {error ? <FormMessage tone="error">{error}</FormMessage> : null}
-      <div className="flex flex-wrap justify-between gap-3">
-        <div className="flex flex-wrap gap-3">
-          <ButtonLink href={`/bagikan/${projectId}/tim`} variant="outline">
+      <WizardActions
+        left={
+          <ButtonLink href={`/bagikan/${projectId}/tim`} variant="outline" size="lg">
             {t("back")}
           </ButtonLink>
-          <ButtonLink href="/dasbor" variant="outline">
-            {tw("saveDraft")}
-          </ButtonLink>
-        </div>
+        }
+      >
+        <SaveExitButton />
         <Button
-          size="md"
+          size="lg"
+          loading={pending}
           disabled={!canPublish || !confirmed || !policies || pending}
           onClick={() =>
             start(async () => {
@@ -86,7 +101,7 @@ export function PublishBar({
           <Rocket size={18} aria-hidden="true" />
           {pending ? t("publishing") : t("publish")}
         </Button>
-      </div>
+      </WizardActions>
       <p className="m-0 text-[13px] text-text-2">{t("note")}</p>
     </Card>
   );

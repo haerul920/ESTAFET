@@ -4,15 +4,19 @@ import { useActionState, useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, UserPlus, X } from "lucide-react";
+import { Check, UserPlus } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Button, ButtonLink } from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { FormMessage, TextField } from "@/components/ui/Field";
 import { confirmTeamConsent, inviteCoOwner, removeTeamMember } from "@/app/actions/projects";
 import { formatDate } from "@/lib/format";
 import type { Project } from "@/lib/db/types";
 import type { FormState } from "@/lib/validation";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { AccessFields, type AccessValue } from "@/components/features/AccessSettings";
+import { saveAccessSettings } from "@/app/actions/owner";
+import { WizardActions } from "./WizardActions";
 
 interface Member {
   profile_id: string;
@@ -22,7 +26,7 @@ interface Member {
   consented_at: string | null;
 }
 
-/** The team part of "Team and access": every active member confirms that the project may be shared. */
+/** The "Team and access" step: every active member confirms that the project may be shared, and owners set access. */
 export function ConsentStep({
   project,
   team,
@@ -38,9 +42,28 @@ export function ConsentStep({
   const [pending, start] = useTransition();
   const [addState, addAction, adding] = useActionState<FormState, FormData>(inviteCoOwner, {});
   const [confirmError, setConfirmError] = useState("");
+  const tAccess = useTranslations("access");
+  const tExit = useTranslations("saveExit");
+  const [access, setAccess] = useState<AccessValue>({ mode: project.access_mode, max: project.max_active_adopters });
+  const [accessError, setAccessError] = useState("");
+  const [target, setTarget] = useState<"back" | "exit" | "next" | null>(null);
+  const [saving, startSaving] = useTransition();
+
+  function saveThenGo(which: "back" | "exit" | "next", href: string) {
+    setTarget(which);
+    startSaving(async () => {
+      setAccessError("");
+      if (access.mode !== project.access_mode || access.max !== project.max_active_adopters) {
+        const r = await saveAccessSettings(project.id, access.mode, access.max);
+        if (r.error) {
+          setAccessError(r.error);
+          return;
+        }
+      }
+      router.push(href);
+    });
+  }
   const me = team.find((m) => m.profile_id === currentUserId);
-  const active = team.filter((m) => m.status === "active");
-  const allConfirmed = active.length > 0 && active.every((m) => m.consented_at);
 
   return (
     <div className="flex flex-col gap-6">
@@ -55,10 +78,9 @@ export function ConsentStep({
               <motion.li
                 key={m.profile_id}
                 layout
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97 }}
               >
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-line-soft bg-white p-4">
                   <div>
@@ -66,7 +88,9 @@ export function ConsentStep({
                     {m.profile_id === currentUserId ? <span className="text-text-2">{t("you")}</span> : null}
                     <div className="text-sm text-text-2">
                       {m.status === "invited"
-                        ? t("invited")
+                        ? m.profile_id.startsWith("email:")
+                          ? t("invitedPendingAccount")
+                          : t("invited")
                         : m.consented_at
                           ? t("confirmedOn", { date: formatDate(m.consented_at, locale) })
                           : t("notConfirmed")}
@@ -82,6 +106,7 @@ export function ConsentStep({
                     ) : m.profile_id === currentUserId ? (
                       <Button
                         size="md"
+                        loading={pending}
                         disabled={pending}
                         onClick={() =>
                           start(async () => {
@@ -97,19 +122,20 @@ export function ConsentStep({
                       <Badge tone="warn">{t("waiting")}</Badge>
                     )}
                     {m.role !== "owner" ? (
-                      <button
-                        type="button"
-                        aria-label={t("removeAria", { name: m.full_name })}
-                        onClick={() =>
-                          start(async () => {
-                            await removeTeamMember(project.id, m.profile_id);
-                            router.refresh();
-                          })
-                        }
-                        className="icon-btn flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-text-2 hover:bg-surface"
-                      >
-                        <X size={18} aria-hidden="true" />
-                      </button>
+                      <ConfirmDialog
+                        trigger={t("remove")}
+                        title={t("removeTitle", { name: m.full_name })}
+                        effect={t("removeEffect", { name: m.full_name })}
+                        confirmLabel={t("remove")}
+                        tone="danger"
+                        triggerVariant="danger"
+                        size="sm"
+                        onConfirm={async () => {
+                          await removeTeamMember(project.id, m.profile_id);
+                          return {};
+                        }}
+                        onDone={() => router.refresh()}
+                      />
                     ) : null}
                   </div>
                 </div>
@@ -124,19 +150,20 @@ export function ConsentStep({
         ) : null}
         {me && !me.consented_at ? <p className="mb-0 mt-3 text-sm text-text-2">{t("confirmNote")}</p> : null}
 
-        <form action={addAction} className="mt-5 flex flex-wrap items-end gap-3 border-t border-line pt-5">
+        <form action={addAction} className="mt-5 border-t border-line pt-5">
           <input type="hidden" name="project_id" value={project.id} />
           <TextField
             label={t("inviteLabel")}
             name="email"
             type="email"
-            className="min-w-[240px] flex-1"
             error={addState.fieldErrors?.email}
             hint={t("inviteHint")}
+            after={
+              <Button type="submit" variant="outline" disabled={adding} className="shrink-0">
+                <UserPlus size={18} aria-hidden="true" /> {t("invite")}
+              </Button>
+            }
           />
-          <Button type="submit" variant="outline" disabled={adding}>
-            <UserPlus size={18} aria-hidden="true" /> {t("invite")}
-          </Button>
         </form>
         {addState.ok ? (
           <div className="mt-3">
@@ -145,14 +172,48 @@ export function ConsentStep({
         ) : null}
       </Card>
 
-      <div className="flex flex-wrap justify-between gap-3">
-        <ButtonLink href={`/bagikan/${project.id}/tinjau`} variant="outline">
-          {t("back")}
-        </ButtonLink>
-        <ButtonLink href={`/bagikan/${project.id}/terbit`} arrow size="lg">
-          {allConfirmed ? t("next") : t("nextLater")}
-        </ButtonLink>
-      </div>
+      <Card as="section" aria-labelledby="access-h" className="flex flex-col gap-5">
+        <h2 id="access-h" className="m-0 text-xl">
+          {tAccess("title")}
+        </h2>
+        <AccessFields projectId={project.id} value={access} onChange={setAccess} />
+      </Card>
+
+      {accessError ? <FormMessage tone="error">{accessError}</FormMessage> : null}
+
+      {/* Always last on the step. Each button saves the access rules first, then goes. */}
+      <WizardActions
+        left={
+          <Button
+            variant="outline"
+            size="lg"
+            loading={saving && target === "back"}
+            disabled={saving}
+            onClick={() => saveThenGo("back", `/bagikan/${project.id}/tinjau`)}
+          >
+            {t("back")}
+          </Button>
+        }
+      >
+        <Button
+          variant="outline"
+          size="lg"
+          loading={saving && target === "exit"}
+          disabled={saving}
+          onClick={() => saveThenGo("exit", "/dasbor")}
+        >
+          {tExit("button")}
+        </Button>
+        <Button
+          arrow
+          size="lg"
+          loading={saving && target === "next"}
+          disabled={saving}
+          onClick={() => saveThenGo("next", `/bagikan/${project.id}/terbit`)}
+        >
+          {t("next")}
+        </Button>
+      </WizardActions>
     </div>
   );
 }

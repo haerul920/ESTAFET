@@ -96,6 +96,7 @@ export function ConfirmDialog({
           </Button>
           <Button
             variant={tone === "danger" ? "danger" : "primary"}
+            loading={pending}
             disabled={pending || !reasonOk}
             onClick={() =>
               start(async () => {

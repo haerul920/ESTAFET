@@ -25,7 +25,7 @@ export function Card({
   children: React.ReactNode;
 } & React.HTMLAttributes<HTMLElement>) {
   return (
-    <Tag className={cn("rounded-[28px] p-6", TONE[tone], className)} {...rest}>
+    <Tag className={cn("rounded-[28px] p-6 max-sm:rounded-[22px] max-sm:p-4", TONE[tone], className)} {...rest}>
       {children}
     </Tag>
   );

@@ -10,7 +10,6 @@ import { loadDashboard } from "@/lib/db/dashboard";
 import { getLabels } from "@/lib/get-labels";
 import type { TFn } from "@/lib/labels";
 import { PageShell } from "@/components/ui/PageShell";
-import { DemoBadge } from "@/components/ui/Badge";
 import { Dashboard } from "@/components/features/Dashboard";
 import { VerifyEmailNotice } from "@/components/features/VerifyEmailNotice";
 
@@ -46,7 +45,7 @@ export default async function DashboardPage() {
           className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[18px] bg-warn-bg p-4 text-warn-ink"
         >
           <span>{t("deletionBanner", { date: formatDate(deletion.scheduled_for as string, locale) })}</span>
-          <ButtonLink href="/akun/privasi" variant="outline" size="md">
+          <ButtonLink href="/akun/setelan" variant="outline" size="md">
             {t("deletionManage")}
           </ButtonLink>
         </div>
@@ -56,7 +55,6 @@ export default async function DashboardPage() {
           <h1 className="mb-2 mt-0 text-[40px] font-medium max-sm:text-[30px]">{t("title")}</h1>
           <p className="m-0 text-text-2">{t("lead")}</p>
         </div>
-        {data.hasDemo ? <DemoBadge /> : null}
       </div>
       {!user.verified ? <VerifyEmailNotice email={user.email} /> : null}
       <Dashboard data={data} />

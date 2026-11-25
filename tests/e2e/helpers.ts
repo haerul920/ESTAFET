@@ -11,6 +11,14 @@ export function adminDb() {
   });
 }
 
+/** Chooses an option in the searchable picker (SearchableSelect). */
+export async function pickOption(page: Page, label: string, option: string | RegExp) {
+  await page.getByRole("button", { name: new RegExp(`^${label}`) }).click();
+  // A label such as "Faculty (FT)" is read as "Faculty FT": the code is shown as its own badge.
+  const name = typeof option === "string" ? option.replace(/\s*\(([^()]+)\)\s*$/, " $1") : option;
+  await page.getByRole("option", { name }).click();
+}
+
 export async function newUserPage(browser: Browser) {
   const context = await browser.newContext();
   return { context, page: await context.newPage() };
@@ -22,12 +30,12 @@ export async function signIn(page: Page, email: string, opts: { password?: strin
   if (locale === "id") {
     await page.goto("/login");
     await page.getByLabel("Email", { exact: true }).fill(email);
-    await page.getByLabel("Kata sandi").fill(password);
+    await page.getByLabel("Kata sandi", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Masuk" }).last().click();
   } else {
     await page.goto("/en/login");
     await page.getByLabel("Email", { exact: true }).fill(email);
-    await page.getByLabel("Password").fill(password);
+    await page.getByLabel("Password", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
   }
   await page.waitForURL(/\/(dasbor|dashboard|admin|mulai)/);
@@ -47,7 +55,8 @@ export async function signUp(
     await page.waitForTimeout(3200);
     await page.getByLabel("Nama lengkap").fill(name);
     await page.getByLabel("Email", { exact: true }).fill(email);
-    await page.getByLabel("Kata sandi").fill(password);
+    await page.getByLabel("Kata sandi", { exact: true }).fill(password);
+    await page.getByLabel("Konfirmasi kata sandi", { exact: true }).fill(password);
     await page.getByLabel(/Saya menyetujui Syarat dan Kebijakan Privasi/).check();
     await page.getByRole("button", { name: "Buat akun" }).click();
     await page.waitForURL("**/mulai");
@@ -59,7 +68,8 @@ export async function signUp(
     await page.waitForTimeout(3200);
     await page.getByLabel("Full name").fill(name);
     await page.getByLabel("Email", { exact: true }).fill(email);
-    await page.getByLabel("Password").fill(password);
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    await page.getByLabel("Confirm password", { exact: true }).fill(password);
     await page.getByLabel(/I accept the Terms and the Privacy Policy/).check();
     await page.getByRole("button", { name: "Create account" }).click();
     await page.waitForURL("**/mulai");

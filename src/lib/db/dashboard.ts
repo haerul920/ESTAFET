@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { resumeStep } from "@/lib/db/owner";
+import { claimPendingTeamInvites, resumeStep } from "@/lib/db/owner";
 import { formatDate, formatMonthYear, timeAgo } from "@/lib/format";
 import type { Labels, TFn } from "@/lib/labels";
 import type {
@@ -26,6 +26,8 @@ export interface DashboardProject {
   note: string;
   noteTone: "warn" | "blue" | "grey";
   isDemo: boolean;
+  /** A draft that only exists for its owners: the main owner may delete it. The database checks this again. */
+  canDelete: boolean;
 }
 
 export interface DashboardRequest {
@@ -63,6 +65,8 @@ export interface DashboardNotification {
   href: string;
   unread: boolean;
   when: string;
+  inviteProjectId?: string;
+  inviteStatus?: "invited" | "active" | "left";
 }
 
 export interface DashboardData {
@@ -243,18 +247,25 @@ export async function loadDashboard(
   ctx: { t: TFn; L: Labels; locale: string },
 ): Promise<DashboardData> {
   const { t, L, locale } = ctx;
+  await claimPendingTeamInvites(userId, email);
   const supabase = await createClient();
   const admin = createAdminClient();
 
   const { data: memberRows } = await supabase
     .from("project_members")
-    .select("project_id, status, consented_at")
+    .select("project_id, status, consented_at, role")
     .eq("profile_id", userId)
     .in("status", ["active", "invited"]);
-  const members = (memberRows ?? []) as { project_id: string; status: string; consented_at: string | null }[];
+  const members = (memberRows ?? []) as {
+    project_id: string;
+    role: string;
+    status: string;
+    consented_at: string | null;
+  }[];
   const projectIds = members.filter((m) => m.status === "active").map((m) => m.project_id);
   const invitedIds = members.filter((m) => m.status === "invited").map((m) => m.project_id);
   const consentedByMe = new Map(members.map((m) => [m.project_id, m.consented_at]));
+  const roleByProject = new Map(members.map((m) => [m.project_id, m.role]));
 
   const [
     { data: projectRows },
@@ -337,7 +348,7 @@ export async function loadDashboard(
   }
 
   const mine: DashboardProject[] = projects.map((p) => {
-    const its = items.filter((i) => i.project_id === p.id);
+    const its = items.filter((i) => i.project_id === p.id && i.review_status !== "removed");
     const reviewed = its.filter((i) => i.review_status !== "pending").length;
     const open = unsignedByProject.get(p.id) ?? [];
     const pendingReq = open.filter((r) => r.status === "pending");
@@ -345,7 +356,21 @@ export async function loadDashboard(
     const myConsent = consentedByMe.get(p.id);
     const statusLabel = L.projectStatus[p.status];
     const when = formatMonthYear(p.published_at, locale);
-    const base = { id: p.id, title: p.title, slug: p.slug, isDemo: p.is_demo, status: p.status, statusLabel };
+    const canDelete =
+      p.status === "draft" &&
+      !p.published_at &&
+      (!p.moderation_status || p.moderation_status === "ok") &&
+      roleByProject.get(p.id) === "owner" &&
+      !requests.some((r) => r.project_id === p.id);
+    const base = {
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      isDemo: p.is_demo,
+      status: p.status,
+      statusLabel,
+      canDelete,
+    };
 
     if (p.moderation_status && p.moderation_status !== "ok") {
       return {
@@ -355,7 +380,8 @@ export async function loadDashboard(
           state: p.moderation_status === "removed" ? t("p.stateRemoved") : t("p.stateHidden"),
         }),
         cta: t("p.moderatedCta"),
-        href: "/dasbor#notifikasi",
+        // Straight to the decision, its reason and the appeal form.
+        href: `/proyek/${p.slug}/keputusan`,
         ctaTone: "outline" as const,
         note: t("p.moderatedNote", {
           action: p.moderation_status === "removed" ? t("p.actionRemoved") : t("p.actionHidden"),
@@ -502,4 +528,46 @@ export async function loadDashboard(
     },
     hasDemo: mine.some((p) => p.isDemo) || sent.length > 0 || access.length > 0,
   };
+}
+
+export async function loadNotifications(
+  userId: string,
+  ctx: { t: TFn; locale: string },
+  email?: string,
+): Promise<DashboardNotification[]> {
+  const { t, locale } = ctx;
+  if (email) {
+    await claimPendingTeamInvites(userId, email);
+  }
+  const supabase = await createClient();
+  const [{ data: notifRows }, { data: memberRows }] = await Promise.all([
+    supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase.from("project_members").select("project_id, status").eq("profile_id", userId),
+  ]);
+
+  const statusByProject = new Map(
+    ((memberRows ?? []) as { project_id: string; status: "invited" | "active" | "left" }[]).map((m) => [
+      m.project_id,
+      m.status,
+    ]),
+  );
+
+  return ((notifRows ?? []) as NotificationRow[]).map((n) => {
+    const p = n.payload as Record<string, string | undefined>;
+    const inviteProjectId = n.type === "team_invite" && p.project_id ? p.project_id : undefined;
+    const inviteStatus = inviteProjectId ? statusByProject.get(inviteProjectId) : undefined;
+    return {
+      id: n.id,
+      ...describeNotification(n, t),
+      unread: !n.read_at,
+      when: timeAgo(n.created_at, locale),
+      inviteProjectId,
+      inviteStatus,
+    };
+  });
 }

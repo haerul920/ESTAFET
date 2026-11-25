@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { motion } from "framer-motion";
 import { Flag } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -25,7 +26,7 @@ const REASONS = [
 
 /**
  * Report a project: a dialog with each reason and its rule in one line, required details, an optional evidence link,
- * a bot check for guests, and a confirmation with a reference code. Open it from a button, or control it from a menu.
+ * a bot check for guests, and a confirmation with a reference code. It brings its own button.
  */
 export function ReportDialog({
   projectId,
@@ -51,16 +52,26 @@ export function ReportDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
       {hideTrigger ? null : (
-        <div className="rounded-[28px] border border-line-soft p-4">
-          <DialogTrigger asChild>
-            <button
-              type="button"
-              className="flex min-h-[44px] w-full cursor-pointer items-center gap-2 text-left text-sm font-semibold text-text-2 hover:text-ink"
+        <DialogTrigger asChild>
+          {/* Motion lifts the button and waves the flag, CSS turns it red. No whileTap on a Radix trigger. */}
+          <motion.button
+            type="button"
+            initial="rest"
+            animate="rest"
+            whileHover="hover"
+            variants={{ rest: { y: 0 }, hover: { y: -2 } }}
+            className="group inline-flex h-11 flex-none cursor-pointer items-center gap-2 self-center rounded-full border-[1.5px] border-line-strong bg-white px-4 text-sm font-semibold leading-none text-ink transition-colors duration-200 hover:border-danger hover:bg-[#fdecea] hover:text-danger focus-visible:border-danger focus-visible:text-danger active:bg-[#fbdcd9]"
+          >
+            <motion.span
+              aria-hidden="true"
+              className="inline-flex origin-bottom-left"
+              variants={{ rest: { rotate: 0 }, hover: { rotate: [0, -16, 12, -6, 0], transition: { duration: 0.55 } } }}
             >
-              <Flag size={16} aria-hidden="true" /> {t("open")}
-            </button>
-          </DialogTrigger>
-        </div>
+              <Flag size={16} />
+            </motion.span>
+            {t("open")}
+          </motion.button>
+        </DialogTrigger>
       )}
       <DialogContent title={t("title")} className="w-[min(560px,calc(100vw-2rem))]">
         {/* The form only exists while the dialog is open, so its state (and its timer) start fresh every time. */}

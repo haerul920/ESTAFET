@@ -38,7 +38,6 @@ export const synthesisSchema = z.object({
       z.object({
         title: z.string().min(1),
         description: z.string().default(""),
-        effort: z.enum(["small", "medium", "large"]),
         evidence: evidenceList,
       }),
     )
@@ -58,4 +57,40 @@ export const synthesisSchema = z.object({
 export type SynthesisOutput = z.infer<typeof synthesisSchema>;
 export type SynthesisEvidence = z.infer<typeof evidenceSchema>;
 
-export class SynthesisError extends Error {}
+/** Why a draft could not be made. Each one has a plain message in both languages under `synth.error`. */
+export const SYNTHESIS_FAILURES = [
+  "busy",
+  "quota",
+  "unavailable",
+  "connection",
+  "badAnswer",
+  "noText",
+  "saveFailed",
+  "failed",
+] as const;
+export type SynthesisFailure = (typeof SYNTHESIS_FAILURES)[number];
+
+/**
+ * With a `code`, the message is technical (kept with the run for troubleshooting) and the reader gets the translation
+ * of the code. Without one, the message is already written for the reader.
+ */
+export class SynthesisError extends Error {
+  constructor(
+    message: string,
+    readonly code?: SynthesisFailure,
+  ) {
+    super(message);
+  }
+}
+
+/** Sorts whatever a provider call threw. Providers report an HTTP status as "... request failed (503).". */
+export function providerFailure(error: unknown): SynthesisFailure {
+  const message = error instanceof Error ? error.message : "";
+  const status = Number(message.match(/request failed \((\d{3})\)/)?.[1] ?? 0);
+  if (status === 429) return "quota";
+  if ([500, 502, 503, 504, 529].includes(status)) return "busy";
+  if ([401, 403, 404].includes(status) || /(_API_KEY|LLM_MODEL) is not set/.test(message)) return "unavailable";
+  const name = error instanceof Error ? error.name : "";
+  if (name === "AbortError" || name === "TimeoutError" || /fetch failed|network/i.test(message)) return "connection";
+  return "failed";
+}

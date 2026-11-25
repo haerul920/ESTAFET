@@ -92,10 +92,10 @@ export function EmptyState({ title, text, action }: { title: string; text?: stri
 
 export function KeyValueList({ items }: { items: { label: string; value: React.ReactNode }[] }) {
   return (
-    <dl className="m-0 grid grid-cols-[minmax(110px,160px)_1fr] gap-x-4 gap-y-2.5 text-sm">
+    <dl className="m-0 grid grid-cols-[minmax(110px,160px)_1fr] gap-x-4 gap-y-2.5 text-sm max-sm:grid-cols-1 max-sm:gap-y-1">
       {items.map((it) => (
         <div key={it.label} className="contents">
-          <dt className="text-text-2">{it.label}</dt>
+          <dt className="text-text-2 max-sm:mt-1.5 max-sm:text-xs max-sm:font-semibold">{it.label}</dt>
           <dd className="m-0 min-w-0 break-words">{it.value ?? "—"}</dd>
         </div>
       ))}

@@ -1,9 +1,12 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { sessionCookieOptions } from "@/lib/supabase/keys";
 import { emailSchema, fieldErrorsFrom, formValues, safeNext, type FormState } from "@/lib/validation";
 import { getSettings, isEmailAllowedBy } from "@/lib/settings";
 import { isSuspendedProfile } from "@/lib/auth";
@@ -52,6 +55,7 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
     await supabase.auth.signOut();
     return { error: suspendedMessage, values };
   }
+  revalidatePath("/", "layout");
   redirect({ href: safeNext(values.next), locale });
 }
 
@@ -65,7 +69,12 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
       email: emailSchema(t.v),
       faculty: z.string().trim().optional(),
       password: z.string().min(8, t.v("passwordMin")),
+      confirm_password: z.string().min(1, t.v("passwordConfirmRequired")),
       accept_policies: z.literal("on", { message: t.v("acceptPolicies") }),
+    })
+    .refine((d) => d.password === d.confirm_password, {
+      path: ["confirm_password"],
+      message: t.v("passwordMismatch"),
     })
     .safeParse(values);
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error), values };
@@ -113,6 +122,7 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
         .upsert(rows, { onConflict: "profile_id,kind,version", ignoreDuplicates: true });
   }
   if (!data.session) return { ok: true, message: t.a("signupDone") };
+  revalidatePath("/", "layout");
   redirect({ href: safeNext(values.next), locale });
 }
 
@@ -134,7 +144,24 @@ export async function resendVerification(): Promise<{ error?: string }> {
 
 export async function signOut() {
   const locale = await getLocale();
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch {
+    /* ignore remote sign-out errors so local session cookies are still wiped */
+  }
+  const cookieStore = await cookies();
+  const opts = sessionCookieOptions();
+  for (const c of cookieStore.getAll()) {
+    if (c.name.startsWith("sb-")) {
+      try {
+        cookieStore.set(c.name, "", { ...opts, maxAge: 0, expires: new Date(0) });
+        cookieStore.delete(c.name);
+      } catch {
+        /* ignore cookie deletion errors */
+      }
+    }
+  }
+  revalidatePath("/", "layout");
   redirect({ href: "/", locale });
 }
