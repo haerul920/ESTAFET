@@ -25,15 +25,16 @@ export function applyPlatformDefaults(env: Env = process.env): void {
 /**
  * The start-up check, called from `src/instrumentation.ts` (Node.js only).
  *
- * - A standalone production server (`next start`) exits with code 1 on an unsafe configuration. Just throwing would
- *   leave it listening and answering every request with an error, which hides the problem from a platform that
- *   restarts crashed processes and watches exit codes.
- * - On Vercel there is no long-lived process to exit. PRODUCTION still refuses to serve (CLAUDE.md 14.2 and 14.10):
- *   the error is rethrown so `register()` fails and the deployment answers with errors instead of running with mock
- *   AI, demo seeding, no bot check or no email. DEMO and STAGING on Vercel only log the problem, so a preview with a
- *   partial configuration still opens.
+ * - Only a DECLARED production (`APP_ENV=PRODUCTION`) refuses an unsafe configuration (CLAUDE.md 14.2 and 14.10).
+ *   A standalone server (`next start`) then exits with code 1; on Vercel, where there is no long-lived process to exit,
+ *   the error is rethrown so `register()` fails.
+ * - Without `APP_ENV` a hosted deployment still counts as PRODUCTION (no "demo" labels, no styleguide, no purge, indexed),
+ *   but an incomplete configuration is only logged as `config.invalid` and shown to admins on /admin, so the site keeps
+ *   serving. Team decision, 2026-11-23: the site went down with HTTP 500 on every route while APP_ENV was not set.
+ * - DEMO and STAGING only log the problem, so a preview with a partial configuration still opens.
  */
 export function bootCheck(env: Env = process.env): void {
+  const declared = Boolean(env.APP_ENV?.trim());
   applyPlatformDefaults(env);
   try {
     const report = assertConfig(env);
@@ -41,9 +42,19 @@ export function bootCheck(env: Env = process.env): void {
     if (report.env === "LOCAL") for (const e of report.errors) log.warn("config.problem", { message: e });
     log.info("server.start", { env: report.env, warnings: report.warnings.length });
   } catch (e) {
+    const name = environmentName(env);
+    if (name === "PRODUCTION" && !declared) {
+      const message = (e instanceof Error ? e.message : String(e)).replace(
+        /^Refusing to start in PRODUCTION\. Fix the configuration:/,
+        "Unsafe PRODUCTION configuration (APP_ENV is not set, so the site keeps serving). Set APP_ENV=PRODUCTION to enforce these rules, or APP_ENV=DEMO for a demo site:",
+      );
+      console.error(message);
+      log.error("config.invalid", { message });
+      return;
+    }
     const message = e instanceof Error ? e.message : String(e);
     console.error(message);
-    if (env.VERCEL && environmentName(env) !== "PRODUCTION") {
+    if (env.VERCEL && name !== "PRODUCTION") {
       log.error("config.invalid", { message });
       return;
     }

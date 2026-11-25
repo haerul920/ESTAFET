@@ -1903,7 +1903,9 @@
       "recentAudit": "Recent audit events",
       "viewAll": "View all",
       "noAudit": "No audit events yet",
-      "noAuditText": "Every admin action will appear here."
+      "noAuditText": "Every admin action will appear here.",
+      "configTitle": "Production configuration is incomplete",
+      "configText": "The site keeps running because APP_ENV is not set, but these settings are not safe for production. Complete them in Vercel and set APP_ENV=PRODUCTION, or set APP_ENV=DEMO if this is a demo site."
     },
     "reasons": {
       "copyright": "copyright",

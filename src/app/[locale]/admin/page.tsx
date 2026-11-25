@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader, Panel, StatCard, StatusPill, Time, toneFor, EmptyState } from "@/components/admin/ui";
 import { getSettings } from "@/lib/settings";
 import { environmentName } from "@/lib/admin/env";
+import { checkConfig } from "@/lib/config";
 import { statusText, type StatusTranslator } from "@/lib/admin/labels";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -76,6 +77,7 @@ export default async function AdminOverviewPage() {
   return (
     <>
       <PageHeader title={t("title")} intro={t("intro")} />
+      <ConfigWarning t={t} />
 
       <h2 className="mono-label mb-2 mt-0 text-xs font-normal text-text-2">{t("queues")}</h2>
       <div className="mb-6 grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-3">
@@ -187,5 +189,28 @@ export default async function AdminOverviewPage() {
         )}
       </Panel>
     </>
+  );
+}
+
+/**
+ * A production site without APP_ENV keeps serving even when its configuration is incomplete (see src/lib/boot.ts).
+ * Admins must see that, so the problems are listed here until APP_ENV is set and the configuration is fixed.
+ */
+function ConfigWarning({ t }: { t: (key: string) => string }) {
+  if (process.env.APP_ENV?.trim()) return null;
+  const report = checkConfig();
+  if (report.env !== "PRODUCTION" || report.errors.length === 0) return null;
+  return (
+    <div role="alert" className="mb-4 rounded-2xl bg-[#fdecea] px-4 py-3 text-sm text-danger">
+      <strong className="mb-1 block">{t("configTitle")}</strong>
+      <p className="m-0 mb-2">{t("configText")}</p>
+      <ul className="m-0 flex flex-col gap-1 pl-5">
+        {report.errors.map((e) => (
+          <li key={e} className="font-code text-[13px]">
+            {e}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

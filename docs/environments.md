@@ -2,12 +2,12 @@
 
 ESTAFET runs in four environments. Each one has **its own Supabase project** and its own set of variables. Never point two environments at the same database.
 
-| Environment | `APP_ENV` | Purpose | Supabase | AI | Email | Search engines |
-|---|---|---|---|---|---|---|
-| Local | `LOCAL` | Development, tests | Local Docker stack (`pnpm db:start`) | `mock` | `log` (prints a line) | closed |
-| Demo | `DEMO` | The site the STACK 2026 judges use | Its own hosted project, with demo data | `mock` allowed, banner "Simulated AI output" | optional | closed (`noindex`) |
-| Staging | `STAGING` | Rehearsal of every release, restore drills, load tests | Its own hosted project, **no demo data** | live or `mock` | real provider, a test sender address | closed (`noindex`) |
-| Production | `PRODUCTION` | The public product | Its own hosted project | live only | real provider | open |
+| Environment | `APP_ENV`    | Purpose                                                | Supabase                                 | AI                                           | Email                                | Search engines     |
+| ----------- | ------------ | ------------------------------------------------------ | ---------------------------------------- | -------------------------------------------- | ------------------------------------ | ------------------ |
+| Local       | `LOCAL`      | Development, tests                                     | Local Docker stack (`pnpm db:start`)     | `mock`                                       | `log` (prints a line)                | closed             |
+| Demo        | `DEMO`       | The site the STACK 2026 judges use                     | Its own hosted project, with demo data   | `mock` allowed, banner "Simulated AI output" | optional                             | closed (`noindex`) |
+| Staging     | `STAGING`    | Rehearsal of every release, restore drills, load tests | Its own hosted project, **no demo data** | live or `mock`                               | real provider, a test sender address | closed (`noindex`) |
+| Production  | `PRODUCTION` | The public product                                     | Its own hosted project                   | live only                                    | real provider                        | open               |
 
 If `APP_ENV` is not set, a local Supabase URL means `LOCAL` and anything else is treated as `PRODUCTION`, so a forgotten variable errs on the safe side.
 
@@ -17,26 +17,26 @@ If `APP_ENV` is not set, a local Supabase URL means `LOCAL` and anything else is
 
 On **Vercel** (`src/lib/boot.ts`) there is no long-lived process to stop, so:
 
-- `PRODUCTION` still refuses: the start-up hook fails and **every request answers 500** until the configuration is fixed. The Vercel function logs show `Refusing to start in PRODUCTION` with the list of problems. A Vercel *Production* deployment without `APP_ENV` counts as `PRODUCTION`, so set `APP_ENV=STAGING` (or `DEMO`) explicitly when that deployment is not the public product.
+- A **declared** `PRODUCTION` (`APP_ENV=PRODUCTION`) refuses: the start-up hook fails and **every request answers 500** until the configuration is fixed, and the Vercel function logs show `Refusing to start in PRODUCTION` with the list of problems. A deployment **without** `APP_ENV` still counts as `PRODUCTION` (no demo labels, no styleguide, no purge, indexed by search engines) but keeps serving: the logs show `config.invalid` ("Unsafe PRODUCTION configuration") and `/admin` shows a red banner listing the problems (team decision, 2026-11-23). Set `APP_ENV=PRODUCTION` once the configuration is complete, or `APP_ENV=DEMO` / `STAGING` when the deployment is not the public product.
 - `STAGING` and `DEMO` only log the problems (`config.invalid`) and keep serving, so a preview with a partial configuration still opens.
-- Without `APP_ENV`, a Vercel *Preview* deployment counts as `DEMO`.
+- Without `APP_ENV`, a Vercel _Preview_ deployment counts as `DEMO`.
 - Without `APP_URL`, the address comes from Vercel: the production domain (`VERCEL_PROJECT_PRODUCTION_URL`) on production deployments, the deployment URL (`VERCEL_URL`) on previews. Set `APP_URL` by hand once there is a custom domain.
 
 Checked against a local production build with `VERCEL=1` (not on Vercel itself): an unsafe `PRODUCTION` configuration answered 500 on every route, and a preview without `APP_ENV` started as `DEMO` with `noindex`.
 
-| Rule | Production | Staging, Demo |
-|---|---|---|
-| Supabase URL, public key and service key are set | required | required |
-| Supabase URL is not a local address | required | required |
-| `APP_URL` is a public `https` address | required | required |
-| `CRON_SECRET` has at least 32 characters | required | required |
-| `LLM_PROVIDER` is not `mock` | **required** | allowed |
-| `SEED_DEMO` is not `true` | **required** | allowed |
-| Turnstile site and secret key | required | warning |
-| `EMAIL_PROVIDER` is `smtp` or `resend` | required | `none` warns, `log` allowed |
-| A live provider has its API key and `LLM_MODEL` | required | required |
-| Number settings are valid numbers | required | required |
-| `RATE_LIMIT_MULTIPLIER` (tests only) is not set | required | required |
+| Rule                                             | Production   | Staging, Demo               |
+| ------------------------------------------------ | ------------ | --------------------------- |
+| Supabase URL, public key and service key are set | required     | required                    |
+| Supabase URL is not a local address              | required     | required                    |
+| `APP_URL` is a public `https` address            | required     | required                    |
+| `CRON_SECRET` has at least 32 characters         | required     | required                    |
+| `LLM_PROVIDER` is not `mock`                     | **required** | allowed                     |
+| `SEED_DEMO` is not `true`                        | **required** | allowed                     |
+| Turnstile site and secret key                    | required     | warning                     |
+| `EMAIL_PROVIDER` is `smtp` or `resend`           | required     | `none` warns, `log` allowed |
+| A live provider has its API key and `LLM_MODEL`  | required     | required                    |
+| Number settings are valid numbers                | required     | required                    |
+| `RATE_LIMIT_MULTIPLIER` (tests only) is not set  | required     | required                    |
 
 Check a file or the current environment **before** deploying:
 
@@ -51,25 +51,25 @@ It prints every problem and exits with 1 if the server would refuse to start. Un
 
 Secrets are never committed. `.env.example` lists every name.
 
-| Variable | Needed for | Notes |
-|---|---|---|
-| `APP_ENV` | all | `LOCAL`, `DEMO`, `STAGING`, `PRODUCTION`. Read at run time, and the build must see the same value for the HSTS header (see `docs/security.md`) |
-| `APP_URL` | all deployed | Public address, used in emails, the sitemap and canonical links |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `..._PUBLISHABLE_KEY`) | all | Public by design |
-| `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_SECRET_KEY`) | all | Server only. Never in the browser |
-| `CRON_SECRET` | deployed | 32+ random characters. Vercel Cron sends it automatically |
-| `LLM_PROVIDER`, `LLM_MODEL`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY` | AI drafts | Production needs a live provider |
-| `SYNTHESIS_DAILY_CAP` | cost | Live AI runs per person per 24 h (default 20, also editable in `/admin/settings`) |
-| `SYNTHESIS_GLOBAL_DAILY_CAP` | cost | Live AI runs for everyone together per 24 h (default 300) |
-| `EMAIL_PROVIDER`, `EMAIL_FROM` | email | `smtp` or `resend` (see `docs/email.md`) |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | email (smtp) | |
-| `RESEND_API_KEY` | email (resend) | |
-| `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | bot check | Production requires both |
-| `UPLOAD_SCAN_URL` | uploads | Optional malware scanner (see `docs/security.md`) |
-| `ALERT_WEBHOOK_URL` | alerts | Slack or Discord compatible webhook |
-| `MAX_UPLOAD_MB`, `ALLOWED_EMAIL_DOMAINS`, `REPORT_HOLD_THRESHOLD`, `HOLD_REVIEW_DAYS` | behaviour | Defaults; `/admin/settings` overrides them |
-| `SEED_DEMO` | local, demo | Never `true` in production |
-| `RATE_LIMIT_MULTIPLIER` | local tests | Raises rate limits for browser tests. Refused outside `LOCAL` |
+| Variable                                                                               | Needed for     | Notes                                                                                                                                          |
+| -------------------------------------------------------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_ENV`                                                                              | all            | `LOCAL`, `DEMO`, `STAGING`, `PRODUCTION`. Read at run time, and the build must see the same value for the HSTS header (see `docs/security.md`) |
+| `APP_URL`                                                                              | all deployed   | Public address, used in emails, the sitemap and canonical links                                                                                |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `..._PUBLISHABLE_KEY`) | all            | Public by design                                                                                                                               |
+| `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_SECRET_KEY`)                                 | all            | Server only. Never in the browser                                                                                                              |
+| `CRON_SECRET`                                                                          | deployed       | 32+ random characters. Vercel Cron sends it automatically                                                                                      |
+| `LLM_PROVIDER`, `LLM_MODEL`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`                     | AI drafts      | Production needs a live provider                                                                                                               |
+| `SYNTHESIS_DAILY_CAP`                                                                  | cost           | Live AI runs per person per 24 h (default 20, also editable in `/admin/settings`)                                                              |
+| `SYNTHESIS_GLOBAL_DAILY_CAP`                                                           | cost           | Live AI runs for everyone together per 24 h (default 300)                                                                                      |
+| `EMAIL_PROVIDER`, `EMAIL_FROM`                                                         | email          | `smtp` or `resend` (see `docs/email.md`)                                                                                                       |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`                                 | email (smtp)   |                                                                                                                                                |
+| `RESEND_API_KEY`                                                                       | email (resend) |                                                                                                                                                |
+| `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`                               | bot check      | Production requires both                                                                                                                       |
+| `UPLOAD_SCAN_URL`                                                                      | uploads        | Optional malware scanner (see `docs/security.md`)                                                                                              |
+| `ALERT_WEBHOOK_URL`                                                                    | alerts         | Slack or Discord compatible webhook                                                                                                            |
+| `MAX_UPLOAD_MB`, `ALLOWED_EMAIL_DOMAINS`, `REPORT_HOLD_THRESHOLD`, `HOLD_REVIEW_DAYS`  | behaviour      | Defaults; `/admin/settings` overrides them                                                                                                     |
+| `SEED_DEMO`                                                                            | local, demo    | Never `true` in production                                                                                                                     |
+| `RATE_LIMIT_MULTIPLIER`                                                                | local tests    | Raises rate limits for browser tests. Refused outside `LOCAL`                                                                                  |
 
 ## Setting up staging (first time)
 
@@ -77,7 +77,7 @@ Secrets are never committed. `.env.example` lists every name.
 2. Create the first admin: `select public.promote_admin('you@example.com');`
 3. In Supabase, **Authentication, Providers, Email**: turn on **Confirm email**. Add the redirect URL `https://<staging address>/**` under **URL Configuration**. Set the site URL to the staging address.
 4. Configure SMTP for Supabase Auth and paste the confirmation template (see `docs/email.md`).
-5. Create a Vercel project (or a Vercel *environment*) for staging. Set the variables above with `APP_ENV=STAGING`. Add the same `CRON_SECRET` to the project.
+5. Create a Vercel project (or a Vercel _environment_) for staging. Set the variables above with `APP_ENV=STAGING`. Add the same `CRON_SECRET` to the project.
 6. Run `pnpm config:check --file <your staging env file>`, then deploy.
 7. Open `/api/health`: it must answer `{"status":"ok","database":"up"}`.
 8. Follow `docs/operations-checklist.md`.
